@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Courier_Prime, Press_Start_2P } from "next/font/google";
+import { VaultBackdrop } from "@/components/vault-backdrop";
 import "./globals.css";
 
 // Display de píxel: rótulos, botones y marcadores. Sólo existe en 400.
@@ -34,7 +35,10 @@ export default function RootLayout({
       className={`${pressStart.variable} ${courierPrime.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col bg-av-bg text-av-text font-mono tracking-av">
-        {children}
+        <VaultBackdrop />
+        {/* El contenido va por encima de la rejilla (z-0) y por debajo de las
+            scanlines (z-50), igual que el z-index 2 de las plantillas. */}
+        <div className="relative z-2 flex flex-1 flex-col">{children}</div>
       </body>
     </html>
   );
