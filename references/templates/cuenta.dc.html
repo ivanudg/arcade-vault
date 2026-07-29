@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Courier+Prime:wght@400;700&display=swap">
+<script src="./arcade-core.js"></script>
+<style>
+  body { margin: 0; background: #0a0a0f; }
+  a { color: #00f5ff; text-decoration: none; }
+  a:hover { color: #f5ff00; }
+  input { font-family: 'Courier Prime', monospace; }
+  ::selection { background: #ff006e; color: #0a0a0f; }
+  @keyframes av-grid { from { transform: translateY(0); } to { transform: translateY(60px); } }
+  @keyframes av-fade { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: translateY(0); } }
+</style>
+</helmet>
+<div style="position: relative; min-height: 100vh; background: #0a0a0f; color: #c9cfdd; font-family: 'Courier Prime', monospace; overflow-x: hidden;">
+
+  <sc-if value="{{ animatedGrid }}" hint-placeholder-val="{{ true }}">
+    <div style="position: fixed; inset: 0; overflow: hidden; pointer-events: none; z-index: 0;">
+      <div style="position: absolute; left: -20%; right: -20%; bottom: -10%; height: 70%; transform: perspective(320px) rotateX(62deg); transform-origin: bottom center; background-image: linear-gradient(to right, rgba(0,245,255,0.16) 1px, transparent 1px), linear-gradient(to bottom, rgba(255,0,110,0.14) 1px, transparent 1px); background-size: 60px 60px; animation: av-grid 3.4s linear infinite;"></div>
+      <div style="position: absolute; inset: 0; background: radial-gradient(120% 80% at 50% 0%, rgba(0,245,255,0.07), transparent 60%), radial-gradient(90% 60% at 80% 100%, rgba(255,0,110,0.09), transparent 65%);"></div>
+    </div>
+  </sc-if>
+  <sc-if value="{{ scanlines }}" hint-placeholder-val="{{ true }}">
+    <div style="position: fixed; inset: 0; pointer-events: none; z-index: 50; background: repeating-linear-gradient(to bottom, rgba(0,0,0,0.34) 0 1px, rgba(0,0,0,0) 1px 3px); mix-blend-mode: multiply;"></div>
+  </sc-if>
+
+  <header style="position: sticky; top: 0; z-index: 40; display: flex; align-items: center; justify-content: space-between; gap: 18px; padding: 14px clamp(14px, 3vw, 40px); background: rgba(10,10,15,0.88); backdrop-filter: blur(8px); border-bottom: 1px solid rgba(0,245,255,0.24);">
+    <a href="biblioteca.dc.html" style="font-family: 'Press Start 2P', monospace; font-size: clamp(11px, 2.2vw, 15px); letter-spacing: 1px; color: #00f5ff; text-shadow: 0 0 8px rgba(0,245,255,0.9), 0 0 24px rgba(0,245,255,0.45);">ARCADE<span style="color: #ff006e; text-shadow: 0 0 8px rgba(255,0,110,0.9), 0 0 24px rgba(255,0,110,0.5);"> VAULT</span></a>
+    <nav style="display: flex; align-items: center; gap: 22px; font-size: 13px; letter-spacing: 1.6px;">
+      <a href="biblioteca.dc.html" style="padding-bottom: 5px; border-bottom: 2px solid transparent; color: #8f97a8;">Biblioteca</a>
+      <a href="salon.dc.html" style="padding-bottom: 5px; border-bottom: 2px solid transparent; color: #8f97a8;">Salón de la Fama</a>
+    </nav>
+  </header>
+
+  <main style="position: relative; z-index: 2; max-width: 1240px; margin: 0 auto; padding: clamp(22px, 4vw, 44px) clamp(14px, 3vw, 40px) 90px;">
+    <section style="display: grid; place-items: center; padding: clamp(10px, 4vw, 40px) 0; animation: av-fade 0.3s ease both;">
+      <div style="width: min(100%, 440px); padding: clamp(22px, 4vw, 36px); background: rgba(13,15,22,0.92); border: 1px solid rgba(0,245,255,0.28); box-shadow: 0 0 44px rgba(0,245,255,0.12);">
+        <div style="text-align: center; font-family: 'Press Start 2P', monospace; font-size: 15px; letter-spacing: 1px; color: #00f5ff; text-shadow: 0 0 12px rgba(0,245,255,0.8);">ARCADE<span style="color: #ff006e; text-shadow: 0 0 12px rgba(255,0,110,0.8);"> VAULT</span></div>
+        <p style="margin: 14px 0 24px; text-align: center; font-size: 13px; color: #6f7686; letter-spacing: 1px;">Guarda tus récords y compite en el salón.</p>
+
+        <sc-if value="{{ loggedIn }}">
+          <div style="display: flex; flex-direction: column; gap: 16px; text-align: center;">
+            <div style="display: grid; place-items: center; gap: 12px; padding: 20px; background: #05060a; border: 1px solid rgba(255,0,110,0.35);">
+              <div style="width: 52px; height: 52px; display: grid; place-items: center; font-family: 'Press Start 2P', monospace; font-size: 16px; color: #0a0a0f; background: #ff006e; box-shadow: 0 0 18px rgba(255,0,110,0.6);">{{ userInitial }}</div>
+              <span style="font-family: 'Press Start 2P', monospace; font-size: 11px; letter-spacing: 1px; color: #e7ebf5;">{{ userName }}</span>
+              <span style="font-size: 12px; color: #6f7686; letter-spacing: 1px;">Sesión activa en este dispositivo</span>
+            </div>
+            <a href="biblioteca.dc.html" style="padding: 16px; font-family: 'Press Start 2P', monospace; font-size: 10px; letter-spacing: 1px; color: #0a0a0f; background: #00f5ff; box-shadow: 0 0 22px rgba(0,245,255,0.5);" style-hover="background: #f5ff00; color: #0a0a0f;">IR A LA BIBLIOTECA</a>
+            <button onClick="{{ logout }}" style="cursor: pointer; padding: 15px; font-family: 'Press Start 2P', monospace; font-size: 9px; letter-spacing: 1px; color: #ff006e; background: transparent; border: 1px solid rgba(255,0,110,0.5);" style-hover="background: rgba(255,0,110,0.16); color: #ffffff;" style-active="transform: scale(0.97);">CERRAR SESION</button>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{ loggedOut }}" hint-placeholder-val="{{ true }}">
+          <div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; border: 1px solid rgba(0,245,255,0.25);">
+              <button onClick="{{ tabLogin }}" style="cursor: pointer; padding: 14px 8px; font-family: 'Press Start 2P', monospace; font-size: 9px; letter-spacing: 1px; border: none; color: {{ loginFg }}; background: {{ loginBg }};" style-active="transform: scale(0.97);">INICIAR SESION</button>
+              <button onClick="{{ tabRegister }}" style="cursor: pointer; padding: 14px 8px; font-family: 'Press Start 2P', monospace; font-size: 9px; letter-spacing: 1px; border: none; color: {{ regFg }}; background: {{ regBg }};" style-active="transform: scale(0.97);">CREAR CUENTA</button>
+            </div>
+
+            <div style="margin-top: 24px; display: flex; flex-direction: column; gap: 16px;">
+              <label style="display: flex; flex-direction: column; gap: 8px; font-size: 12px; letter-spacing: 1.4px; color: #8f97a8;">Usuario
+                <input value="{{ authUser }}" onChange="{{ onAuthUser }}" placeholder="jugador_01" style="padding: 13px; font-size: 14px; color: #e7ebf5; background: #05060a; border: 1px solid rgba(0,245,255,0.3); outline: none;" style-focus="border-color: #00f5ff; box-shadow: 0 0 18px rgba(0,245,255,0.45);">
+              </label>
+              <sc-if value="{{ isRegister }}">
+                <label style="display: flex; flex-direction: column; gap: 8px; font-size: 12px; letter-spacing: 1.4px; color: #8f97a8;">Correo electrónico
+                  <input value="{{ authEmail }}" onChange="{{ onAuthEmail }}" placeholder="tu@correo.com" style="padding: 13px; font-size: 14px; color: #e7ebf5; background: #05060a; border: 1px solid rgba(0,245,255,0.3); outline: none;" style-focus="border-color: #00f5ff; box-shadow: 0 0 18px rgba(0,245,255,0.45);">
+                </label>
+              </sc-if>
+              <label style="display: flex; flex-direction: column; gap: 8px; font-size: 12px; letter-spacing: 1.4px; color: #8f97a8;">Contraseña
+                <input value="{{ authPass }}" onChange="{{ onAuthPass }}" type="password" placeholder="••••••••" style="padding: 13px; font-size: 14px; color: #e7ebf5; background: #05060a; border: 1px solid rgba(0,245,255,0.3); outline: none;" style-focus="border-color: #00f5ff; box-shadow: 0 0 18px rgba(0,245,255,0.45);">
+              </label>
+              <button onClick="{{ submitAuth }}" style="cursor: pointer; padding: 16px; font-family: 'Press Start 2P', monospace; font-size: 10px; letter-spacing: 1px; color: #0a0a0f; background: #00f5ff; border: none; box-shadow: 0 0 22px rgba(0,245,255,0.5);" style-hover="background: #f5ff00;" style-active="transform: scale(0.97);">{{ authCta }}</button>
+              <a href="biblioteca.dc.html" style="text-align: center; padding: 15px; font-family: 'Press Start 2P', monospace; font-size: 9px; letter-spacing: 1px; color: #ff006e; border: 1px solid rgba(255,0,110,0.5);" style-hover="background: rgba(255,0,110,0.16); color: #ffffff;">JUGAR COMO INVITADO</a>
+              <p style="margin: 0; text-align: center; font-size: 11px; color: #545b6b; letter-spacing: 1px;">Como invitado tus puntuaciones no se guardan en el servidor.</p>
+
+              <div style="display: flex; align-items: center; gap: 12px; color: #3d4350; font-size: 11px; letter-spacing: 2px;">
+                <span style="flex: 1; height: 1px; background: rgba(255,255,255,0.1);"></span>O CONTINÚA CON<span style="flex: 1; height: 1px; background: rgba(255,255,255,0.1);"></span>
+              </div>
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                <button onClick="{{ socialGoogle }}" style="cursor: pointer; padding: 14px 8px; font-family: 'Press Start 2P', monospace; font-size: 8px; letter-spacing: 1px; color: #9aa2b4; background: #0f1119; border: 1px solid rgba(255,255,255,0.14);" style-hover="color: #00f5ff; border-color: rgba(0,245,255,0.5);" style-active="transform: scale(0.96);">GOOGLE</button>
+                <button onClick="{{ socialGithub }}" style="cursor: pointer; padding: 14px 8px; font-family: 'Press Start 2P', monospace; font-size: 8px; letter-spacing: 1px; color: #9aa2b4; background: #0f1119; border: 1px solid rgba(255,255,255,0.14);" style-hover="color: #00f5ff; border-color: rgba(0,245,255,0.5);" style-active="transform: scale(0.96);">GITHUB</button>
+              </div>
+              <p style="margin: 4px 0 0; font-size: 11px; color: #3d4350; letter-spacing: 1px;">Sesión simulada en este dispositivo. Conectar aquí: POST /api/auth/login · OAuth Google/GitHub vía Supabase.</p>
+            </div>
+          </div>
+        </sc-if>
+      </div>
+    </section>
+  </main>
+
+  <footer style="position: relative; z-index: 2; padding: 22px clamp(14px, 3vw, 40px) 34px; border-top: 1px solid rgba(255,255,255,0.06); font-size: 11px; letter-spacing: 1.4px; color: #3d4350; text-align: center;">ARCADE VAULT · ACCESO DE JUGADORES</footer>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;showScanlines&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Pantalla&quot;},&quot;animatedGrid&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Pantalla&quot;}}">
+class Component extends DCLogic {
+  state = { user: null, tab: 'login', au: '', ap: '', ae: '', ready: false };
+
+  componentDidMount() {
+    const check = () => {
+      if (window.ARCADE) { this.setState({ ready: true, user: window.ARCADE.read().user || null }); return; }
+      this.t = setTimeout(check, 30);
+    };
+    check();
+  }
+
+  componentWillUnmount() { clearTimeout(this.t); }
+
+  renderVals() {
+    const A = window.ARCADE, s = this.state;
+    const login = (name) => {
+      const user = { name: name, guest: false };
+      if (A) A.persist({ user: user });
+      this.setState({ user: user, au: '', ap: '', ae: '' });
+    };
+    return {
+      scanlines: this.props.showScanlines !== false,
+      animatedGrid: this.props.animatedGrid !== false,
+      loggedIn: !!s.user, loggedOut: !s.user,
+      userName: s.user ? s.user.name : '', userInitial: s.user ? s.user.name.slice(0, 1).toUpperCase() : '',
+      logout: () => { if (A) A.persist({ user: null }); this.setState({ user: null }); },
+      isRegister: s.tab === 'register',
+      loginFg: s.tab === 'login' ? '#0a0a0f' : '#8f97a8',
+      loginBg: s.tab === 'login' ? '#00f5ff' : 'transparent',
+      regFg: s.tab === 'register' ? '#0a0a0f' : '#8f97a8',
+      regBg: s.tab === 'register' ? '#ff006e' : 'transparent',
+      tabLogin: () => this.setState({ tab: 'login' }),
+      tabRegister: () => this.setState({ tab: 'register' }),
+      authCta: s.tab === 'login' ? 'ENTRAR AL VAULT' : 'CREAR MI CUENTA',
+      authUser: s.au, authPass: s.ap, authEmail: s.ae,
+      onAuthUser: (e) => this.setState({ au: e.target.value }),
+      onAuthPass: (e) => this.setState({ ap: e.target.value }),
+      onAuthEmail: (e) => this.setState({ ae: e.target.value }),
+      submitAuth: () => login((s.au || 'JUGADOR').toUpperCase().slice(0, 12)),
+      socialGoogle: () => login('GOOGLE_USER'),
+      socialGithub: () => login('GITHUB_USER')
+    };
+  }
+}
+</script>
+</body>
+</html>

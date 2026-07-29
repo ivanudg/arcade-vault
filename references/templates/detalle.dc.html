@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Courier+Prime:wght@400;700&display=swap">
+<script src="./arcade-core.js"></script>
+<style>
+  body { margin: 0; background: #0a0a0f; }
+  a { color: #00f5ff; text-decoration: none; }
+  a:hover { color: #f5ff00; }
+  ::selection { background: #ff006e; color: #0a0a0f; }
+  @keyframes av-grid { from { transform: translateY(0); } to { transform: translateY(60px); } }
+  @keyframes av-fade { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: translateY(0); } }
+  @keyframes av-slide { from { transform: translateX(100%); } to { transform: translateX(0); } }
+  @keyframes av-row { from { opacity: 0; transform: translateX(-18px); } to { opacity: 1; transform: translateX(0); } }
+  @keyframes av-pulse {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(255,0,110,0.55), 0 0 18px rgba(255,0,110,0.5); }
+    50% { box-shadow: 0 0 0 14px rgba(255,0,110,0), 0 0 34px rgba(255,0,110,0.85); }
+  }
+</style>
+</helmet>
+<div style="position: relative; min-height: 100vh; background: #0a0a0f; color: #c9cfdd; font-family: 'Courier Prime', monospace; overflow-x: hidden;">
+
+  <sc-if value="{{ animatedGrid }}" hint-placeholder-val="{{ true }}">
+    <div style="position: fixed; inset: 0; overflow: hidden; pointer-events: none; z-index: 0;">
+      <div style="position: absolute; left: -20%; right: -20%; bottom: -10%; height: 70%; transform: perspective(320px) rotateX(62deg); transform-origin: bottom center; background-image: linear-gradient(to right, rgba(0,245,255,0.16) 1px, transparent 1px), linear-gradient(to bottom, rgba(255,0,110,0.14) 1px, transparent 1px); background-size: 60px 60px; animation: av-grid 3.4s linear infinite;"></div>
+      <div style="position: absolute; inset: 0; background: radial-gradient(120% 80% at 50% 0%, rgba(0,245,255,0.07), transparent 60%), radial-gradient(90% 60% at 80% 100%, rgba(255,0,110,0.09), transparent 65%);"></div>
+    </div>
+  </sc-if>
+  <sc-if value="{{ scanlines }}" hint-placeholder-val="{{ true }}">
+    <div style="position: fixed; inset: 0; pointer-events: none; z-index: 50; background: repeating-linear-gradient(to bottom, rgba(0,0,0,0.34) 0 1px, rgba(0,0,0,0) 1px 3px); mix-blend-mode: multiply;"></div>
+  </sc-if>
+
+  <header style="position: sticky; top: 0; z-index: 40; display: flex; align-items: center; justify-content: space-between; gap: 18px; padding: 14px clamp(14px, 3vw, 40px); background: rgba(10,10,15,0.88); backdrop-filter: blur(8px); border-bottom: 1px solid rgba(0,245,255,0.24);">
+    <a href="biblioteca.dc.html" style="font-family: 'Press Start 2P', monospace; font-size: clamp(11px, 2.2vw, 15px); letter-spacing: 1px; color: #00f5ff; text-shadow: 0 0 8px rgba(0,245,255,0.9), 0 0 24px rgba(0,245,255,0.45);">ARCADE<span style="color: #ff006e; text-shadow: 0 0 8px rgba(255,0,110,0.9), 0 0 24px rgba(255,0,110,0.5);"> VAULT</span></a>
+    <sc-if value="{{ wide }}" hint-placeholder-val="{{ true }}">
+      <nav style="display: flex; align-items: center; gap: 28px; font-size: 13px; letter-spacing: 1.6px;">
+        <a href="biblioteca.dc.html" style="padding-bottom: 5px; border-bottom: 2px solid #00f5ff; color: #00f5ff;">Biblioteca</a>
+        <a href="salon.dc.html" style="padding-bottom: 5px; border-bottom: 2px solid transparent; color: #8f97a8;">Salón de la Fama</a>
+      </nav>
+    </sc-if>
+    <div style="display: flex; align-items: center; gap: 12px;">
+      <sc-if value="{{ loggedOut }}" hint-placeholder-val="{{ true }}">
+        <a href="cuenta.dc.html" style="font-family: 'Press Start 2P', monospace; font-size: 9px; letter-spacing: 1px; padding: 11px 14px; color: #0a0a0f; background: #00f5ff; box-shadow: 0 0 16px rgba(0,245,255,0.55);" style-hover="background: #f5ff00; color: #0a0a0f;">INICIAR SESION</a>
+      </sc-if>
+      <sc-if value="{{ loggedIn }}">
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <div style="width: 34px; height: 34px; display: grid; place-items: center; font-family: 'Press Start 2P', monospace; font-size: 11px; color: #0a0a0f; background: #ff006e; box-shadow: 0 0 14px rgba(255,0,110,0.6);">{{ userInitial }}</div>
+          <div style="display: flex; flex-direction: column; gap: 2px;">
+            <span style="font-size: 12px; color: #e7ebf5; letter-spacing: 1px;">{{ userName }}</span>
+            <span onClick="{{ logout }}" style="cursor: pointer; font-size: 10px; color: #6f7686; letter-spacing: 1px;" style-hover="color: #ff006e;">SALIR</span>
+          </div>
+        </div>
+      </sc-if>
+      <sc-if value="{{ narrow }}">
+        <button onClick="{{ toggleMenu }}" style="cursor: pointer; width: 40px; height: 38px; display: grid; gap: 5px; place-content: center; background: transparent; border: 1px solid rgba(0,245,255,0.4);" style-active="transform: scale(0.94);">
+          <span style="display: block; width: 20px; height: 2px; background: #00f5ff;"></span>
+          <span style="display: block; width: 20px; height: 2px; background: #00f5ff;"></span>
+          <span style="display: block; width: 20px; height: 2px; background: #00f5ff;"></span>
+        </button>
+      </sc-if>
+    </div>
+  </header>
+
+  <sc-if value="{{ menuOpen }}">
+    <div onClick="{{ toggleMenu }}" style="position: fixed; inset: 0; z-index: 45; background: rgba(5,5,10,0.72);">
+      <div style="position: absolute; top: 0; right: 0; bottom: 0; width: min(78vw, 300px); padding: 26px 22px; background: #0d0e16; border-left: 1px solid rgba(0,245,255,0.3); animation: av-slide 0.22s ease both; display: flex; flex-direction: column; gap: 22px;">
+        <div style="font-family: 'Press Start 2P', monospace; font-size: 10px; color: #4a5160; letter-spacing: 1px;">MENU</div>
+        <a href="biblioteca.dc.html" style="font-size: 15px; letter-spacing: 1.4px; color: #00f5ff;">Biblioteca</a>
+        <a href="salon.dc.html" style="font-size: 15px; letter-spacing: 1.4px; color: #e7ebf5;">Salón de la Fama</a>
+        <a href="cuenta.dc.html" style="font-size: 15px; letter-spacing: 1.4px; color: #ff006e;">Cuenta</a>
+      </div>
+    </div>
+  </sc-if>
+
+  <main style="position: relative; z-index: 2; max-width: 1240px; margin: 0 auto; padding: clamp(22px, 4vw, 44px) clamp(14px, 3vw, 40px) 90px;">
+    <section style="animation: av-fade 0.28s ease both;">
+      <a href="biblioteca.dc.html" style="display: inline-block; margin-bottom: 26px; padding: 11px 14px; font-family: 'Press Start 2P', monospace; font-size: 9px; letter-spacing: 1px; color: #00f5ff; border: 1px solid rgba(0,245,255,0.45);" style-hover="background: rgba(0,245,255,0.14); color: #ffffff;">&lt; VOLVER AL VAULT</a>
+
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 26px; align-items: start;">
+        <div style="display: flex; flex-direction: column; gap: 20px;">
+          <div style="position: relative; height: 240px; overflow: hidden; background: #05060a; border: 1px solid {{ border }};">
+            <canvas ref="{{ preview }}" width="560" height="360" style="display: block; width: 100%; height: 100%; object-fit: cover; image-rendering: pixelated;"></canvas>
+            <div style="position: absolute; inset: 0; pointer-events: none; background: radial-gradient(120% 120% at 50% 45%, rgba(0,0,0,0) 55%, rgba(0,0,0,0.6) 100%);"></div>
+          </div>
+          <h2 style="margin: 0; font-family: 'Press Start 2P', monospace; font-size: clamp(18px, 4vw, 34px); line-height: 1.35; letter-spacing: 1px; color: {{ glow }}; text-shadow: 0 0 16px {{ tintStrong }};">{{ title }}</h2>
+          <div style="display: flex; flex-wrap: wrap; gap: 10px; font-family: 'Press Start 2P', monospace; font-size: 8px; letter-spacing: 1px; color: #6f7686;">
+            <span style="padding: 7px 9px; border: 1px solid rgba(255,255,255,0.14);">{{ cat }}</span>
+            <span style="padding: 7px 9px; border: 1px solid rgba(255,255,255,0.14);">1 JUGADOR</span>
+            <span style="padding: 7px 9px; border: 1px solid rgba(245,255,0,0.3); color: #f5ff00;">RECORD {{ best }}</span>
+          </div>
+          <p style="margin: 0; font-size: 15px; line-height: 1.75; color: #9aa2b4; text-wrap: pretty; max-width: 56ch;">{{ long }}</p>
+          <div style="padding: 14px; background: rgba(5,6,10,0.8); border: 1px dashed rgba(0,245,255,0.25); font-size: 12px; line-height: 1.7; color: #6f7686;">CONTROLES: {{ controls }}</div>
+          <div style="display: flex; flex-wrap: wrap; gap: 14px;">
+            <sc-if value="{{ playable }}" hint-placeholder-val="{{ true }}">
+              <a href="{{ playHref }}" style="padding: 18px 26px; font-family: 'Press Start 2P', monospace; font-size: 12px; letter-spacing: 2px; color: #0a0a0f; background: #ff006e; animation: av-pulse 1.8s ease-in-out infinite;" style-hover="background: #f5ff00; color: #0a0a0f;">JUGAR AHORA</a>
+            </sc-if>
+            <sc-if value="{{ locked }}">
+              <span style="padding: 18px 26px; font-family: 'Press Start 2P', monospace; font-size: 12px; letter-spacing: 2px; color: #4a5160; background: #12141d; border: 1px solid rgba(255,255,255,0.1);">PRONTO</span>
+            </sc-if>
+            <a href="biblioteca.dc.html" style="padding: 18px 26px; font-family: 'Press Start 2P', monospace; font-size: 11px; letter-spacing: 1px; color: #00f5ff; border: 1px solid #00f5ff;" style-hover="background: rgba(0,245,255,0.12); color: #ffffff;">VOLVER AL VAULT</a>
+          </div>
+        </div>
+
+        <aside style="padding: 22px; background: rgba(13,15,22,0.88); border: 1px solid rgba(255,0,110,0.3); box-shadow: 0 0 32px rgba(255,0,110,0.1);">
+          <h3 style="margin: 0 0 18px; font-family: 'Press Start 2P', monospace; font-size: 11px; letter-spacing: 1px; color: #ff006e; text-shadow: 0 0 12px rgba(255,0,110,0.6);">MEJORES PUNTUACIONES</h3>
+          <div style="display: flex; flex-direction: column; gap: 2px;">
+            <sc-for list="{{ board }}" as="r" hint-placeholder-count="10">
+              <div style="display: grid; grid-template-columns: 34px minmax(0, 1fr) auto; gap: 10px; align-items: center; padding: 10px 8px; background: {{ r.bg }}; border-left: 2px solid {{ r.accent }}; animation: av-row 0.4s ease both; animation-delay: {{ r.delay }};">
+                <span style="font-family: 'Press Start 2P', monospace; font-size: 9px; color: {{ r.accent }};">{{ r.rank }}</span>
+                <span style="font-size: 13px; letter-spacing: 1px; color: #cfd5e2; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{ r.name }}</span>
+                <span style="font-family: 'Press Start 2P', monospace; font-size: 10px; color: #f5ff00;">{{ r.score }}</span>
+              </div>
+            </sc-for>
+          </div>
+          <a href="salon.dc.html?juego={{ id }}" style="display: block; margin-top: 18px; text-align: center; font-size: 12px; letter-spacing: 1.4px; color: #6f7686;" style-hover="color: #f5ff00;">Ver el Salón de la Fama completo &gt;</a>
+        </aside>
+      </div>
+    </section>
+  </main>
+
+  <footer style="position: relative; z-index: 2; padding: 22px clamp(14px, 3vw, 40px) 34px; border-top: 1px solid rgba(255,255,255,0.06); font-size: 11px; letter-spacing: 1.4px; color: #3d4350; text-align: center;">ARCADE VAULT · FICHA DE MÁQUINA</footer>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;showScanlines&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Pantalla&quot;},&quot;animatedGrid&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Pantalla&quot;}}">
+class Component extends DCLogic {
+  state = { w: 1240, user: null, menuOpen: false, ready: false };
+
+  componentDidMount() {
+    this.onResize = () => this.setState({ w: window.innerWidth });
+    window.addEventListener('resize', this.onResize);
+    this.setState({ w: window.innerWidth });
+    const check = () => {
+      if (window.ARCADE) { this.setState({ ready: true, user: window.ARCADE.read().user || null }); return; }
+      this.t = setTimeout(check, 30);
+    };
+    check();
+  }
+
+  componentWillUnmount() {
+    window.removeEventListener('resize', this.onResize);
+    clearTimeout(this.t);
+  }
+
+  renderVals() {
+    const A = window.ARCADE, s = this.state, narrow = s.w < 780;
+    const base = {
+      scanlines: this.props.showScanlines !== false,
+      animatedGrid: this.props.animatedGrid !== false,
+      wide: !narrow, narrow: narrow, menuOpen: s.menuOpen,
+      toggleMenu: () => this.setState({ menuOpen: !s.menuOpen }),
+      loggedIn: !!s.user, loggedOut: !s.user,
+      userName: s.user ? s.user.name : '', userInitial: s.user ? s.user.name.slice(0, 1).toUpperCase() : '',
+      logout: () => { if (A) A.persist({ user: null }); this.setState({ user: null }); },
+      board: []
+    };
+    if (!A) return base;
+
+    const g = A.game(A.param('juego', 'muro'));
+    const medal = ['#f5ff00', '#d8dee9', '#ff9d4d'];
+    return Object.assign(base, {
+      id: g.id, title: g.title, cat: g.cat, long: g.long, controls: g.controls,
+      glow: g.glow, tint: A.tint(g.glow, 0.16), tintStrong: A.tint(g.glow, 0.65), border: A.tint(g.glow, 0.32),
+      best: A.best(g.id), playable: g.playable, locked: !g.playable,
+      playHref: 'jugar.dc.html?juego=' + g.id,
+      preview: A.previewRef(g.id),
+      board: A.board(g.id).map((r, i) => ({
+        rank: String(i + 1).padStart(2, '0'), name: r.name, score: A.fmt(r.score),
+        accent: i < 3 ? medal[i] : '#4a5160',
+        bg: r.mine ? 'rgba(0,245,255,0.08)' : i < 3 ? 'rgba(245,255,0,0.04)' : 'transparent',
+        delay: (i * 0.055).toFixed(2) + 's'
+      }))
+    });
+  }
+}
+</script>
+</body>
+</html>

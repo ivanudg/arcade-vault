@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Courier+Prime:wght@400;700&display=swap">
+<script src="./arcade-core.js"></script>
+<style>
+  body { margin: 0; background: #0a0a0f; }
+  a { color: #00f5ff; text-decoration: none; }
+  a:hover { color: #f5ff00; }
+  ::selection { background: #ff006e; color: #0a0a0f; }
+  @keyframes av-fade { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: translateY(0); } }
+  @keyframes av-spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+  @keyframes av-caret { 50% { opacity: 0; } }
+  @keyframes av-sweep { from { transform: translateY(-100%); } to { transform: translateY(220%); } }
+</style>
+</helmet>
+<div style="position: relative; min-height: 100vh; background: #0a0a0f; color: #c9cfdd; font-family: 'Courier Prime', monospace; overflow-x: hidden;">
+
+  <sc-if value="{{ scanlines }}" hint-placeholder-val="{{ true }}">
+    <div style="position: fixed; inset: 0; pointer-events: none; z-index: 50; background: repeating-linear-gradient(to bottom, rgba(0,0,0,0.34) 0 1px, rgba(0,0,0,0) 1px 3px); mix-blend-mode: multiply;"></div>
+  </sc-if>
+
+  <header style="position: sticky; top: 0; z-index: 40; display: flex; align-items: center; justify-content: space-between; gap: 14px; padding: 14px clamp(14px, 3vw, 40px); background: rgba(10,10,15,0.9); border-bottom: 1px solid rgba(0,245,255,0.24);">
+    <a href="biblioteca.dc.html" style="font-family: 'Press Start 2P', monospace; font-size: clamp(10px, 2vw, 13px); letter-spacing: 1px; color: #00f5ff; text-shadow: 0 0 8px rgba(0,245,255,0.9);">ARCADE<span style="color: #ff006e; text-shadow: 0 0 8px rgba(255,0,110,0.9);"> VAULT</span></a>
+    <span style="font-family: 'Press Start 2P', monospace; font-size: clamp(9px, 1.8vw, 12px); letter-spacing: 1px; color: #e7ebf5;">{{ title }}</span>
+    <a href="{{ detailHref }}" style="font-family: 'Press Start 2P', monospace; font-size: 9px; letter-spacing: 1px; padding: 11px 13px; color: #ff006e; border: 1px solid rgba(255,0,110,0.45);" style-hover="background: rgba(255,0,110,0.16); color: #ffffff;">SALIR</a>
+  </header>
+
+  <main style="position: relative; z-index: 2; max-width: 780px; margin: 0 auto; padding: clamp(18px, 3vw, 34px) clamp(14px, 3vw, 30px) 80px;">
+    <section style="animation: av-fade 0.24s ease both;">
+      <div style="display: flex; flex-wrap: wrap; gap: 12px; align-items: center; justify-content: space-between; padding: 14px 16px; background: rgba(13,15,22,0.9); border: 1px solid rgba(0,245,255,0.3);">
+        <div style="display: flex; flex-wrap: wrap; gap: 22px; font-family: 'Press Start 2P', monospace; font-size: 9px; letter-spacing: 1px;">
+          <span style="color: #6f7686;">PUNTUACION <span style="color: #00f5ff; text-shadow: 0 0 10px rgba(0,245,255,0.6);">{{ hudScore }}</span></span>
+          <span style="color: #6f7686;">VIDAS <span style="color: #ff006e; text-shadow: 0 0 10px rgba(255,0,110,0.6);">{{ hudLives }}</span></span>
+          <span style="color: #6f7686;">NIVEL <span style="color: #f5ff00; text-shadow: 0 0 10px rgba(245,255,0,0.6);">{{ hudLevel }}</span></span>
+          <span style="color: #6f7686;">JUGADOR <span style="color: #e7ebf5;">{{ playerName }}</span></span>
+        </div>
+        <button onClick="{{ togglePause }}" style="cursor: pointer; padding: 11px 14px; font-family: 'Press Start 2P', monospace; font-size: 9px; color: #f5ff00; background: transparent; border: 1px solid rgba(245,255,0,0.45);" style-hover="background: rgba(245,255,0,0.16); color: #ffffff;" style-active="transform: scale(0.94);">{{ pauseLabel }}</button>
+      </div>
+
+      <div style="margin: 26px auto 0; padding: 22px; background: linear-gradient(#15171f, #0b0c12); border: 1px solid rgba(0,245,255,0.22); border-radius: 34px; box-shadow: 0 0 46px rgba(0,245,255,0.12), inset 0 0 0 1px rgba(255,255,255,0.04);">
+        <div style="position: relative; overflow: hidden; border-radius: 22px; background: #05060a; box-shadow: inset 0 0 60px rgba(0,0,0,0.9), inset 0 0 12px rgba(0,245,255,0.16);">
+          <canvas ref="{{ canvasRef }}" width="480" height="480" style="display: block; width: 100%; height: auto; image-rendering: pixelated;"></canvas>
+          <div style="position: absolute; inset: 0; pointer-events: none; border-radius: 22px; background: radial-gradient(115% 115% at 50% 50%, rgba(0,0,0,0) 55%, rgba(0,0,0,0.72) 100%);"></div>
+          <div style="position: absolute; inset: 0; pointer-events: none; height: 34%; background: linear-gradient(rgba(255,255,255,0) 0%, rgba(255,255,255,0.045) 55%, rgba(255,255,255,0) 100%); animation: av-sweep 5.5s linear infinite;"></div>
+          <sc-if value="{{ paused }}">
+            <div style="position: absolute; inset: 0; display: grid; place-items: center; background: rgba(5,6,10,0.78);">
+              <span style="font-family: 'Press Start 2P', monospace; font-size: clamp(14px, 3vw, 22px); letter-spacing: 2px; color: #f5ff00; text-shadow: 0 0 18px rgba(245,255,0,0.6);">EN PAUSA</span>
+            </div>
+          </sc-if>
+        </div>
+        <div style="margin-top: 18px; display: grid; grid-template-columns: repeat(auto-fit, minmax(60px, 1fr)); gap: 10px;">
+          <sc-for list="{{ pad }}" as="k" hint-placeholder-count="5">
+            <button onPointerDown="{{ k.down }}" onPointerUp="{{ k.up }}" onPointerLeave="{{ k.up }}" style="cursor: pointer; padding: 15px 6px; font-family: 'Press Start 2P', monospace; font-size: 10px; color: #00f5ff; background: #0f1119; border: 1px solid rgba(0,245,255,0.3); touch-action: none;" style-active="background: #00f5ff; color: #0a0a0f;">{{ k.label }}</button>
+          </sc-for>
+        </div>
+        <p style="margin: 14px 0 0; text-align: center; font-size: 12px; letter-spacing: 1px; color: #545b6b;">{{ controls }}</p>
+      </div>
+    </section>
+  </main>
+
+  <sc-if value="{{ loading }}">
+    <div style="position: fixed; inset: 0; z-index: 60; display: grid; place-items: center; background: rgba(5,6,10,0.94);">
+      <div style="display: grid; gap: 18px; justify-items: center;">
+        <div style="width: 54px; height: 54px; display: grid; grid-template-columns: 1fr 1fr; gap: 6px; animation: av-spin 0.9s steps(8) infinite;">
+          <span style="background: #00f5ff; box-shadow: 0 0 12px #00f5ff;"></span>
+          <span style="background: #ff006e; box-shadow: 0 0 12px #ff006e;"></span>
+          <span style="background: #f5ff00; box-shadow: 0 0 12px #f5ff00;"></span>
+          <span style="background: #00f5ff; box-shadow: 0 0 12px #00f5ff;"></span>
+        </div>
+        <span style="font-family: 'Press Start 2P', monospace; font-size: 10px; letter-spacing: 2px; color: #00f5ff;">CARGANDO CARTUCHO...</span>
+      </div>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ over }}">
+    <div style="position: fixed; inset: 0; z-index: 55; display: grid; place-items: center; padding: 20px; background: rgba(5,6,10,0.9);">
+      <div style="width: min(100%, 460px); padding: clamp(22px, 4vw, 34px); text-align: center; background: #0d0f16; border: 1px solid rgba(255,0,110,0.45); box-shadow: 0 0 48px rgba(255,0,110,0.22); animation: av-fade 0.24s ease both;">
+        <h3 style="margin: 0; font-family: 'Press Start 2P', monospace; font-size: clamp(15px, 3.6vw, 24px); letter-spacing: 2px; color: #ff006e; text-shadow: 0 0 16px rgba(255,0,110,0.7);">FIN DEL JUEGO</h3>
+        <p style="margin: 20px 0 6px; font-size: 12px; letter-spacing: 2px; color: #6f7686;">PUNTUACIÓN FINAL</p>
+        <p style="margin: 0; font-family: 'Press Start 2P', monospace; font-size: clamp(24px, 6vw, 40px); color: #f5ff00; text-shadow: 0 0 18px rgba(245,255,0,0.6);">{{ hudScore }}</p>
+        <p style="margin: 14px 0 22px; font-size: 13px; letter-spacing: 1px; color: #8f97a8;">{{ overNote }}</p>
+        <div style="display: flex; flex-direction: column; gap: 12px;">
+          <sc-if value="{{ canSave }}" hint-placeholder-val="{{ true }}">
+            <button onClick="{{ saveScore }}" style="cursor: pointer; padding: 15px; font-family: 'Press Start 2P', monospace; font-size: 10px; letter-spacing: 1px; color: #0a0a0f; background: #f5ff00; border: none; box-shadow: 0 0 22px rgba(245,255,0,0.45);" style-hover="background: #00f5ff;" style-active="transform: scale(0.96);">GUARDAR PUNTUACION</button>
+          </sc-if>
+          <sc-if value="{{ saved }}">
+            <p style="margin: 0; font-family: 'Press Start 2P', monospace; font-size: 10px; letter-spacing: 1px; color: #00f5ff; text-shadow: 0 0 12px rgba(0,245,255,0.6);">{{ savedText }}<span style="animation: av-caret 0.9s steps(1) infinite;">_</span></p>
+          </sc-if>
+          <button onClick="{{ replay }}" style="cursor: pointer; padding: 15px; font-family: 'Press Start 2P', monospace; font-size: 10px; letter-spacing: 1px; color: #ff006e; background: transparent; border: 1px solid #ff006e;" style-hover="background: rgba(255,0,110,0.18); color: #ffffff;" style-active="transform: scale(0.96);">JUGAR DE NUEVO</button>
+          <a href="biblioteca.dc.html" style="padding: 15px; font-family: 'Press Start 2P', monospace; font-size: 10px; letter-spacing: 1px; color: #00f5ff; border: 1px solid rgba(0,245,255,0.5);" style-hover="background: rgba(0,245,255,0.14); color: #ffffff;">VOLVER AL VAULT</a>
+        </div>
+      </div>
+    </div>
+  </sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;showScanlines&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Pantalla&quot;},&quot;difficulty&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;facil&quot;,&quot;normal&quot;,&quot;dificil&quot;],&quot;default&quot;:&quot;normal&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Juego&quot;}}">
+class Component extends DCLogic {
+  canvasRef = React.createRef();
+  keys = {};
+  state = { ready: false, loading: true, paused: false, over: false, saved: false, savedText: '', user: null, hud: { score: 0, lives: 3, level: 1 } };
+
+  componentDidMount() {
+    this.onDown = (e) => {
+      this.keys[e.key] = true;
+      if ([' ', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].indexOf(e.key) >= 0) e.preventDefault();
+    };
+    this.onUp = (e) => { this.keys[e.key] = false; };
+    window.addEventListener('keydown', this.onDown);
+    window.addEventListener('keyup', this.onUp);
+    const check = () => {
+      if (window.ARCADE) {
+        this.setState({ ready: true, user: window.ARCADE.read().user || null });
+        this.loadT = setTimeout(() => this.setState({ loading: false }), 750);
+        return;
+      }
+      this.t = setTimeout(check, 30);
+    };
+    check();
+  }
+
+  componentWillUnmount() {
+    window.removeEventListener('keydown', this.onDown);
+    window.removeEventListener('keyup', this.onUp);
+    clearTimeout(this.t); clearTimeout(this.loadT); clearInterval(this.typer);
+    this.stop();
+  }
+
+  componentDidUpdate() {
+    const s = this.state;
+    if (s.ready && !s.loading && !s.over && !this.running) this.start();
+  }
+
+  speed() { const d = this.props.difficulty || 'normal'; return d === 'facil' ? 0.8 : d === 'dificil' ? 1.4 : 1; }
+  gameId() { return window.ARCADE ? window.ARCADE.param('juego', 'muro') : 'muro'; }
+
+  start() {
+    const cv = this.canvasRef.current;
+    if (!cv || !window.ARCADE) return;
+    this.ctx = cv.getContext('2d');
+    this.g = window.ARCADE.engine(this.gameId(), this.keys);
+    this.running = true; this.lastT = 0;
+    this.setState({ hud: { score: 0, lives: this.g.lives, level: 1 }, paused: false, over: false, saved: false, savedText: '' });
+    this.raf = requestAnimationFrame(this.loop);
+  }
+
+  stop() { this.running = false; cancelAnimationFrame(this.raf); }
+
+  loop = (t) => {
+    if (!this.running) return;
+    const dt = this.lastT ? Math.min(48, t - this.lastT) : 16;
+    this.lastT = t;
+    if (!this.state.paused && !this.state.over) this.g.update(dt * this.speed());
+    this.g.draw(this.ctx);
+    const h = this.state.hud;
+    if (h.score !== this.g.score || h.lives !== this.g.lives || h.level !== this.g.level) {
+      this.setState({ hud: { score: this.g.score, lives: this.g.lives, level: this.g.level } });
+    }
+    if (this.g.dead) { this.stop(); this.setState({ over: true }); return; }
+    this.raf = requestAnimationFrame(this.loop);
+  };
+
+  saveScore = () => {
+    const A = window.ARCADE;
+    if (!A) return;
+    const name = this.state.user ? this.state.user.name : 'INVITADO';
+    A.addScore(this.gameId(), name, this.state.hud.score);
+    this.setState({ saved: true, savedText: '' });
+    const msg = 'PUNTUACION GUARDADA';
+    let i = 0;
+    clearInterval(this.typer);
+    this.typer = setInterval(() => {
+      i++;
+      this.setState({ savedText: msg.slice(0, i) });
+      if (i >= msg.length) clearInterval(this.typer);
+    }, 55);
+  };
+
+  renderVals() {
+    const A = window.ARCADE, s = this.state;
+    const g = A ? A.game(this.gameId()) : null;
+    const key = (label, k) => ({ label: label, down: () => { this.keys[k] = true; }, up: () => { this.keys[k] = false; } });
+    return {
+      scanlines: this.props.showScanlines !== false,
+      title: g ? g.title : 'CARGANDO',
+      controls: g ? g.controls : '',
+      detailHref: 'detalle.dc.html?juego=' + this.gameId(),
+      hudScore: A ? A.fmt(s.hud.score) : '0',
+      hudLives: s.hud.lives, hudLevel: s.hud.level,
+      playerName: s.user ? s.user.name : 'INVITADO',
+      pauseLabel: s.paused ? 'SEGUIR' : 'PAUSA',
+      paused: s.paused,
+      togglePause: () => this.setState({ paused: !s.paused }),
+      canvasRef: this.canvasRef,
+      pad: [key('←', 'ArrowLeft'), key('↑', 'ArrowUp'), key('↓', 'ArrowDown'), key('→', 'ArrowRight'), key('FUEGO', ' ')],
+      loading: s.loading, over: s.over, canSave: !s.saved, saved: s.saved, savedText: s.savedText,
+      overNote: s.user ? 'Sesión de ' + s.user.name + ': tu marca entra en el salón.' : 'Modo invitado: la marca se guarda solo en este dispositivo.',
+      saveScore: this.saveScore,
+      replay: () => { this.stop(); this.setState({ over: false, saved: false, savedText: '', loading: true }); clearTimeout(this.loadT); this.loadT = setTimeout(() => this.setState({ loading: false }), 450); }
+    };
+  }
+}
+</script>
+</body>
+</html>
