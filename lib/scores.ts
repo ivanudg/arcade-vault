@@ -150,12 +150,8 @@ export function formatScore(n: number): string {
   return n.toLocaleString("es-ES");
 }
 
-/**
- * Tabla de una máquina: semilla más marcas propias, de mayor a menor y
- * recortada a 10 filas. Una marca propia que baje del top 10 deja de verse.
- */
-export function board(id: GameId): BoardRow[] {
-  const stored = read().scores?.[id] ?? [];
+/** Mezcla semilla y marcas propias: de mayor a menor y recortada a 10 filas. */
+function rows(id: GameId, stored: ScoreEntry[]): BoardRow[] {
   const seed: BoardRow[] = (SEED[id] ?? []).map((r) => ({ ...r, mine: false }));
   const mine: BoardRow[] = stored.map((r) => ({ ...r, mine: true }));
   return seed
@@ -164,24 +160,35 @@ export function board(id: GameId): BoardRow[] {
     .slice(0, 10);
 }
 
+/**
+ * Tabla de una máquina, con las marcas de este dispositivo incluidas.
+ * Una marca propia que baje del top 10 simplemente deja de verse.
+ */
+export function board(id: GameId): BoardRow[] {
+  return rows(id, read().scores?.[id] ?? []);
+}
+
+/**
+ * La tabla contando sólo las semillas.
+ *
+ * Es lo único que puede pintar el servidor, donde no hay `localStorage`. Los
+ * componentes de cliente arrancan con esto y pasan a `board()` tras montar:
+ * así las semillas se ven siempre y no hay aviso de hidratación.
+ */
+export function seedBoard(id: GameId): BoardRow[] {
+  return rows(id, []);
+}
+
 /** Mejor marca ya formateada, o `'—'` si la máquina no tuviera ninguna. */
 export function best(id: GameId): string {
   const top = board(id)[0];
   return top ? formatScore(top.score) : "—";
 }
 
-/**
- * Mejor marca contando sólo las semillas.
- *
- * Es lo único que puede pintar el servidor, donde no hay `localStorage`. Los
- * componentes de cliente arrancan con este valor y pasan a `best()` tras
- * montar: así las semillas se ven siempre y no hay aviso de hidratación.
- */
+/** Igual que `best()` pero sólo con semillas: el valor que pinta el servidor. */
 export function seedBest(id: GameId): string {
-  const top = (SEED[id] ?? [])
-    .map((r) => r.score)
-    .sort((a, b) => b - a)[0];
-  return top === undefined ? "—" : formatScore(top);
+  const top = seedBoard(id)[0];
+  return top ? formatScore(top.score) : "—";
 }
 
 /** Fecha de hoy como `dd/mm/aa`. Se evalúa al guardar, siempre en el cliente. */
