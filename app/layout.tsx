@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import { Courier_Prime, Press_Start_2P } from "next/font/google";
+import { SiteFooter } from "@/components/site-footer";
+import { SiteHeader } from "@/components/site-header";
 import { VaultBackdrop } from "@/components/vault-backdrop";
 import { SessionProvider } from "@/lib/session";
 import "./globals.css";
@@ -40,7 +42,11 @@ export default function RootLayout({
         <SessionProvider>
           {/* El contenido va por encima de la rejilla (z-0) y por debajo de las
               scanlines (z-50), igual que el z-index 2 de las plantillas. */}
-          <div className="relative z-2 flex flex-1 flex-col">{children}</div>
+          <div className="relative z-2 flex flex-1 flex-col">
+            <SiteHeader />
+            {children}
+            <SiteFooter />
+          </div>
         </SessionProvider>
       </body>
     </html>
