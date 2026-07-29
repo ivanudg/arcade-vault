@@ -170,6 +170,20 @@ export function best(id: GameId): string {
   return top ? formatScore(top.score) : "—";
 }
 
+/**
+ * Mejor marca contando sólo las semillas.
+ *
+ * Es lo único que puede pintar el servidor, donde no hay `localStorage`. Los
+ * componentes de cliente arrancan con este valor y pasan a `best()` tras
+ * montar: así las semillas se ven siempre y no hay aviso de hidratación.
+ */
+export function seedBest(id: GameId): string {
+  const top = (SEED[id] ?? [])
+    .map((r) => r.score)
+    .sort((a, b) => b - a)[0];
+  return top === undefined ? "—" : formatScore(top);
+}
+
 /** Fecha de hoy como `dd/mm/aa`. Se evalúa al guardar, siempre en el cliente. */
 function today(): string {
   const d = new Date();
