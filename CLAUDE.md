@@ -10,16 +10,6 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 El flujo de trabajo del proyecto es **Spec Driven Design** vía las skills `/spec` y `/spec-impl` de [Klerith/fernando-skills](https://github.com/Klerith/fernando-skills) (`npx skills@latest add Klerith/fernando-skills`). Antes de implementar una feature nueva, espera/produce la spec correspondiente en lugar de escribir código directamente.
 
-## Comandos
-
-```bash
-npm run dev     # servidor de desarrollo (Turbopack por defecto en Next 16)
-npm run build   # build de producción
-npm start       # sirve el build de producción
-npm run lint    # ESLint (flat config, eslint-config-next core-web-vitals + typescript)
-npx tsc --noEmit  # type-check aislado; el build ya lo hace
-```
-
 No hay framework de tests configurado. Si se añade uno, documenta aquí cómo correr un test individual.
 
 ## Stack y convenciones
@@ -27,9 +17,14 @@ No hay framework de tests configurado. Si se añade uno, documenta aquí cómo c
 - **Next.js 16.2.12 (App Router) + React 19.2 + TypeScript strict + Tailwind CSS v4.**
 - Alias de imports: `@/*` apunta a la raíz del repo (`@/app/...`, no hay `src/`).
 - Tailwind v4 se configura **en CSS**, no en `tailwind.config.js`: los tokens viven en el bloque `@theme inline` de `app/globals.css`, alimentados por variables CSS de `:root`. Para añadir colores/fuentes del tema, edítalo ahí. PostCSS solo carga `@tailwindcss/postcss`.
-- Las fuentes se cargan con `next/font/google` en `app/layout.tsx` y se exponen como variables CSS (`--font-geist-sans`, `--font-geist-mono`) enlazadas al tema de Tailwind.
-- El dark mode actual es `prefers-color-scheme` + variantes `dark:` de Tailwind; no hay theme switcher.
+- Las fuentes se cargan con `next/font/google` en `app/layout.tsx` y se exponen como variables CSS (`--font-press-start` para Press Start 2P, `--font-courier-prime` para Courier Prime) enlazadas al tema de Tailwind (`font-display`, `font-mono`/`font-sans`).
+- El tema es **dark-only**: los tokens `--av-*` de `app/globals.css` derivan de `references/templates/` (paleta neón `#00f5ff` / `#ff006e` / `#f5ff00` sobre `#0a0a0f`). No hay variante clara ni theme switcher; no uses variantes `dark:`.
+- Los efectos CRT del template son utilidades propias en `globals.css`: `av-glow-*`, `av-halo-*`, `av-grid-floor`, `av-scanlines`, `av-vignette`, y las animaciones `animate-av-*` (fade, slide, row, caret, spin, sweep, cabinet, pulse, flicker, grid).
 - `next.config.ts` está vacío: cualquier flag (p. ej. `cacheComponents`) es una decisión nueva, no algo ya asumido.
+
+# Skills
+
+Usa sempre /frontend-design para diseñar interfaces de usuario
 
 ## Next.js 16: diferencias que rompen suposiciones previas
 

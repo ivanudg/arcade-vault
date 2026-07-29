@@ -1,26 +1,271 @@
 @import "tailwindcss";
 
+/* ============================================================
+   ARCADE VAULT — tema global
+   Tokens extraídos de references/templates/ (arcade-styles.css +
+   las 5 pantallas .dc.html). El tema es dark-only por diseño:
+   no hay variante clara en las referencias.
+   ============================================================ */
+
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* --- Neón: los tres acentos que cargan toda la identidad --- */
+  --av-cyan: #00f5ff; /* acción primaria, enlaces, bordes vivos */
+  --av-magenta: #ff006e; /* alertas, avatar, estado "grabando" */
+  --av-yellow: #f5ff00; /* hover, ruta activa, podio */
+  --av-amber: #ff9d4d; /* dato secundario / warning suave */
+
+  /* --- Superficies, de más profunda a más elevada --- */
+  --av-void: #05060a; /* fondo tras overlays y modales */
+  --av-bg: #0a0a0f; /* lienzo de la app */
+  --av-panel: #0f1119;
+  --av-panel-raised: #12141d;
+  --av-panel-high: #15171f;
+
+  /* --- Texto: 6 niveles reales usados en las pantallas --- */
+  --av-text-bright: #e7ebf5; /* títulos y valores */
+  --av-text: #c9cfdd; /* cuerpo */
+  --av-text-soft: #9aa2b4;
+  --av-text-muted: #8f97a8; /* nav inactiva, metadatos */
+  --av-text-dim: #6f7686; /* pistas, "SALIR" */
+  --av-text-faint: #545b6b;
+
+  /* --- Líneas --- */
+  --av-line: #3d4350;
+  --av-line-strong: #4a5160;
+
+  /* --- Velos y brillos recurrentes --- */
+  --av-cyan-glow: 0 0 8px rgba(0, 245, 255, 0.9), 0 0 24px rgba(0, 245, 255, 0.45);
+  --av-magenta-glow: 0 0 8px rgba(255, 0, 110, 0.9), 0 0 24px rgba(255, 0, 110, 0.5);
+  --av-yellow-glow: 0 0 8px rgba(245, 255, 0, 0.9), 0 0 24px rgba(245, 255, 0, 0.45);
+  --av-header-bg: rgba(10, 10, 15, 0.88);
+  --av-scrim: rgba(5, 5, 10, 0.72);
+
+  /* Alias base que consume el reset */
+  --background: var(--av-bg);
+  --foreground: var(--av-text);
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+
+  --color-av-cyan: var(--av-cyan);
+  --color-av-magenta: var(--av-magenta);
+  --color-av-yellow: var(--av-yellow);
+  --color-av-amber: var(--av-amber);
+
+  --color-av-void: var(--av-void);
+  --color-av-bg: var(--av-bg);
+  --color-av-panel: var(--av-panel);
+  --color-av-panel-raised: var(--av-panel-raised);
+  --color-av-panel-high: var(--av-panel-high);
+
+  --color-av-text-bright: var(--av-text-bright);
+  --color-av-text: var(--av-text);
+  --color-av-text-soft: var(--av-text-soft);
+  --color-av-text-muted: var(--av-text-muted);
+  --color-av-text-dim: var(--av-text-dim);
+  --color-av-text-faint: var(--av-text-faint);
+
+  --color-av-line: var(--av-line);
+  --color-av-line-strong: var(--av-line-strong);
+
+  /* --- Tipografía: display de píxel + cuerpo monoespaciado --- */
+  --font-display: var(--font-press-start), "Press Start 2P", monospace;
+  --font-mono: var(--font-courier-prime), "Courier Prime", monospace;
+  --font-sans: var(--font-courier-prime), "Courier Prime", monospace;
+
+  /* Escala fluida tomada de los clamp() de las pantallas */
+  --text-av-hero: clamp(24px, 7vw, 62px);
+  --text-av-title: clamp(24px, 6vw, 40px);
+  --text-av-section: clamp(18px, 4vw, 34px);
+  --text-av-subtitle: clamp(15px, 3.6vw, 24px);
+  --text-av-brand: clamp(11px, 2.2vw, 15px);
+  --text-av-label: clamp(9px, 1.7vw, 13px);
+
+  /* Press Start 2P sólo respira con tracking; nunca va a 0 */
+  --tracking-av: 1px;
+  --tracking-av-wide: 1.4px;
+  --tracking-av-wider: 2px;
+
+  /* --- Animaciones (los @keyframes av-* viven abajo) --- */
+  --animate-av-flicker: av-flicker 6s linear infinite;
+  --animate-av-grid: av-grid 3.4s linear infinite;
+  --animate-av-fade: av-fade 0.3s ease both;
+  --animate-av-slide: av-slide 0.22s ease both;
+  --animate-av-row: av-row 0.4s ease both;
+  --animate-av-caret: av-caret 1.4s steps(1) infinite;
+  --animate-av-spin: av-spin 0.9s steps(8) infinite;
+  --animate-av-sweep: av-sweep 5.5s linear infinite;
+  --animate-av-cabinet: av-cabinet 1.05s ease-in-out infinite;
+  --animate-av-pulse: av-pulse 1.8s ease-in-out infinite;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+/* ============================================================
+   Reset (equivalente a references/templates/arcade-styles.css)
+   ============================================================ */
+
+body {
+  margin: 0;
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-courier-prime), "Courier Prime", monospace;
+}
+
+a {
+  color: var(--av-cyan);
+  text-decoration: none;
+}
+
+a:hover {
+  color: var(--av-yellow);
+}
+
+input,
+textarea,
+select {
+  font-family: var(--font-courier-prime), "Courier Prime", monospace;
+}
+
+::selection {
+  background: var(--av-magenta);
+  color: var(--av-bg);
+}
+
+/* El foco por defecto se pierde sobre fondo negro: se refuerza en neón */
+:focus-visible {
+  outline: 2px solid var(--av-cyan);
+  outline-offset: 2px;
+}
+
+/* ============================================================
+   Utilidades de firma: los efectos CRT que repiten las pantallas
+   ============================================================ */
+
+/* Texto neón — el rótulo ARCADE VAULT y los titulares */
+@utility av-glow-cyan {
+  text-shadow: var(--av-cyan-glow);
+}
+
+@utility av-glow-magenta {
+  text-shadow: var(--av-magenta-glow);
+}
+
+@utility av-glow-yellow {
+  text-shadow: var(--av-yellow-glow);
+}
+
+/* Halo de caja para botones y fichas sólidas */
+@utility av-halo-cyan {
+  box-shadow: 0 0 16px rgba(0, 245, 255, 0.55);
+}
+
+@utility av-halo-magenta {
+  box-shadow: 0 0 14px rgba(255, 0, 110, 0.6);
+}
+
+/* Rejilla en perspectiva del fondo. Se aplica al div de fondo:
+   position absolute + inset negativos, igual que en las referencias. */
+@utility av-grid-floor {
+  background-image: linear-gradient(to right, rgba(0, 245, 255, 0.16) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(255, 0, 110, 0.14) 1px, transparent 1px);
+  background-size: 60px 60px;
+  transform: perspective(320px) rotateX(62deg);
+  transform-origin: bottom center;
+  animation: var(--animate-av-grid);
+}
+
+/* Líneas de barrido del monitor — capa fija sobre todo el contenido */
+@utility av-scanlines {
+  background: repeating-linear-gradient(
+    to bottom,
+    rgba(0, 0, 0, 0.34) 0 1px,
+    rgba(0, 0, 0, 0) 1px 3px
+  );
+  mix-blend-mode: multiply;
+}
+
+/* Viñeta de color que tiñe las esquinas del salón */
+@utility av-vignette {
+  background: radial-gradient(120% 80% at 50% 0%, rgba(245, 255, 0, 0.05), transparent 60%),
+    radial-gradient(90% 60% at 80% 100%, rgba(255, 0, 110, 0.09), transparent 65%);
+}
+
+/* ============================================================
+   Animaciones (copia literal de arcade-styles.css)
+   ============================================================ */
+
+@keyframes av-flicker {
+  0%, 19%, 21%, 23%, 25%, 54%, 56%, 100% { opacity: 1; }
+  20%, 24%, 55% { opacity: 0.45; }
+}
+
+@keyframes av-grid {
+  from { transform: translateY(0); }
+  to { transform: translateY(60px); }
+}
+
+@keyframes av-fade {
+  from { opacity: 0; transform: translateY(14px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes av-slide {
+  from { transform: translateX(100%); }
+  to { transform: translateX(0); }
+}
+
+@keyframes av-row {
+  from { opacity: 0; transform: translateX(-18px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes av-caret {
+  50% { opacity: 0; }
+}
+
+@keyframes av-spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+@keyframes av-sweep {
+  from { transform: translateY(-100%); }
+  to { transform: translateY(220%); }
+}
+
+@keyframes av-cabinet {
+  0%, 100% {
+    box-shadow: 0 0 0 1px currentColor, 0 0 16px -4px currentColor, 0 14px 30px rgba(0, 0, 0, 0.55);
+  }
+  50% {
+    box-shadow: 0 0 0 2px currentColor, 0 0 34px 0px currentColor, 0 18px 42px rgba(0, 0, 0, 0.62);
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+@keyframes av-pulse {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(255, 0, 110, 0.55), 0 0 18px rgba(255, 0, 110, 0.5);
+  }
+  50% {
+    box-shadow: 0 0 0 14px rgba(255, 0, 110, 0), 0 0 34px rgba(255, 0, 110, 0.85);
+  }
+}
+
+/* El parpadeo y la rejilla marean a quien pide menos movimiento:
+   se cortan los bucles ambientales y se conservan las transiciones. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* La grilla en perspectiva desborda en horizontal si el body no la contiene */
+html {
+  overflow-x: hidden;
 }

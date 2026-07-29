@@ -11,22 +11,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Courier+Prime:wght@400;700&display=swap">
 <script src="./arcade-core.js"></script>
-<style>
-  body { margin: 0; background: #0a0a0f; }
-  a { color: #00f5ff; text-decoration: none; }
-  a:hover { color: #f5ff00; }
-  input { font-family: 'Courier Prime', monospace; }
-  ::selection { background: #ff006e; color: #0a0a0f; }
-  @keyframes av-flicker { 0%, 19%, 21%, 23%, 25%, 54%, 56%, 100% { opacity: 1; } 20%, 24%, 55% { opacity: 0.45; } }
-  @keyframes av-grid { from { transform: translateY(0); } to { transform: translateY(60px); } }
-  @keyframes av-fade { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: translateY(0); } }
-  @keyframes av-slide { from { transform: translateX(100%); } to { transform: translateX(0); } }
-  @keyframes av-caret { 50% { opacity: 0; } }
-  @keyframes av-cabinet {
-    0%, 100% { box-shadow: 0 0 0 1px currentColor, 0 0 16px -4px currentColor, 0 14px 30px rgba(0,0,0,0.55); }
-    50% { box-shadow: 0 0 0 2px currentColor, 0 0 34px 0px currentColor, 0 18px 42px rgba(0,0,0,0.62); }
-  }
-</style>
+<link rel="stylesheet" href="./arcade-styles.css">
 </helmet>
 <div style="position: relative; min-height: 100vh; background: #0a0a0f; color: #c9cfdd; font-family: 'Courier Prime', monospace; overflow-x: hidden;">
 
