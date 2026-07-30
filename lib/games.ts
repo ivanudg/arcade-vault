@@ -137,11 +137,12 @@ export function getGame(id: string): Game | undefined {
 }
 
 /**
- * El color de una máquina con transparencia, como el `tint()` del prototipo.
- * Los velos y halos de las tarjetas y la ficha se calculan con esto porque el
- * color no se conoce hasta el render y no puede salir de una clase estática.
+ * Un color hexadecimal con transparencia, como el `tint()` del prototipo.
+ * Los velos y halos se calculan con esto porque el color no se conoce hasta el
+ * render y no puede salir de una clase estática. Acepta cualquier `#rrggbb`:
+ * además de los acentos de máquina, lo usan los colores del podio.
  */
-export function tint(hex: GameGlow, alpha: number): string {
+export function tint(hex: string, alpha: number): string {
   const n = parseInt(hex.slice(1), 16);
   return `rgba(${(n >> 16) & 255},${(n >> 8) & 255},${n & 255},${alpha})`;
 }
