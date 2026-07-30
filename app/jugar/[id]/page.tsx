@@ -33,9 +33,7 @@ export default async function PlayPage({ params }: PageProps<"/jugar/[id]">) {
 
   return (
     <main className="flex-1 px-[clamp(14px,3vw,30px)] pt-[clamp(18px,3vw,34px)] pb-20">
-      <section className="mx-auto w-full max-w-195 animate-av-fade">
-        <PlayCabinet game={game} />
-      </section>
+      <PlayCabinet game={game} />
     </main>
   );
 }

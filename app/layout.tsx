@@ -41,9 +41,12 @@ export default function RootLayout({
             su propia cabecera reducida y no lleva pie. */}
         <VaultBackdrop />
         <SessionProvider>
-          {/* El contenido va por encima de la rejilla (z-0) y por debajo de las
-              scanlines (z-50), igual que el z-index 2 de las plantillas. */}
-          <div className="relative z-2 flex flex-1 flex-col">{children}</div>
+          {/* Sin z-index a propósito: así no crea contexto de apilamiento y los
+              z-index de dentro compiten con los del fondo igual que en las
+              plantillas — rejilla 0, cabecera 40, scanlines 50, superpuestos de
+              juego 55 y 60. Con `z-2` aquí, las scanlines taparían los
+              superpuestos. Va por encima de la rejilla por orden en el DOM. */}
+          <div className="relative flex flex-1 flex-col">{children}</div>
         </SessionProvider>
       </body>
     </html>
