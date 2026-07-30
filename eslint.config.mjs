@@ -12,6 +12,9 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // El prototipo de referencia: código de terceros que no se edita ni se
+    // publica, y que arrastra ReactDOM.render y otras cosas ya deprecadas.
+    "references/**",
   ]),
 ]);
 

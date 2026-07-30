@@ -103,39 +103,50 @@
 
 /* ============================================================
    Reset (equivalente a references/templates/arcade-styles.css)
+
+   Va dentro de @layer base a propósito: lo que se escribe sin capa gana
+   siempre a @layer utilities, así que un `a { color }` sin encapar dejaría
+   inservible cualquier clase `text-*` sobre un enlace.
    ============================================================ */
 
-body {
-  margin: 0;
-  background: var(--background);
-  color: var(--foreground);
-  font-family: var(--font-courier-prime), "Courier Prime", monospace;
-}
+@layer base {
+  body {
+    margin: 0;
+    background: var(--background);
+    color: var(--foreground);
+    font-family: var(--font-courier-prime), "Courier Prime", monospace;
+  }
 
-a {
-  color: var(--av-cyan);
-  text-decoration: none;
-}
+  a {
+    color: var(--av-cyan);
+    text-decoration: none;
+  }
 
-a:hover {
-  color: var(--av-yellow);
-}
+  a:hover {
+    color: var(--av-yellow);
+  }
 
-input,
-textarea,
-select {
-  font-family: var(--font-courier-prime), "Courier Prime", monospace;
-}
+  input,
+  textarea,
+  select {
+    font-family: var(--font-courier-prime), "Courier Prime", monospace;
+  }
 
-::selection {
-  background: var(--av-magenta);
-  color: var(--av-bg);
-}
+  ::selection {
+    background: var(--av-magenta);
+    color: var(--av-bg);
+  }
 
-/* El foco por defecto se pierde sobre fondo negro: se refuerza en neón */
-:focus-visible {
-  outline: 2px solid var(--av-cyan);
-  outline-offset: 2px;
+  /* El foco por defecto se pierde sobre fondo negro: se refuerza en neón */
+  :focus-visible {
+    outline: 2px solid var(--av-cyan);
+    outline-offset: 2px;
+  }
+
+  /* La grilla en perspectiva desborda en horizontal si el body no la contiene */
+  html {
+    overflow-x: hidden;
+  }
 }
 
 /* ============================================================
@@ -263,9 +274,4 @@ select {
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
   }
-}
-
-/* La grilla en perspectiva desborda en horizontal si el body no la contiene */
-html {
-  overflow-x: hidden;
 }
