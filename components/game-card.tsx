@@ -45,7 +45,7 @@ export function GameCard({ game }: { game: Game }) {
       </div>
 
       <div className="flex flex-col gap-3 p-4.5">
-        <h3 className="font-display text-[13px] leading-[1.5] tracking-av text-av-text-bright">
+        <h3 className="font-display text-[13px] leading-normal tracking-av text-av-text-bright">
           {game.title}
         </h3>
         <p className="text-[13px] leading-[1.55] text-pretty text-av-text-muted">
