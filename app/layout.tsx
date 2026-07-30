@@ -1,7 +1,5 @@
 import type { Metadata } from "next";
 import { Courier_Prime, Press_Start_2P } from "next/font/google";
-import { SiteFooter } from "@/components/site-footer";
-import { SiteHeader } from "@/components/site-header";
 import { VaultBackdrop } from "@/components/vault-backdrop";
 import { SessionProvider } from "@/lib/session";
 import "./globals.css";
@@ -38,15 +36,14 @@ export default function RootLayout({
       className={`${pressStart.variable} ${courierPrime.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col bg-av-bg text-av-text font-mono tracking-av">
+        {/* Fondo y sesión son de todas las pantallas. La cabecera y el pie
+            generales viven en app/(vault)/layout.tsx, porque /jugar/[id] tiene
+            su propia cabecera reducida y no lleva pie. */}
         <VaultBackdrop />
         <SessionProvider>
           {/* El contenido va por encima de la rejilla (z-0) y por debajo de las
               scanlines (z-50), igual que el z-index 2 de las plantillas. */}
-          <div className="relative z-2 flex flex-1 flex-col">
-            <SiteHeader />
-            {children}
-            <SiteFooter />
-          </div>
+          <div className="relative z-2 flex flex-1 flex-col">{children}</div>
         </SessionProvider>
       </body>
     </html>
