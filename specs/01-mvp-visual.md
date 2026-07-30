@@ -192,71 +192,71 @@ Cada paso deja la aplicación arrancando con `npm run dev` y es commiteable por 
 
 ### General
 
-- [ ] `npm run build` termina sin errores y `npm run lint` no reporta avisos.
-- [ ] Las rutas `/`, `/juego/muro`, `/jugar/muro`, `/salon` y `/cuenta` cargan sin errores en la consola del navegador.
-- [ ] No queda ningún rastro del scaffold: `app/page.tsx` no importa `next/image` y `public/` no contiene los cinco SVG de `create-next-app`.
-- [ ] La rejilla del fondo se desplaza y la capa de scanlines es visible en las cinco pantallas.
-- [ ] Con `prefers-reduced-motion: reduce` activo, la rejilla y el parpadeo del rótulo se detienen.
-- [ ] Ninguna pantalla produce desbordamiento horizontal a 360 px de ancho.
-- [ ] Cada pantalla tiene su propio título de pestaña; el de la ficha incluye el nombre de la máquina.
+- [x] `npm run build` termina sin errores y `npm run lint` no reporta avisos.
+- [x] Las rutas `/`, `/juego/muro`, `/jugar/muro`, `/salon` y `/cuenta` cargan sin errores en la consola del navegador.
+- [x] No queda ningún rastro del scaffold: `app/page.tsx` no importa `next/image` y `public/` no contiene los cinco SVG de `create-next-app`.
+- [x] La rejilla del fondo se desplaza y la capa de scanlines es visible en las cinco pantallas.
+- [x] Con `prefers-reduced-motion: reduce` activo, la rejilla y el parpadeo del rótulo se detienen.
+- [x] Ninguna pantalla produce desbordamiento horizontal a 360 px de ancho.
+- [x] Cada pantalla tiene su propio título de pestaña; el de la ficha incluye el nombre de la máquina.
 
 ### Cabecera y navegación
 
-- [ ] A 1280 px se ve la navegación con Biblioteca y Salón de la Fama; a 375 px se ve el botón hamburguesa en su lugar.
-- [ ] El enlace de la sección actual aparece subrayado en su color (cian en biblioteca, amarillo en salón).
-- [ ] El menú lateral entra deslizándose y se cierra al pulsar fuera.
-- [ ] Sin sesión, la cabecera muestra el botón INICIAR SESION; con sesión, la inicial en un cuadro magenta, el nombre y SALIR.
-- [ ] Pulsar SALIR devuelve la cabecera al estado sin sesión y `localStorage` deja de tener usuario.
-- [ ] `/jugar/muro` no muestra la cabecera general ni el pie; muestra la marca, el título de la máquina y el botón SALIR.
+- [x] A 1280 px se ve la navegación con Biblioteca y Salón de la Fama; a 375 px se ve el botón hamburguesa en su lugar.
+- [x] El enlace de la sección actual aparece subrayado en su color (cian en biblioteca, amarillo en salón).
+- [x] El menú lateral entra deslizándose y se cierra al pulsar fuera.
+- [x] Sin sesión, la cabecera muestra el botón INICIAR SESION; con sesión, la inicial en un cuadro magenta, el nombre y SALIR.
+- [x] Pulsar SALIR devuelve la cabecera al estado sin sesión y `localStorage` deja de tener usuario.
+- [x] `/jugar/muro` no muestra la cabecera general ni el pie; muestra la marca, el título de la máquina y el botón SALIR.
 
 ### Biblioteca
 
-- [ ] Se listan las 8 máquinas, cada una con su preview dibujada en canvas y distinta de las demás.
-- [ ] Escribir "neon" en el buscador deja visibles MURO NEON y CORREDOR DE NEON.
-- [ ] Pulsar la categoría PUZZLE deja visible solo CAIDA VERTICAL.
-- [ ] Una búsqueda sin coincidencias muestra NO HAY JUEGOS PARA ESA BUSQUEDA y ninguna tarjeta.
-- [ ] Las 6 máquinas jugables muestran el botón JUGAR y las 2 en mantenimiento muestran PRONTO.
-- [ ] El botón JUGAR de MURO NEON lleva a `/jugar/muro`; el de CAIDA VERTICAL lleva a `/juego/caida`.
-- [ ] Cada tarjeta muestra la mejor puntuación de su máquina con separador de miles (`18.420`).
+- [x] Se listan las 8 máquinas, cada una con su preview dibujada en canvas y distinta de las demás.
+- [x] Escribir "neon" en el buscador deja visibles MURO NEON y CORREDOR DE NEON.
+- [x] Pulsar la categoría PUZZLE deja visible solo CAIDA VERTICAL.
+- [x] Una búsqueda sin coincidencias muestra NO HAY JUEGOS PARA ESA BUSQUEDA y ninguna tarjeta.
+- [x] Las 6 máquinas jugables muestran el botón JUGAR y las 2 en mantenimiento muestran PRONTO.
+- [x] El botón JUGAR de MURO NEON lleva a `/jugar/muro`; el de CAIDA VERTICAL lleva a `/juego/caida`.
+- [x] Cada tarjeta muestra la mejor puntuación de su máquina con separador de miles (`18.420`).
 
 ### Ficha de máquina
 
-- [ ] `/juego/rocas` muestra título, categoría, "1 JUGADOR", récord, descripción larga y la línea de controles.
-- [ ] El acento de la ficha (título, borde de la preview) usa el color de la máquina.
-- [ ] Las máquinas jugables muestran JUGAR AHORA con pulso magenta; `caida` y `laberinto` muestran PRONTO deshabilitado.
-- [ ] El panel lateral lista 10 marcas, con las tres primeras en oro, plata y bronce.
-- [ ] El enlace del panel lleva a `/salon?juego=rocas` con esa pestaña ya activa.
-- [ ] `/juego/tetris` devuelve 404 y muestra la pantalla MAQUINA NO ENCONTRADA.
+- [x] `/juego/rocas` muestra título, categoría, "1 JUGADOR", récord, descripción larga y la línea de controles.
+- [x] El acento de la ficha (título, borde de la preview) usa el color de la máquina.
+- [x] Las máquinas jugables muestran JUGAR AHORA con pulso magenta; `caida` y `laberinto` muestran PRONTO deshabilitado.
+- [x] El panel lateral lista 10 marcas, con las tres primeras en oro, plata y bronce.
+- [x] El enlace del panel lleva a `/salon?juego=rocas` con esa pestaña ya activa.
+- [x] `/juego/tetris` devuelve 404 y muestra la pantalla MAQUINA NO ENCONTRADA.
 
 ### Salón de la fama
 
-- [ ] Hay 8 pestañas, una por máquina, y la activa se pinta con el color de esa máquina.
-- [ ] La tabla muestra 10 filas con rango de dos dígitos, jugador, puntuación y fecha.
-- [ ] Las filas entran escalonadas de izquierda a derecha al cargar.
-- [ ] `/salon` sin parámetros abre en MURO NEON.
-- [ ] El botón BATIR ESTE RECORD lleva a `/jugar/<máquina>` si es jugable y a `/juego/<máquina>` si no lo es.
+- [x] Hay 8 pestañas, una por máquina, y la activa se pinta con el color de esa máquina.
+- [x] La tabla muestra 10 filas con rango de dos dígitos, jugador, puntuación y fecha.
+- [x] Las filas entran escalonadas de izquierda a derecha al cargar.
+- [x] `/salon` sin parámetros abre en MURO NEON.
+- [x] El botón BATIR ESTE RECORD lleva a `/jugar/<máquina>` si es jugable y a `/juego/<máquina>` si no lo es.
 
 ### Cuenta
 
-- [ ] Sin sesión se ven las pestañas INICIAR SESION y CREAR CUENTA, y la activa cambia de color al pulsarla.
-- [ ] La pestaña CREAR CUENTA añade el campo de correo; la de acceso no lo muestra.
-- [ ] Enviar el formulario con `jugador_01` crea la sesión y la pantalla pasa a mostrar el avatar con la inicial J y el nombre JUGADOR_01.
-- [ ] Enviar el formulario con el usuario vacío crea la sesión como JUGADOR.
-- [ ] Los botones GOOGLE y GITHUB crean las sesiones GOOGLE_USER y GITHUB_USER.
-- [ ] Con sesión activa, la pantalla muestra IR A LA BIBLIOTECA y CERRAR SESION en lugar del formulario.
-- [ ] La sesión sobrevive a recargar la página y se refleja en las otras cuatro pantallas.
+- [x] Sin sesión se ven las pestañas INICIAR SESION y CREAR CUENTA, y la activa cambia de color al pulsarla.
+- [x] La pestaña CREAR CUENTA añade el campo de correo; la de acceso no lo muestra.
+- [x] Enviar el formulario con `jugador_01` crea la sesión y la pantalla pasa a mostrar el avatar con la inicial J y el nombre JUGADOR_01.
+- [x] Enviar el formulario con el usuario vacío crea la sesión como JUGADOR.
+- [x] Los botones GOOGLE y GITHUB crean las sesiones GOOGLE_USER y GITHUB_USER.
+- [x] Con sesión activa, la pantalla muestra IR A LA BIBLIOTECA y CERRAR SESION en lugar del formulario.
+- [x] La sesión sobrevive a recargar la página y se refleja en las otras cuatro pantallas.
 
 ### Pantalla de juego
 
-- [ ] Al entrar en `/jugar/muro` aparece durante unos 750 ms el superpuesto CARGANDO CARTUCHO con el cuadrado giratorio.
-- [ ] El HUD muestra puntuación, vidas, nivel y el nombre del jugador (INVITADO si no hay sesión).
-- [ ] El canvas muestra la escena de la máquina correspondiente, congelada.
-- [ ] Pulsar PAUSA muestra EN PAUSA sobre el canvas y cambia la etiqueta del botón a SEGUIR.
-- [ ] El D-pad y el botón FUEGO responden visualmente al pulsarlos y no alteran el canvas.
-- [ ] El superpuesto de fin de partida muestra la puntuación final y el aviso correcto según haya sesión o no.
-- [ ] GUARDAR PUNTUACION escribe la marca y muestra PUNTUACION GUARDADA tecleándose carácter a carácter.
-- [ ] Tras guardar en `/jugar/muro`, la marca aparece en `/salon?juego=muro` y en `/juego/muro` con el distintivo TU MEJOR MARCA.
-- [ ] JUGAR DE NUEVO vuelve a mostrar el superpuesto de carga y devuelve el HUD a su estado inicial.
+- [x] Al entrar en `/jugar/muro` aparece durante unos 750 ms el superpuesto CARGANDO CARTUCHO con el cuadrado giratorio.
+- [x] El HUD muestra puntuación, vidas, nivel y el nombre del jugador (INVITADO si no hay sesión).
+- [x] El canvas muestra la escena de la máquina correspondiente, congelada.
+- [x] Pulsar PAUSA muestra EN PAUSA sobre el canvas y cambia la etiqueta del botón a SEGUIR.
+- [x] El D-pad y el botón FUEGO responden visualmente al pulsarlos y no alteran el canvas.
+- [x] El superpuesto de fin de partida muestra la puntuación final y el aviso correcto según haya sesión o no.
+- [x] GUARDAR PUNTUACION escribe la marca y muestra PUNTUACION GUARDADA tecleándose carácter a carácter.
+- [x] Tras guardar en `/jugar/muro`, la marca aparece en `/salon?juego=muro` y en `/juego/muro` con el distintivo TU MEJOR MARCA.
+- [x] JUGAR DE NUEVO vuelve a mostrar el superpuesto de carga y devuelve el HUD a su estado inicial.
 
 ## Decisiones
 
