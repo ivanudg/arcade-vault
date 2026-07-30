@@ -58,7 +58,12 @@ export default async function GamePage({ params }: PageProps<"/juego/[id]">) {
         <div className="grid grid-cols-[repeat(auto-fit,minmax(300px,1fr))] items-start gap-6.5">
           <div className="flex flex-col gap-5">
             <div className="relative h-60 overflow-hidden border border-(--av-edge) bg-av-void">
-              <GamePreview id={game.id} width={560} height={360} />
+              <GamePreview
+                id={game.id}
+                width={560}
+                height={360}
+                className="size-full object-cover"
+              />
               <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(120%_120%_at_50%_45%,rgba(0,0,0,0)_55%,rgba(0,0,0,0.6)_100%)]" />
             </div>
 

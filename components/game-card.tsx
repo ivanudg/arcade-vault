@@ -36,7 +36,7 @@ export function GameCard({ game }: { game: Game }) {
       className="flex flex-col border border-(--av-edge) bg-[rgba(13,15,22,0.86)] text-(--av-glow) [transition:transform_.16s_steps(3),border-color_.16s_ease,filter_.2s_ease] hover:animate-av-cabinet hover:-translate-y-1.5 hover:border-current hover:brightness-112 hover:saturate-118"
     >
       <div className="relative h-39.5 overflow-hidden border-b border-(--av-edge) bg-av-void">
-        <GamePreview id={game.id} />
+        <GamePreview id={game.id} className="size-full object-cover" />
         {/* Viñeta sobre la escena: hunde las esquinas del monitor. */}
         <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(120%_120%_at_50%_40%,rgba(0,0,0,0)_55%,rgba(0,0,0,0.55)_100%)]" />
         <div className="absolute top-2.5 left-2.5 bg-(--av-glow) px-2 py-1.25 font-display text-[7px] tracking-av text-av-bg">

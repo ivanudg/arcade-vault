@@ -4,10 +4,11 @@
  * Preview de una máquina: la escena de `drawPreview()` sobre un canvas.
  *
  * La escena se dibuja siempre en el tamaño lógico que use la plantilla
- * correspondiente (300×190 en las tarjetas, 560×360 en la ficha) y es
- * `object-fit: cover` quien la encaja en la caja, recortando igual que en
- * references/templates/. Dibujar directamente al tamaño de la caja cambiaría
- * el encuadre: los trazos se calculan como fracciones de `W`/`H`.
+ * correspondiente (300×190 en las tarjetas, 560×360 en la ficha, 480×480 en el
+ * gabinete), y el encaje en la caja es cosa del llamador vía `className`:
+ * `size-full object-cover` donde la plantilla recorta, `w-full h-auto` donde
+ * el canvas manda. Dibujar directamente al tamaño de la caja cambiaría el
+ * encuadre, porque los trazos se calculan como fracciones de `W`/`H`.
  *
  * El buffer se multiplica por `devicePixelRatio` para no quedar borroso en
  * pantallas densas, e `image-rendering: pixelated` remata el aspecto de
@@ -53,7 +54,7 @@ export function GamePreview({
     <canvas
       ref={ref}
       aria-hidden
-      className={`block size-full object-cover [image-rendering:pixelated] ${className ?? ""}`}
+      className={`block [image-rendering:pixelated] ${className ?? ""}`}
     />
   );
 }
