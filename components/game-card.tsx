@@ -18,8 +18,11 @@ import { best, seedBest } from "@/lib/scores";
 
 export function GameCard({ game }: { game: Game }) {
   // Arranca con la semilla —lo mismo que pinta el servidor— y pasa a la mejor
-  // marca real, propias incluidas, en cuanto hay `localStorage`.
+  // marca real, propias incluidas, en cuanto hay `localStorage`. Es la
+  // mitigación de hidratación que pide la spec, y sólo puede ocurrir tras
+  // montar: en el render aún no existe `localStorage`.
   const [top, setTop] = useState(() => seedBest(game.id));
+  // eslint-disable-next-line react-hooks/set-state-in-effect -- lectura única de localStorage tras hidratar
   useEffect(() => setTop(best(game.id)), [game.id]);
 
   const playHref = game.playable ? `/jugar/${game.id}` : `/juego/${game.id}`;

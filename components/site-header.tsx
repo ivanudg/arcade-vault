@@ -43,9 +43,6 @@ export function SiteHeader() {
   const { user, ready, logout } = useSession();
   const [menuOpen, setMenuOpen] = useState(false);
 
-  // El cajón se cierra al navegar: si no, seguiría abierto sobre la pantalla nueva.
-  useEffect(() => setMenuOpen(false), [pathname]);
-
   // Cerrar con Escape: el velo sólo responde al ratón.
   useEffect(() => {
     if (!menuOpen) return;
@@ -139,10 +136,13 @@ export function SiteHeader() {
             <div className="font-display text-[10px] tracking-av text-av-line-strong">
               MENU
             </div>
+            {/* Cada enlace cierra el cajón al navegar: si no, seguiría abierto
+                sobre la pantalla nueva. */}
             {SECTIONS.map((s) => (
               <Link
                 key={s.href}
                 href={s.href}
+                onClick={() => setMenuOpen(false)}
                 className={`text-[15px] tracking-av-wide ${s.isActive(pathname) ? s.drawerOn : DRAWER_OFF}`}
               >
                 {s.label}
@@ -150,6 +150,7 @@ export function SiteHeader() {
             ))}
             <Link
               href="/cuenta"
+              onClick={() => setMenuOpen(false)}
               className="text-[15px] tracking-av-wide text-av-magenta"
             >
               Cuenta

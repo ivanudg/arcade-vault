@@ -14,7 +14,7 @@ import { HallOfFame } from "@/components/hall-of-fame";
 import { getGame, type GameId } from "@/lib/games";
 
 export const metadata: Metadata = {
-  title: "SALON DE LA FAMA · Arcade Vault",
+  title: "SALON DE LA FAMA",
   description: "Las diez marcas más altas de cada máquina del vault.",
 };
 

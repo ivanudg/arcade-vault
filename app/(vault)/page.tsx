@@ -11,7 +11,14 @@
  * restaría el relleno y la rejilla saldría 80px más estrecha.
  */
 
+import type { Metadata } from "next";
 import { LibraryBrowser } from "@/components/library-browser";
+import { GAMES } from "@/lib/games";
+
+export const metadata: Metadata = {
+  title: "BIBLIOTECA",
+  description: `Las ${GAMES.length} máquinas del vault, listas para jugar.`,
+};
 
 export default function Home() {
   return (

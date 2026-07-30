@@ -23,7 +23,7 @@ export async function generateMetadata({
   const { id } = await params;
   const game = getGame(id);
   if (!game) return {};
-  return { title: `JUGAR · ${game.title} · Arcade Vault`, description: game.desc };
+  return { title: `JUGAR · ${game.title}`, description: game.desc };
 }
 
 export default async function PlayPage({ params }: PageProps<"/jugar/[id]">) {

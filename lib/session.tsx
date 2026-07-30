@@ -30,15 +30,15 @@ interface Session {
 const SessionContext = createContext<Session | null>(null);
 
 export function SessionProvider({ children }: { children: React.ReactNode }) {
-  const [user, setUser] = useState<VaultUser | null>(null);
-  const [ready, setReady] = useState(false);
+  // `undefined` significa "aún no se ha leído `localStorage`", así que `ready`
+  // se deduce en vez de guardarse: un solo estado, imposible que discrepen.
+  const [user, setUser] = useState<VaultUser | null | undefined>(undefined);
+  const ready = user !== undefined;
 
   // `localStorage` no existe en el render de servidor: la lectura espera al
   // efecto. Hasta que `ready` es true nadie debe pintar estado de sesión.
-  useEffect(() => {
-    setUser(read().user ?? null);
-    setReady(true);
-  }, []);
+  // eslint-disable-next-line react-hooks/set-state-in-effect -- lectura única de localStorage tras hidratar
+  useEffect(() => setUser(read().user ?? null), []);
 
   const login = useCallback((name: string) => {
     const next: VaultUser = { name: name.toUpperCase().slice(0, 12), guest: false };
@@ -52,7 +52,7 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const value = useMemo<Session>(
-    () => ({ user, ready, login, logout }),
+    () => ({ user: user ?? null, ready, login, logout }),
     [user, ready, login, logout],
   );
 

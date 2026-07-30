@@ -21,6 +21,7 @@ const NO_MEDAL = "#4a5160";
 export function ScorePanel({ id }: { id: GameId }) {
   // Semilla primero —lo que pinta el servidor— y tabla completa tras montar.
   const [rows, setRows] = useState(() => seedBoard(id));
+  // eslint-disable-next-line react-hooks/set-state-in-effect -- lectura única de localStorage tras hidratar
   useEffect(() => setRows(board(id)), [id]);
 
   return (

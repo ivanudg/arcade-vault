@@ -24,6 +24,7 @@ export function HallOfFame({ initialTab }: { initialTab: GameId }) {
   const [rows, setRows] = useState(() => seedBoard(initialTab));
 
   // Semilla primero —lo que pinta el servidor— y tabla completa tras montar.
+  // eslint-disable-next-line react-hooks/set-state-in-effect -- lectura de localStorage tras hidratar y al cambiar de pestaña
   useEffect(() => setRows(board(tab)), [tab]);
 
   const game = getGame(tab);

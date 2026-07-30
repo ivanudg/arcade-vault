@@ -7,7 +7,7 @@ import type { Metadata } from "next";
 import { AuthPanel } from "@/components/auth-panel";
 
 export const metadata: Metadata = {
-  title: "ACCESO DE JUGADORES · Arcade Vault",
+  title: "ACCESO DE JUGADORES",
   description: "Guarda tus récords y compite en el salón.",
 };
 

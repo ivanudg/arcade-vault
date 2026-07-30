@@ -48,12 +48,13 @@ export function PlayCabinet({ game }: { game: Game }) {
   }, []);
 
   useEffect(() => {
-    startLoading(LOAD_MS);
+    // `loading` ya arranca en `true`, así que aquí sólo se programa su final.
+    loadTimer.current = setTimeout(() => setLoading(false), LOAD_MS);
     return () => {
       clearTimeout(loadTimer.current);
       clearInterval(typer.current);
     };
-  }, [startLoading]);
+  }, []);
 
   const run = DEMO_RUN[game.id];
   const playerName = ready && user ? user.name : "INVITADO";

@@ -21,7 +21,12 @@ const courierPrime = Courier_Prime({
 });
 
 export const metadata: Metadata = {
-  title: "Arcade Vault",
+  // Cada pantalla pone su nombre y la plantilla añade la marca. El `default`
+  // cubre lo que no lo declara, como el 404.
+  title: {
+    default: "Arcade Vault",
+    template: "%s · Arcade Vault",
+  },
   description: "Juega online y compite por el puntaje más alto.",
 };
 
