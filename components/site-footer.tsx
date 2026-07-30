@@ -7,13 +7,22 @@
  */
 
 import { usePathname } from "next/navigation";
+import { getGame } from "@/lib/games";
 
 /** Los cuatro remates de references/templates/, con sus tildes en minúscula. */
 const BY_SECTION: ReadonlyArray<[test: (path: string) => boolean, text: string]> =
   [
     [(p) => p.startsWith("/salon"), "ARCADE VAULT · SALÓN DE LA FAMA"],
     [(p) => p.startsWith("/cuenta"), "ARCADE VAULT · ACCESO DE JUGADORES"],
-    [(p) => p.startsWith("/juego"), "ARCADE VAULT · FICHA DE MÁQUINA"],
+    // Sólo si la máquina existe: en el 404 de `/juego/inventado` este pie
+    // anunciaría una ficha que no se está mostrando.
+    [
+      (p) => {
+        const match = /^\/juego\/([^/]+)$/.exec(p);
+        return match !== null && getGame(match[1]) !== undefined;
+      },
+      "ARCADE VAULT · FICHA DE MÁQUINA",
+    ],
   ];
 
 const DEFAULT_TEXT = "ARCADE VAULT · 8 MÁQUINAS · INSERTA UNA MONEDA";
