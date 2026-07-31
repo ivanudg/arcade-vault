@@ -11,7 +11,19 @@
  */
 
 import Link from "next/link";
+import { FeatureIcon } from "@/components/feature-icon";
 import { HeroSilhouettes } from "@/components/hero-silhouettes";
+import { Reveal } from "@/components/reveal";
+import { SectionHead } from "@/components/section-head";
+import { type Accent, FEATURES } from "@/lib/landing";
+
+/** Clases completas por acento: Tailwind no ve nombres interpolados. */
+const ACCENT: Record<Accent, string> = {
+  cyan: "text-av-cyan",
+  magenta: "text-av-magenta",
+  yellow: "text-av-yellow",
+  amber: "text-av-amber",
+};
 
 export default function HomePage() {
   return (
@@ -69,6 +81,36 @@ export default function HomePage() {
         >
           <span>DESLIZA</span>
           <span className="text-av-cyan animate-av-bounce">▼</span>
+        </div>
+      </section>
+
+      {/* 01 — Por qué el vault. El acento de cada tarjeta lo pinta el texto y
+          el borde lo recoge con `currentColor` al pasar el ratón. */}
+      <section className="mx-auto max-w-330 px-[clamp(14px,3vw,40px)] py-[clamp(52px,8vw,80px)]">
+        <Reveal>
+          <SectionHead
+            index={1}
+            title="¿POR QUE ARCADE VAULT?"
+            accent="magenta"
+          />
+        </Reveal>
+
+        <div className="grid gap-4.5 sm:grid-cols-2 lg:grid-cols-4">
+          {FEATURES.map((feature, i) => (
+            <Reveal key={feature.title} className="h-full" delay={i * 80}>
+              <article
+                className={`flex h-full flex-col gap-3.5 border border-av-line bg-linear-to-b from-av-panel to-av-panel-raised p-6 transition duration-200 hover:-translate-y-1.5 hover:border-current hover:shadow-[0_18px_40px_-16px_currentColor] ${ACCENT[feature.accent]}`}
+              >
+                <FeatureIcon kind={feature.icon} />
+                <h3 className="font-display text-[12px] tracking-widest [text-shadow:0_0_8px_currentColor]">
+                  {feature.title}
+                </h3>
+                <p className="text-[13px] leading-[1.6] text-av-text-dim">
+                  {feature.desc}
+                </p>
+              </article>
+            </Reveal>
+          ))}
         </div>
       </section>
     </main>

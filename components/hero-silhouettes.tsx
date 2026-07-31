@@ -28,7 +28,7 @@ function Silo({
       viewBox={viewBox}
       fill="currentColor"
       style={delay ? { animationDelay: `${delay}s` } : undefined}
-      className={`absolute animate-av-float [filter:drop-shadow(0_0_10px_currentColor)] motion-reduce:animate-none ${className}`}
+      className={`absolute animate-av-float filter-[drop-shadow(0_0_10px_currentColor)] motion-reduce:animate-none ${className}`}
     >
       {children}
     </svg>
