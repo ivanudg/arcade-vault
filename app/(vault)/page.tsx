@@ -19,7 +19,7 @@ import { Reveal } from "@/components/reveal";
 import { SectionHead } from "@/components/section-head";
 import { TopPlayers } from "@/components/top-players";
 import { GAMES } from "@/lib/games";
-import { type Accent, FEATURES, STATS } from "@/lib/landing";
+import { type Accent, FAQ, FEATURES, PLAN, STATS } from "@/lib/landing";
 
 /** Clases completas por acento: Tailwind no ve nombres interpolados. */
 const ACCENT: Record<Accent, string> = {
@@ -28,6 +28,13 @@ const ACCENT: Record<Accent, string> = {
   yellow: "text-av-yellow",
   amber: "text-av-amber",
 };
+
+/** El filo izquierdo de cada pregunta del FAQ, en el orden en que se leen. */
+const FAQ_EDGE = [
+  "border-l-av-cyan",
+  "border-l-av-magenta",
+  "border-l-av-yellow",
+];
 
 export default function HomePage() {
   return (
@@ -180,6 +187,98 @@ export default function HomePage() {
           <div className="grid items-start gap-4.5 lg:grid-cols-[1.2fr_1fr]">
             <ActivityFeed />
             <TopPlayers />
+          </div>
+        </Reveal>
+      </section>
+
+      {/* 04 — Precios. El plan es gratis, así que la sección no vende: afirma.
+          El template pinta esta tarjeta en verde y el importe con un degradado
+          recortado sobre el texto; aquí van en cian con halo, que es el
+          lenguaje del resto del sitio. */}
+      <section className="mx-auto max-w-330 px-[clamp(14px,3vw,40px)] py-[clamp(52px,8vw,80px)]">
+        <Reveal>
+          <SectionHead index={4} title="PRECIOS" accent="amber" />
+        </Reveal>
+
+        <Reveal>
+          <div className="grid items-stretch gap-6 lg:grid-cols-2">
+            <article className="relative flex flex-col gap-3.5 border border-av-cyan bg-linear-to-b from-av-panel to-av-void p-[clamp(22px,4vw,32px)] shadow-[0_0_28px_rgba(0,245,255,0.18),inset_0_0_14px_rgba(0,245,255,0.08)]">
+              {/* El filo interior de puntos: el borde troquelado de un vale
+                  de máquina. Decorativo, fuera del flujo y del puntero. */}
+              <span
+                aria-hidden="true"
+                className="pointer-events-none absolute inset-1 border border-dashed border-av-cyan/30"
+              />
+
+              {/* Sale del marco por la esquina, como el sello que se estampa
+                  encima cuando ya está impreso. El desbordamiento cabe en el
+                  acolchado de la sección: a 360 px no empuja la página. */}
+              <span
+                className="absolute -top-3.5 -right-1 z-10 rotate-[14deg] border-2 border-av-magenta bg-av-void/85 px-4 py-2.5 text-center font-display text-[clamp(10px,2.4vw,13px)] leading-[1.15] tracking-[0.16em] text-av-magenta av-glow-magenta av-halo-magenta"
+              >
+                FREE
+                <br />
+                PLAY
+              </span>
+
+              <p className="font-display text-[9px] tracking-[0.22em] text-av-text-dim">
+                {PLAN.label}
+              </p>
+              <p className="font-display text-[clamp(13px,2.6vw,16px)] tracking-av-wide text-av-cyan av-glow-cyan">
+                {PLAN.name}
+              </p>
+
+              <p className="mt-1.5 flex flex-wrap items-baseline gap-2.5">
+                <span className="font-display text-[clamp(38px,8vw,64px)] tracking-av text-av-text-bright av-glow-cyan">
+                  {PLAN.amount}
+                </span>
+                <span className="font-display text-[11px] tracking-[0.16em] text-av-text-dim">
+                  {PLAN.unit}
+                </span>
+              </p>
+
+              <p className="font-display text-[9px] leading-[1.6] tracking-[0.18em] text-av-yellow av-glow-yellow">
+                {PLAN.tag}
+              </p>
+
+              <ul className="mt-2.5 flex flex-col gap-2">
+                {PLAN.perks.map((perk) => (
+                  <li key={perk} className="flex gap-2.5 text-[13px] text-av-text">
+                    <span aria-hidden="true" className="text-av-cyan">
+                      ✔
+                    </span>
+                    {perk}
+                  </li>
+                ))}
+              </ul>
+
+              <Link
+                href="/cuenta"
+                className="mt-auto block bg-av-cyan px-8 py-5 text-center font-display text-[clamp(11px,2.4vw,14px)] tracking-av-wider text-av-bg av-halo-cyan hover:bg-av-yellow"
+              >
+                EMPEZAR GRATIS →
+              </Link>
+
+              <p className="text-center text-[11px] tracking-[0.1em] text-av-text-faint">
+                {PLAN.foot}
+              </p>
+            </article>
+
+            <div className="flex flex-col justify-center gap-3.5">
+              {FAQ.map((item, i) => (
+                <article
+                  key={item.q}
+                  className={`border border-av-line border-l-4 bg-av-panel-raised px-5 py-4.5 ${FAQ_EDGE[i % FAQ_EDGE.length]}`}
+                >
+                  <h3 className="font-display text-[10px] leading-[1.6] tracking-[0.12em] text-av-text">
+                    {item.q}
+                  </h3>
+                  <p className="mt-2 text-[13px] leading-[1.6] text-av-text-dim">
+                    {item.a}
+                  </p>
+                </article>
+              ))}
+            </div>
           </div>
         </Reveal>
       </section>
