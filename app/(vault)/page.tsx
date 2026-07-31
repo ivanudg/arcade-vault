@@ -284,6 +284,39 @@ export default function HomePage() {
           </div>
         </Reveal>
       </section>
+
+      {/* Remate. Dos filamentos de neón encierran la última llamada, como el
+          marco de una pantalla de atracción. El botón repite el magenta
+          pulsante de `JUGAR` en la ficha de cada máquina: es el mismo gesto,
+          meter la moneda. */}
+      <Reveal>
+        <section className="relative mx-auto max-w-225 px-[clamp(14px,3vw,40px)] pt-[clamp(70px,10vw,100px)] pb-[clamp(84px,11vw,120px)] text-center">
+          <span
+            aria-hidden="true"
+            className="absolute top-7 left-1/2 h-px w-3/5 -translate-x-1/2 bg-linear-to-r from-transparent via-av-cyan to-transparent"
+          />
+
+          <h2 className="font-display text-[clamp(15px,4vw,40px)] leading-[1.4] tracking-av-wide text-av-yellow av-glow-yellow">
+            ¿LISTO PARA JUGAR?
+          </h2>
+
+          <Link
+            href="/biblioteca"
+            className="mt-9 inline-block bg-av-magenta px-11 py-6 font-display text-[clamp(11px,2.6vw,14px)] tracking-av-wider text-av-bg animate-av-pulse hover:bg-av-yellow"
+          >
+            INSERTAR MONEDA →
+          </Link>
+
+          <p className="mt-7 text-[13px] tracking-av text-av-text-dim">
+            Gratis. Sin registro obligatorio. Empieza en segundos.
+          </p>
+
+          <span
+            aria-hidden="true"
+            className="absolute bottom-7 left-1/2 h-px w-3/5 -translate-x-1/2 bg-linear-to-r from-transparent via-av-cyan to-transparent"
+          />
+        </section>
+      </Reveal>
     </main>
   );
 }
