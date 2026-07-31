@@ -214,7 +214,7 @@ export default function HomePage() {
                   encima cuando ya está impreso. El desbordamiento cabe en el
                   acolchado de la sección: a 360 px no empuja la página. */}
               <span
-                className="absolute -top-3.5 -right-1 z-10 rotate-[14deg] border-2 border-av-magenta bg-av-void/85 px-4 py-2.5 text-center font-display text-[clamp(10px,2.4vw,13px)] leading-[1.15] tracking-[0.16em] text-av-magenta av-glow-magenta av-halo-magenta"
+                className="absolute -top-3.5 -right-1 z-10 rotate-14 border-2 border-av-magenta bg-av-void/85 px-4 py-2.5 text-center font-display text-[clamp(10px,2.4vw,13px)] leading-[1.15] tracking-[0.16em] text-av-magenta av-glow-magenta av-halo-magenta"
               >
                 FREE
                 <br />
@@ -259,7 +259,7 @@ export default function HomePage() {
                 EMPEZAR GRATIS →
               </Link>
 
-              <p className="text-center text-[11px] tracking-[0.1em] text-av-text-faint">
+              <p className="text-center text-[11px] tracking-widest text-av-text-faint">
                 {PLAN.foot}
               </p>
             </article>
