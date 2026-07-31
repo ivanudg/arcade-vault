@@ -122,7 +122,7 @@ Cada paso deja el sitio navegable y se puede confirmar por separado.
 5. **Reapuntar pie y 404.** En `components/site-footer.tsx`, añadir el remate de la portada y el de la biblioteca. En `app/not-found.tsx`, el botón `VOLVER AL VAULT` pasa a `/biblioteca`.
 6. **Componente `components/reveal.tsx`.** Cliente, envuelve una sección y le añade la clase visible cuando entra en viewport con `IntersectionObserver`, desconectándose después. Comprobación: una sección de prueba aparece al bajar y no vuelve a ocultarse.
 7. **Componente `components/section-head.tsx`.** Kicker numerado (`// 01`) en su acento, título y la regla que se degrada hacia la derecha. Es la cabecera de cuatro de las secciones.
-8. **Hero.** `components/hero-silhouettes.tsx` con las ocho figuras repintadas y su flotación, y el hero completo en `app/(vault)/page.tsx`: eyebrow, titular de tres líneas con `av-glow-*` y `animate-av-flicker` en la primera, subtítulo, los dos botones y el `DESLIZA ▼`. Comprobación: el hero ocupa el alto de la ventana y los botones llevan a `/biblioteca` y `/cuenta`.
+8. **Hero.** `components/hero-silhouettes.tsx` con las ocho figuras repintadas y su flotación, y el hero completo en `app/(vault)/page.tsx`: eyebrow, titular de tres líneas con `av-glow-*` y `animate-av-flicker` en las tres, desfasado con retardos negativos, subtítulo, los dos botones y el `DESLIZA ▼`. Comprobación: el hero ocupa el alto de la ventana y los botones llevan a `/biblioteca` y `/cuenta`.
 9. **Sección de ventajas.** `components/feature-icon.tsx` con los cuatro SVG de píxel, y la rejilla de cuatro tarjetas que pasa a dos columnas y luego a una. Comprobación: al pasar el ratón, la tarjeta se eleva y su borde toma su acento.
 10. **Rail de juegos.** `components/mini-game-card.tsx` con `<GamePreview>` en cuadrado, título y categoría, enlazando a `/juego/[id]`; la sección muestra las seis primeras máquinas y el botón a `/biblioteca`. Comprobación: seis portadas animadas en una fila, tres en tableta, dos en móvil.
 11. **Franja de cifras.** Bloque a ancho completo con las tres cifras separadas por línea vertical, con su velo amarillo de fondo.
@@ -148,7 +148,7 @@ Cada paso deja el sitio navegable y se puede confirmar por separado.
 
 - [ ] La portada tiene siete secciones en este orden: hero, ventajas, rail de juegos, cifras, actividad, precios y llamada final.
 - [ ] El titular del hero dice `EL ARCADE / CLASICO ESTA / DE VUELTA`, sin tildes, en tres líneas.
-- [ ] La primera línea del titular parpadea con `animate-av-flicker`; la segunda es cian y la tercera magenta, ambas con halo.
+- [ ] Las tres líneas del titular parpadean con `animate-av-flicker`, desfasadas entre sí; la segunda es cian y la tercera magenta, ambas con halo.
 - [ ] Ningún color fuera de `--av-cyan`, `--av-magenta`, `--av-yellow`, `--av-amber` y la escala de grises `--av-*` aparece en el código de la portada, salvo el oro, plata y bronce del podio que ya usa el salón.
 - [ ] Las siluetas del hero son ocho, flotan y no capturan el puntero (`aria-hidden`).
 - [ ] La cuarta tarjeta de ventajas usa `--av-amber`, no verde.

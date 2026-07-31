@@ -15,14 +15,23 @@ import { useEffect, useState } from "react";
 import { useSession } from "@/lib/session";
 
 /**
- * Las dos secciones de la navegación. `/juego/[id]` cuenta como biblioteca,
- * igual que en `detalle.dc.html`, donde Biblioteca sale subrayada en cian.
+ * Las tres secciones de la navegación, una por neón del vault. `/juego/[id]`
+ * cuenta como biblioteca, igual que en `detalle.dc.html`, donde Biblioteca
+ * sale subrayada en cian.
  */
 const SECTIONS = [
   {
     href: "/",
+    label: "Inicio",
+    isActive: (path: string) => path === "/",
+    navOn: "border-av-magenta text-av-magenta",
+    drawerOn: "text-av-magenta",
+  },
+  {
+    href: "/biblioteca",
     label: "Biblioteca",
-    isActive: (path: string) => path === "/" || path.startsWith("/juego"),
+    isActive: (path: string) =>
+      path.startsWith("/biblioteca") || path.startsWith("/juego"),
     navOn: "border-av-cyan text-av-cyan",
     drawerOn: "text-av-cyan",
   },
