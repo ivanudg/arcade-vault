@@ -37,6 +37,8 @@
   --av-cyan-glow: 0 0 8px rgba(0, 245, 255, 0.9), 0 0 24px rgba(0, 245, 255, 0.45);
   --av-magenta-glow: 0 0 8px rgba(255, 0, 110, 0.9), 0 0 24px rgba(255, 0, 110, 0.5);
   --av-yellow-glow: 0 0 8px rgba(245, 255, 0, 0.9), 0 0 24px rgba(245, 255, 0, 0.45);
+  /* El cuarto acento de la portada: mismo halo que los tres neones. */
+  --av-amber-glow: 0 0 8px rgba(255, 157, 77, 0.85), 0 0 24px rgba(255, 157, 77, 0.4);
   --av-header-bg: rgba(10, 10, 15, 0.88);
   --av-scrim: rgba(5, 5, 10, 0.72);
 
@@ -99,6 +101,8 @@
   --animate-av-sweep: av-sweep 5.5s linear infinite;
   --animate-av-cabinet: av-cabinet 1.05s ease-in-out infinite;
   --animate-av-pulse: av-pulse 1.8s ease-in-out infinite;
+  --animate-av-float: av-float 6s ease-in-out infinite;
+  --animate-av-bounce: av-bounce 1.6s ease-in-out infinite;
 }
 
 /* ============================================================
@@ -164,6 +168,10 @@
 
 @utility av-glow-yellow {
   text-shadow: var(--av-yellow-glow);
+}
+
+@utility av-glow-amber {
+  text-shadow: var(--av-amber-glow);
 }
 
 /* Halo de caja para botones y fichas sólidas */
@@ -261,6 +269,17 @@
   50% {
     box-shadow: 0 0 0 14px rgba(255, 0, 110, 0), 0 0 34px rgba(255, 0, 110, 0.85);
   }
+}
+
+/* Deriva de las siluetas del hero de la portada */
+@keyframes av-float {
+  0%, 100% { transform: translateY(0) rotate(-2deg); }
+  50% { transform: translateY(-14px) rotate(2deg); }
+}
+
+/* Flecha del "DESLIZA ▼" */
+@keyframes av-bounce {
+  50% { transform: translateY(6px); }
 }
 
 /* El parpadeo y la rejilla marean a quien pide menos movimiento:

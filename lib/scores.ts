@@ -4,7 +4,7 @@
  * de references/templates/arcade-core.js.
  */
 
-import type { GameId } from "@/lib/games";
+import { GAMES, type GameId } from "@/lib/games";
 import { persist, read } from "@/lib/storage";
 
 export interface ScoreEntry {
@@ -203,4 +203,98 @@ export function addScore(id: GameId, name: string, score: number): void {
   const scores = { ...read().scores };
   scores[id] = [...(scores[id] ?? []), { name, score, date: today() }];
   persist({ scores });
+}
+
+/* -------------------------------------------------------------------------- */
+/* Vistas transversales: las mismas marcas leídas a lo ancho de las máquinas.  */
+/* -------------------------------------------------------------------------- */
+
+/** Marcas guardadas en este dispositivo, tal como las devuelve `read()`. */
+type StoredScores = Partial<Record<GameId, ScoreEntry[]>>;
+
+/** Una marca junto a la máquina donde se logró. */
+export interface RecentScore extends ScoreEntry {
+  game: GameId;
+  mine: boolean;
+}
+
+/** Un jugador y su mejor marca en cualquier máquina. */
+export interface PlayerRank {
+  /** 1 es el primero. */
+  rank: number;
+  name: string;
+  score: number;
+  /** Dónde logró esa marca. */
+  game: GameId;
+  mine: boolean;
+}
+
+/**
+ * `'12/04/26'` → `20260412`: un entero que ordena igual que la fecha.
+ * El siglo se asume `20xx`, que es lo único que puede escribir `today()`.
+ * Un texto que no sea `dd/mm/aa` cae al final, como fecha desconocida.
+ */
+function dateKey(date: string): number {
+  const [d, m, y] = date.split("/").map(Number);
+  if (!Number.isFinite(d) || !Number.isFinite(m) || !Number.isFinite(y)) return 0;
+  return (2000 + y) * 10000 + m * 100 + d;
+}
+
+/** Semillas y marcas propias de las ocho máquinas, en el orden de `GAMES`. */
+function allScores(stored: StoredScores): RecentScore[] {
+  return GAMES.flatMap((g) => [
+    ...(SEED[g.id] ?? []).map((r) => ({ ...r, game: g.id, mine: false })),
+    ...(stored[g.id] ?? []).map((r) => ({ ...r, game: g.id, mine: true })),
+  ]);
+}
+
+/**
+ * De más reciente a más vieja. Las diez fechas semilla se repiten en las ocho
+ * máquinas, así que el desempate importa: primero la fecha, luego la
+ * puntuación mayor y, en último término, el orden de `GAMES` — que es el de
+ * `allScores()` y sobrevive porque `sort()` es estable.
+ */
+function recent(stored: StoredScores, limit: number): RecentScore[] {
+  return allScores(stored)
+    .sort((a, b) => dateKey(b.date) - dateKey(a.date) || b.score - a.score)
+    .slice(0, limit);
+}
+
+/** Las marcas más recientes de todas las máquinas, de nueva a vieja. */
+export function recentScores(limit = 7): RecentScore[] {
+  return recent(read().scores ?? {}, limit);
+}
+
+/** Igual que `recentScores()` pero sólo con semillas: lo que pinta el servidor. */
+export function seedRecentScores(limit = 7): RecentScore[] {
+  return recent({}, limit);
+}
+
+/** Agrupa por `name` exacto y se queda con la marca mayor de cada jugador. */
+function ranking(stored: StoredScores, limit: number): PlayerRank[] {
+  const best = new Map<string, RecentScore>();
+  for (const r of allScores(stored)) {
+    const prev = best.get(r.name);
+    if (!prev || r.score > prev.score) best.set(r.name, r);
+  }
+  return [...best.values()]
+    .sort((a, b) => b.score - a.score)
+    .slice(0, limit)
+    .map((r, i) => ({
+      rank: i + 1,
+      name: r.name,
+      score: r.score,
+      game: r.game,
+      mine: r.mine,
+    }));
+}
+
+/** Ranking global por la mejor marca de cada nombre. */
+export function topPlayers(limit = 5): PlayerRank[] {
+  return ranking(read().scores ?? {}, limit);
+}
+
+/** Igual que `topPlayers()` pero sólo con semillas: lo que pinta el servidor. */
+export function seedTopPlayers(limit = 5): PlayerRank[] {
+  return ranking({}, limit);
 }
