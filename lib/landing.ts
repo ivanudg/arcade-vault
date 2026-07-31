@@ -1,0 +1,126 @@
+/**
+ * Textos y acentos de la portada.
+ *
+ * Puerto de los literales incrustados en `references/templates/home-about/home.jsx`.
+ * Viven aquí para que un retoque editorial no obligue a abrir la maquetación.
+ *
+ * Dos reglas heredadas del resto del proyecto:
+ * - Lo que se pinta en Press Start 2P va en mayúsculas y **sin tildes**: la
+ *   fuente no tiene glifos acentuados, igual que en `lib/games.ts`.
+ * - Los cuerpos de texto van en Courier Prime y sí llevan su acentuación.
+ */
+
+import { GAMES } from "@/lib/games";
+
+/**
+ * Los cuatro acentos permitidos en la portada: los tres neones del vault más
+ * `--av-amber`. No hay verde ni morado; los cinco colores del template ajenos
+ * a la paleta se descartaron en la spec.
+ *
+ * Nunca se interpola en un nombre de clase: cada componente declara un
+ * `Record<Accent, string>` con las clases completas, porque Tailwind sólo ve
+ * las cadenas escritas enteras en el código.
+ */
+export type Accent = "cyan" | "magenta" | "yellow" | "amber";
+
+export interface Feature {
+  icon: "GAMEPAD" | "FREE" | "TROPHY" | "ROCKET";
+  /** Press Start 2P: mayúsculas sin tildes. */
+  title: string;
+  desc: string;
+  accent: Accent;
+}
+
+export interface Stat {
+  /** La cifra grande: `'8'`, `'MILES'`, `'GLOBAL'`. */
+  value: string;
+  /** Press Start 2P: mayúsculas sin tildes. */
+  unit: string;
+  note: string;
+}
+
+export interface FaqItem {
+  /** Press Start 2P: mayúsculas sin tildes. */
+  q: string;
+  a: string;
+}
+
+/** Las cuatro ventajas de «¿por qué Arcade Vault?». */
+export const FEATURES: readonly Feature[] = [
+  {
+    icon: "GAMEPAD",
+    title: "JUEGOS CLASICOS",
+    desc: "Arkanoid, Tetris, Snake y muchos más. Los mejores arcades de todos los tiempos en un solo lugar.",
+    accent: "cyan",
+  },
+  {
+    icon: "FREE",
+    title: "100% GRATIS",
+    desc: "Sin suscripciones, sin pagos ocultos. Todos los juegos disponibles de forma gratuita.",
+    accent: "yellow",
+  },
+  {
+    icon: "TROPHY",
+    title: "TABLAS DE RECORDS",
+    desc: "Compite con jugadores de todo el mundo. Escala el ranking y demuestra quién es el mejor.",
+    accent: "magenta",
+  },
+  {
+    icon: "ROCKET",
+    title: "SIEMPRE CRECIENDO",
+    desc: "Agregamos nuevos juegos constantemente. Vuelve seguido, siempre habrá algo nuevo que jugar.",
+    accent: "amber",
+  },
+];
+
+/**
+ * Las tres cifras de la franja. La primera sale del catálogo real: el `12+`
+ * del template no se corresponde con las máquinas que existen.
+ */
+export const STATS: readonly Stat[] = [
+  { value: String(GAMES.length), unit: "JUEGOS", note: "Y CONTANDO" },
+  { value: "MILES", unit: "DE PARTIDAS", note: "JUGADAS CADA DÍA" },
+  { value: "GLOBAL", unit: "RANKING", note: "COMPITE CON EL MUNDO" },
+];
+
+/** Las tres preguntas que acompañan a la tarjeta de precios. */
+export const FAQ: readonly FaqItem[] = [
+  {
+    q: "¿REALMENTE ES GRATIS?",
+    a: 'Sí. Arcade Vault es un proyecto sin fines de lucro hecho por amor a los clásicos. No hay versión "premium" escondida.',
+  },
+  {
+    q: "¿NECESITO CREAR CUENTA?",
+    a: "No. Puedes jugar como invitado. Si quieres guardar tu puntuación y aparecer en el ranking, regístrate en 10 segundos.",
+  },
+  {
+    q: "¿COMO SOBREVIVEN SIN COBRAR?",
+    a: "Es un proyecto comunitario. Si te gusta, compártelo. Esa es toda la moneda que aceptamos.",
+  },
+];
+
+/** El plan único. Las ventajas van sin viñeta: el ✔ lo pone la maquetación. */
+export const PLAN = {
+  label: "PLAN UNICO",
+  name: "JUGADOR VAULT",
+  amount: "$0",
+  unit: "/ SIEMPRE",
+  tag: "SIN TRUCOS · SIN LETRA PEQUEÑA",
+  perks: [
+    "Acceso a todos los juegos",
+    "Ranking global y salón de la fama",
+    "Sin anuncios entre partidas",
+    "Guarda tus puntuaciones",
+    "Nuevos juegos cada mes",
+    "Funciona en cualquier navegador",
+  ],
+  foot: "No pedimos tarjeta. Nunca lo haremos.",
+} as const satisfies {
+  label: string;
+  name: string;
+  amount: string;
+  unit: string;
+  tag: string;
+  perks: readonly string[];
+  foot: string;
+};
