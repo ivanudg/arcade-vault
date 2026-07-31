@@ -11,6 +11,7 @@
  */
 
 import Link from "next/link";
+import { AccountLink } from "@/components/account-link";
 import { ActivityFeed } from "@/components/activity-feed";
 import { FeatureIcon } from "@/components/feature-icon";
 import { HeroSilhouettes } from "@/components/hero-silhouettes";
@@ -77,12 +78,11 @@ export default function HomePage() {
             >
               ▶ EXPLORAR JUEGOS
             </Link>
-            <Link
-              href="/cuenta"
+            <AccountLink
+              guest="✦ CREAR CUENTA"
+              member="✦ MI CUENTA"
               className="border border-av-magenta px-8 py-5 font-display text-[12px] tracking-av-wider text-av-magenta hover:bg-av-magenta/12 hover:text-white"
-            >
-              ✦ CREAR CUENTA
-            </Link>
+            />
           </div>
         </div>
 
@@ -252,12 +252,11 @@ export default function HomePage() {
                 ))}
               </ul>
 
-              <Link
-                href="/cuenta"
+              <AccountLink
+                guest="EMPEZAR GRATIS →"
+                member="IR A MI CUENTA →"
                 className="mt-auto block bg-av-cyan px-8 py-5 text-center font-display text-[clamp(11px,2.4vw,14px)] tracking-av-wider text-av-bg av-halo-cyan hover:bg-av-yellow"
-              >
-                EMPEZAR GRATIS →
-              </Link>
+              />
 
               <p className="text-center text-[11px] tracking-widest text-av-text-faint">
                 {PLAN.foot}
