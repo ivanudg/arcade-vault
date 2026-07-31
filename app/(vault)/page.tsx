@@ -13,8 +13,10 @@
 import Link from "next/link";
 import { FeatureIcon } from "@/components/feature-icon";
 import { HeroSilhouettes } from "@/components/hero-silhouettes";
+import { MiniGameCard } from "@/components/mini-game-card";
 import { Reveal } from "@/components/reveal";
 import { SectionHead } from "@/components/section-head";
+import { GAMES } from "@/lib/games";
 import { type Accent, FEATURES } from "@/lib/landing";
 
 /** Clases completas por acento: Tailwind no ve nombres interpolados. */
@@ -112,6 +114,30 @@ export default function HomePage() {
             </Reveal>
           ))}
         </div>
+      </section>
+
+      {/* 02 — Las seis primeras máquinas del catálogo. */}
+      <section className="mx-auto max-w-330 px-[clamp(14px,3vw,40px)] py-[clamp(52px,8vw,80px)]">
+        <Reveal>
+          <SectionHead index={2} title="JUEGOS DISPONIBLES AHORA" accent="cyan" />
+        </Reveal>
+
+        <Reveal>
+          <div className="grid grid-cols-2 gap-4 md:grid-cols-3 xl:grid-cols-6">
+            {GAMES.slice(0, 6).map((game) => (
+              <MiniGameCard key={game.id} game={game} />
+            ))}
+          </div>
+
+          <div className="mt-7 text-center">
+            <Link
+              href="/biblioteca"
+              className="inline-block border border-av-cyan px-7 py-4 font-display text-[11px] tracking-av text-av-cyan hover:bg-av-cyan/12 hover:text-white"
+            >
+              VER TODOS LOS JUEGOS →
+            </Link>
+          </div>
+        </Reveal>
       </section>
     </main>
   );
