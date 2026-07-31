@@ -10,6 +10,7 @@
  * subtítulo va en Courier Prime y sí se acentúa.
  */
 
+import type { Metadata } from "next";
 import Link from "next/link";
 import { AccountLink } from "@/components/account-link";
 import { ActivityFeed } from "@/components/activity-feed";
@@ -21,6 +22,17 @@ import { SectionHead } from "@/components/section-head";
 import { TopPlayers } from "@/components/top-players";
 import { GAMES } from "@/lib/games";
 import { type Accent, FAQ, FEATURES, PLAN, STATS } from "@/lib/landing";
+
+/**
+ * El título va en `absolute`: la plantilla del layout (`%s · Arcade Vault`)
+ * dejaría la marca dos veces en la pestaña de la puerta de entrada. Aquí sí se
+ * acentúa, que esto lo lee el navegador y no Press Start 2P.
+ */
+export const metadata: Metadata = {
+  title: { absolute: "Arcade Vault · El arcade clásico está de vuelta" },
+  description:
+    "Juega gratis los clásicos del arcade en tu navegador. Sin descargas, sin cuenta obligatoria y con ranking global.",
+};
 
 /** Clases completas por acento: Tailwind no ve nombres interpolados. */
 const ACCENT: Record<Accent, string> = {
