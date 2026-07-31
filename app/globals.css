@@ -101,6 +101,8 @@
   --animate-av-sweep: av-sweep 5.5s linear infinite;
   --animate-av-cabinet: av-cabinet 1.05s ease-in-out infinite;
   --animate-av-pulse: av-pulse 1.8s ease-in-out infinite;
+  --animate-av-float: av-float 6s ease-in-out infinite;
+  --animate-av-bounce: av-bounce 1.6s ease-in-out infinite;
 }
 
 /* ============================================================
@@ -267,6 +269,17 @@
   50% {
     box-shadow: 0 0 0 14px rgba(255, 0, 110, 0), 0 0 34px rgba(255, 0, 110, 0.85);
   }
+}
+
+/* Deriva de las siluetas del hero de la portada */
+@keyframes av-float {
+  0%, 100% { transform: translateY(0) rotate(-2deg); }
+  50% { transform: translateY(-14px) rotate(2deg); }
+}
+
+/* Flecha del "DESLIZA ▼" */
+@keyframes av-bounce {
+  50% { transform: translateY(6px); }
 }
 
 /* El parpadeo y la rejilla marean a quien pide menos movimiento:
