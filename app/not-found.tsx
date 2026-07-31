@@ -38,7 +38,7 @@ export default function NotFound() {
           </p>
 
           <Link
-            href="/"
+            href="/biblioteca"
             className="mt-1 border border-av-cyan px-6.5 py-4.5 font-display text-[11px] tracking-av text-av-cyan hover:bg-av-cyan/12 hover:text-white"
           >
             &lt; VOLVER AL VAULT

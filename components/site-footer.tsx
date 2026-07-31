@@ -9,9 +9,18 @@
 import { usePathname } from "next/navigation";
 import { getGame } from "@/lib/games";
 
-/** Los cuatro remates de references/templates/, con sus tildes en minúscula. */
+/** El remate del catálogo, que ya no vive en `/`. */
+const LIBRARY_TEXT = "ARCADE VAULT · 8 MÁQUINAS · INSERTA UNA MONEDA";
+
+/**
+ * Un remate por pantalla. Los cuatro últimos vienen literales de
+ * references/templates/; el de la portada es nuevo y repite la promesa de su
+ * hero, que es lo que esa pantalla afirma.
+ */
 const BY_SECTION: ReadonlyArray<[test: (path: string) => boolean, text: string]> =
   [
+    [(p) => p === "/", "ARCADE VAULT · SIN DESCARGAS · SIN COSTO"],
+    [(p) => p.startsWith("/biblioteca"), LIBRARY_TEXT],
     [(p) => p.startsWith("/salon"), "ARCADE VAULT · SALÓN DE LA FAMA"],
     [(p) => p.startsWith("/cuenta"), "ARCADE VAULT · ACCESO DE JUGADORES"],
     // Sólo si la máquina existe: en el 404 de `/juego/inventado` este pie
@@ -25,7 +34,8 @@ const BY_SECTION: ReadonlyArray<[test: (path: string) => boolean, text: string]>
     ],
   ];
 
-const DEFAULT_TEXT = "ARCADE VAULT · 8 MÁQUINAS · INSERTA UNA MONEDA";
+/** Respaldo para el 404 y para cualquier ruta que no tenga remate propio. */
+const DEFAULT_TEXT = LIBRARY_TEXT;
 
 export function SiteFooter({ text }: { text?: string }) {
   const pathname = usePathname();
