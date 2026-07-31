@@ -59,7 +59,11 @@ export default function HomePage() {
 
         <div className="relative z-10 mx-auto max-w-275 text-center animate-av-fade">
           <p className="font-display text-[11px] tracking-[0.24em] text-av-yellow av-glow-yellow">
-            ▸ INSERTA UNA MONEDA
+            {/* Los símbolos del template (▸ ▶ ✦) no están en Press Start 2P y
+                el navegador los sustituye por glifos de cuerpo, que al lado de
+                una fuente de 20px de avance salen como una mota. Aquí se dibuja
+                todo con ASCII, que la fuente sí cubre entero. */}
+            &gt;&gt; INSERTA UNA MONEDA
             <span className="animate-av-caret">_</span>
           </p>
 
@@ -88,11 +92,11 @@ export default function HomePage() {
               href="/biblioteca"
               className="bg-av-cyan px-8 py-5 font-display text-[12px] tracking-av-wider text-av-bg av-halo-cyan hover:bg-av-yellow"
             >
-              ▶ EXPLORAR JUEGOS
+              &gt; EXPLORAR JUEGOS
             </Link>
             <AccountLink
-              guest="✦ CREAR CUENTA"
-              member="✦ MI CUENTA"
+              guest="* CREAR CUENTA"
+              member="* MI CUENTA"
               className="border border-av-magenta px-8 py-5 font-display text-[12px] tracking-av-wider text-av-magenta hover:bg-av-magenta/12 hover:text-white"
             />
           </div>

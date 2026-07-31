@@ -11,7 +11,7 @@
 
 - `/` deja de ser la biblioteca y pasa a ser la portada: las siete secciones de `home.jsx` (hero, «¿por qué Arcade Vault?», rail de juegos, franja de cifras, actividad en vivo, precios y llamada final).
 - La biblioteca se muda a `/biblioteca` con el mismo buscador, filtros y rejilla de SPEC 01; sólo cambia su encabezado, que pasa del rótulo gigante `ARCADE / VAULT` a un titular de sección `BIBLIOTECA`.
-- Hero: eyebrow `▸ INSERTA UNA MONEDA` con cursor parpadeante, titular de tres líneas `EL ARCADE / CLASICO ESTA / DE VUELTA` en blanco, cian y magenta, subtítulo, dos botones y el indicador `DESLIZA ▼`.
+- Hero: eyebrow `>> INSERTA UNA MONEDA` con cursor parpadeante, titular de tres líneas `EL ARCADE / CLASICO ESTA / DE VUELTA` en blanco, cian y magenta, subtítulo, dos botones y el indicador `DESLIZA ▼`.
 - Siluetas flotantes del hero: las ocho figuras de píxel de `FloatingSilhouettes`, repintadas con cian, magenta, amarillo y ámbar.
 - Cuatro tarjetas de ventajas con sus iconos SVG de píxel (`GAMEPAD`, `FREE`, `TROPHY`, `ROCKET`), en cian, amarillo, magenta y ámbar.
 - Rail de seis máquinas con portada cuadrada animada, título y categoría, más el botón `VER TODOS LOS JUEGOS →`.
@@ -20,6 +20,7 @@
 - Precios: tarjeta de plan único gratuito con sus seis ventajas y sello `FREE PLAY`, más las tres preguntas del FAQ.
 - Aparición progresiva al hacer scroll (`.reveal` del template) como componente de cliente, anulada bajo `prefers-reduced-motion`.
 - Navegación: `Inicio · Biblioteca · Salón de la Fama` en la cabecera y en el cajón móvil; el logo lleva a `/`.
+- Contador `CREDITOS · 03` del `nav.jsx` del template: moneda con halo y cifra fija en la barra (oculta por debajo de `lg`) y su rótulo al fondo del cajón móvil.
 - Botones que apuntan a `/cuenta` cambian de texto cuando hay sesión activa.
 - Enlaces de `site-footer.tsx` y `not-found.tsx` reapuntados a las rutas nuevas.
 - `metadata` propio de la portada y de `/biblioteca`.
@@ -27,7 +28,6 @@
 **Fuera de alcance (para futuras specs):**
 
 - La página «Acerca de» (`references/templates/home-about/about.jsx`) y su entrada en el menú.
-- El contador `CRÉDITOS · 03` del `nav.jsx` del template.
 - Actividad realmente en vivo: los paneles leen las semillas y `localStorage`, no hay sondeo ni servidor.
 - Los degradados recortados sobre texto del template (`line-2`, `line-3`, `final-title`, `pc-amount-n`): se sustituyen por los neones con `text-shadow`.
 - Los cinco colores del template ajenos a la paleta (`#00ff88`, `#aa00ff`, `#ffcf3a`, `#ff3060`, `#00d4ff`).
@@ -129,8 +129,9 @@ Cada paso deja el sitio navegable y se puede confirmar por separado.
 12. **Actividad en vivo.** `components/activity-feed.tsx` (últimas siete marcas, con máquina, puntuación y fecha) y `components/top-players.tsx` (cinco jugadores con barra proporcional y podio en oro, plata y bronce, más el botón `VER SALÓN →`). Ambos arrancan con la variante `seed*` y pasan a la real tras montar. Comprobación: una marca guardada al terminar una partida aparece la primera en el panel izquierdo.
 13. **Precios.** Tarjeta del plan gratuito con sus seis ventajas, sello `FREE PLAY` girado y el botón a `/cuenta`, junto a las tres preguntas del FAQ. Comprobación: en móvil la tarjeta y el FAQ se apilan.
 14. **Llamada final.** Titular, botón grande a `/biblioteca` y línea de remate, con las dos reglas cian arriba y abajo.
-15. **Botones sensibles a sesión.** Los dos que apuntan a `/cuenta` leen `useSession()`: sin sesión dicen `✦ CREAR CUENTA` y `EMPEZAR GRATIS →`; con sesión, `✦ MI CUENTA` y `IR A MI CUENTA →`. Comprobación: tras entrar en `/cuenta`, la portada refleja el cambio.
+15. **Botones sensibles a sesión.** Los dos que apuntan a `/cuenta` leen `useSession()`: sin sesión dicen `* CREAR CUENTA` y `EMPEZAR GRATIS →`; con sesión, `* MI CUENTA` y `IR A MI CUENTA →`. Comprobación: tras entrar en `/cuenta`, la portada refleja el cambio.
 16. **Metadatos.** `title` y `description` propios de la portada, y los de `/biblioteca` heredados de la página anterior.
+17. **Contador de créditos.** En `components/site-header.tsx`, la moneda con halo amarillo y `CREDITOS · 03` junto al bloque de sesión, más el mismo rótulo al fondo del cajón móvil. Comprobación: a 1440 px se ve en la barra; a 500 px desaparece de ella y aparece al abrir el cajón.
 
 ## Criterios de aceptación
 
@@ -142,7 +143,9 @@ Cada paso deja el sitio navegable y se puede confirmar por separado.
 - [ ] Estando en `/juego/muro`, el enlace `Biblioteca` aparece subrayado en cian.
 - [ ] Pulsar el logo `ARCADE VAULT` desde cualquier pantalla lleva a `/`.
 - [ ] El botón `VOLVER AL VAULT` de una URL inexistente lleva a `/biblioteca`.
-- [ ] El cajón lateral en móvil ofrece los mismos tres enlaces más `Cuenta`.
+- [ ] El cajón lateral en móvil ofrece los mismos tres enlaces más `Cuenta`, y `CREDITOS · 03` al fondo.
+- [ ] En pantallas de 1024 px o más, la cabecera muestra la moneda y `CREDITOS · 03` a la izquierda del bloque de sesión; por debajo, no.
+- [ ] Ningún texto en Press Start 2P contiene caracteres fuera de ASCII imprimible, salvo `·`.
 
 **Portada**
 
@@ -170,9 +173,9 @@ Cada paso deja el sitio navegable y se puede confirmar por separado.
 
 **Sesión y destinos**
 
-- [ ] Sin sesión, el hero ofrece `✦ CREAR CUENTA` y la tarjeta de precios `EMPEZAR GRATIS →`.
-- [ ] Con sesión iniciada, esos dos botones dicen `✦ MI CUENTA` e `IR A MI CUENTA →`.
-- [ ] `▶ EXPLORAR JUEGOS`, `VER TODOS LOS JUEGOS →` e `INSERTAR MONEDA →` llevan a `/biblioteca`.
+- [ ] Sin sesión, el hero ofrece `* CREAR CUENTA` y la tarjeta de precios `EMPEZAR GRATIS →`.
+- [ ] Con sesión iniciada, esos dos botones dicen `* MI CUENTA` e `IR A MI CUENTA →`.
+- [ ] `> EXPLORAR JUEGOS`, `VER TODOS LOS JUEGOS →` e `INSERTAR MONEDA →` llevan a `/biblioteca`.
 
 **Cierre**
 
@@ -196,6 +199,8 @@ Cada paso deja el sitio navegable y se puede confirmar por separado.
 - **Sí:** titulares con `text-shadow` neón y `animate-av-flicker`, igual que el rótulo de SPEC 01.
 - **No:** los degradados recortados sobre texto del template. Producen otro lenguaje visual y pierden el halo que caracteriza al sitio.
 - **Sí:** titulares sin tildes en Press Start 2P (`CLASICO ESTA`). La fuente no tiene glifos acentuados; es la misma regla que ya sigue `lib/games.ts`.
+- **Sí:** sólo ASCII (33–126) y `·` en lo que se pinte con Press Start 2P. Es todo lo que cubre la fuente: `▸ ▶ ✦ ✔ Ñ É` los dibuja una fuente de respaldo, a tamaño de cuerpo, y al lado de un glifo de 20 px de avance salen como una mota. De ahí el eyebrow `>>`, los botones de cuenta con `*`, las cabeceras de panel con `>` y el lema `SIN PAGOS OCULTOS` en vez de `SIN LETRA PEQUEÑA`.
+- **No:** cambiar `→`, `▼` y el `✔` de las ventajas. También son de la fuente de respaldo, pero acompañan a texto de cuerpo o a un rótulo corto y salen proporcionados.
 - **Sí:** portar `.reveal` con `IntersectionObserver`. Es la mitad del ritmo del template y el bloque `prefers-reduced-motion` de `globals.css` ya lo neutraliza donde toca.
 
 **Datos**
@@ -212,7 +217,7 @@ Cada paso deja el sitio navegable y se puede confirmar por separado.
 
 - **Sí:** conservar la sección de precios pese a ser un producto gratuito. Es donde el template afirma el «100% gratis» con más fuerza.
 - **No:** la página «Acerca de». Va en su propia spec; hasta entonces no aparece en el menú, para no dejar un enlace muerto.
-- **No:** el contador `CRÉDITOS · 03` del `nav.jsx`. Es atrezzo del prototipo y no hay economía de créditos en el producto.
+- **Sí:** el contador de créditos del `nav.jsx`, aunque sea atrezzo. Se descartó al aprobar la spec por no haber economía de créditos en el producto, y se retomó después a petición del autor: la cifra es una constante y nada la consume. Va como `CREDITOS · 03`, sin tilde.
 - **Sí:** cambiar el texto de los botones de cuenta cuando hay sesión. `useSession()` ya existe y ofrecer «crear cuenta» a quien ya entró es un error visible.
 
 ## Riesgos identificados
@@ -228,7 +233,6 @@ Cada paso deja el sitio navegable y se puede confirmar por separado.
 ## Lo que **no** está en esta spec
 
 - La página «Acerca de» de `references/templates/home-about/about.jsx` y su enlace en el menú.
-- El contador `CRÉDITOS · 03` de la cabecera del template.
 - Actividad realmente en vivo: no hay sondeo, servidor ni marcas de tiempo relativas.
 - Los degradados sobre texto y los cinco colores del template ajenos a la paleta.
 - Motores de juego, backend, autenticación real y puntuaciones de servidor.

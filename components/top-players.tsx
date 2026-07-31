@@ -40,7 +40,7 @@ export function TopPlayers() {
     <section className="flex flex-col border border-av-line bg-av-panel">
       <header className="flex items-center justify-between gap-2.5 border-b border-av-line px-4 py-3.5">
         <h3 className="min-w-0 truncate font-display text-[10px] tracking-widest text-av-magenta [text-shadow:0_0_8px_rgba(255,0,110,0.5)]">
-          ▸ TOP JUGADORES · GLOBAL
+          &gt; TOP JUGADORES · GLOBAL
         </h3>
         <Link
           href="/salon"

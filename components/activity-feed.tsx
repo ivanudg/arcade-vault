@@ -30,7 +30,7 @@ export function ActivityFeed() {
     <section className="border border-av-line bg-av-panel">
       <header className="border-b border-av-line px-4 py-3.5">
         <h3 className="font-display text-[10px] tracking-widest text-av-cyan [text-shadow:0_0_8px_rgba(0,245,255,0.5)]">
-          ▸ ULTIMAS PUNTUACIONES
+          &gt; ULTIMAS PUNTUACIONES
         </h3>
       </header>
 

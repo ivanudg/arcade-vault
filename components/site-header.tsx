@@ -47,6 +47,16 @@ const SECTIONS = [
 const NAV_OFF = "border-transparent text-av-text-muted";
 const DRAWER_OFF = "text-av-text-bright";
 
+/**
+ * Los créditos del `nav.jsx` del template. Son atrezzo: el vault no cobra ni
+ * lleva cuenta de partidas, así que la cifra es fija y nada la consume.
+ *
+ * Va sin tilde (`CREDITOS`) porque Press Start 2P no tiene É y el navegador la
+ * sustituiría por un glifo de otra fuente, como pasaba con la Ñ del lema.
+ */
+const CREDITS = 3;
+const CREDITS_LABEL = `CREDITOS · ${String(CREDITS).padStart(2, "0")}`;
+
 export function SiteHeader() {
   const pathname = usePathname();
   const { user, ready, logout } = useSession();
@@ -86,49 +96,65 @@ export function SiteHeader() {
           ))}
         </nav>
 
-        <div className="flex items-center gap-3">
-          {/* Hasta que `ready` es true no se pinta nada: evita mostrar
-              INICIAR SESION un instante a quien ya tiene sesión. */}
-          {ready &&
-            (user ? (
-              <div className="flex items-center gap-2.5">
-                <div className="grid size-8.5 place-items-center bg-av-magenta font-display text-[11px] text-av-bg av-halo-magenta">
-                  {user.name.slice(0, 1).toUpperCase()}
-                </div>
-                <div className="flex flex-col gap-0.5">
-                  <span className="text-[12px] tracking-av text-av-text-bright">
-                    {user.name}
-                  </span>
-                  <button
-                    type="button"
-                    onClick={logout}
-                    className="cursor-pointer text-left text-[10px] tracking-av text-av-text-dim hover:text-av-magenta"
-                  >
-                    SALIR
-                  </button>
-                </div>
-              </div>
-            ) : (
-              <Link
-                href="/cuenta"
-                className="bg-av-cyan px-3.5 py-2.75 font-display text-[9px] tracking-av text-av-bg av-halo-cyan hover:bg-av-yellow"
-              >
-                INICIAR SESION
-              </Link>
-            ))}
+        {/* Créditos y sesión comparten el extremo derecho: si el contador
+            colgara del `justify-between` de la cabecera, empujaría la
+            navegación fuera del centro. */}
+        <div className="flex items-center gap-4.5">
+          {/* La moneda y su cuenta, como en la barra del template. Desaparece
+              antes que la navegación: en cuanto la cabecera se aprieta, lo
+              primero que sobra es el adorno. */}
+          <p className="hidden items-center gap-2 font-display text-[9px] tracking-[0.16em] text-av-yellow lg:flex">
+            <span
+              aria-hidden="true"
+              className="size-3.5 rounded-full bg-[radial-gradient(circle_at_35%_35%,#fff8b0,#f5ff00_60%,#b0b800)] shadow-[0_0_8px_var(--av-yellow)]"
+            />
+            {CREDITS_LABEL}
+          </p>
 
-          <button
-            type="button"
-            onClick={() => setMenuOpen(true)}
-            aria-label="Abrir el menú"
-            aria-expanded={menuOpen}
-            aria-controls="av-menu"
-            className="grid h-9.5 w-10 cursor-pointer place-content-center gap-1.25 border border-av-cyan/40 active:scale-94 md:hidden"
-          >
-            <span className="block h-0.5 w-5 bg-av-cyan" />
-            <span className="block h-0.5 w-5 bg-av-cyan" />
-            <span className="block h-0.5 w-5 bg-av-cyan" />
-          </button>
+          <div className="flex items-center gap-3">
+            {/* Hasta que `ready` es true no se pinta nada: evita mostrar
+              INICIAR SESION un instante a quien ya tiene sesión. */}
+            {ready &&
+              (user ? (
+                <div className="flex items-center gap-2.5">
+                  <div className="grid size-8.5 place-items-center bg-av-magenta font-display text-[11px] text-av-bg av-halo-magenta">
+                    {user.name.slice(0, 1).toUpperCase()}
+                  </div>
+                  <div className="flex flex-col gap-0.5">
+                    <span className="text-[12px] tracking-av text-av-text-bright">
+                      {user.name}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={logout}
+                      className="cursor-pointer text-left text-[10px] tracking-av text-av-text-dim hover:text-av-magenta"
+                    >
+                      SALIR
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <Link
+                  href="/cuenta"
+                  className="bg-av-cyan px-3.5 py-2.75 font-display text-[9px] tracking-av text-av-bg av-halo-cyan hover:bg-av-yellow"
+                >
+                  INICIAR SESION
+                </Link>
+              ))}
+
+            <button
+              type="button"
+              onClick={() => setMenuOpen(true)}
+              aria-label="Abrir el menú"
+              aria-expanded={menuOpen}
+              aria-controls="av-menu"
+              className="grid h-9.5 w-10 cursor-pointer place-content-center gap-1.25 border border-av-cyan/40 active:scale-94 md:hidden"
+            >
+              <span className="block h-0.5 w-5 bg-av-cyan" />
+              <span className="block h-0.5 w-5 bg-av-cyan" />
+              <span className="block h-0.5 w-5 bg-av-cyan" />
+            </button>
+          </div>
         </div>
       </header>
 
@@ -164,6 +190,12 @@ export function SiteHeader() {
             >
               Cuenta
             </Link>
+
+            {/* Al fondo del cajón y sin moneda, igual que en el template: aquí
+                el contador es la firma de la máquina, no un dato que consultar. */}
+            <p className="mt-auto font-display text-[9px] tracking-[0.16em] text-av-text-faint">
+              {CREDITS_LABEL}
+            </p>
           </div>
         </div>
       )}
