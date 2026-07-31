@@ -17,7 +17,7 @@ import { MiniGameCard } from "@/components/mini-game-card";
 import { Reveal } from "@/components/reveal";
 import { SectionHead } from "@/components/section-head";
 import { GAMES } from "@/lib/games";
-import { type Accent, FEATURES } from "@/lib/landing";
+import { type Accent, FEATURES, STATS } from "@/lib/landing";
 
 /** Clases completas por acento: Tailwind no ve nombres interpolados. */
 const ACCENT: Record<Accent, string> = {
@@ -139,6 +139,33 @@ export default function HomePage() {
           </div>
         </Reveal>
       </section>
+
+      {/* Franja de cifras: el único bloque a ancho completo de la portada, con
+          su velo amarillo. La primera cifra sale de `GAMES.length`. */}
+      <Reveal>
+        <section className="relative overflow-hidden border-y border-av-line bg-linear-to-b from-av-void to-av-bg px-[clamp(14px,3vw,40px)] py-[clamp(40px,7vw,60px)]">
+          <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(80%_60%_at_50%_50%,rgba(245,255,0,0.06),transparent_70%)]" />
+
+          <div className="relative mx-auto grid max-w-300 gap-8 sm:grid-cols-3">
+            {STATS.map((stat) => (
+              <div
+                key={stat.unit}
+                className="border-av-line px-5 py-5 text-center max-sm:border-t max-sm:first:border-t-0 sm:border-l sm:first:border-l-0"
+              >
+                <p className="font-display text-[clamp(26px,5vw,56px)] tracking-av text-av-yellow av-glow-yellow">
+                  {stat.value}
+                </p>
+                <p className="mt-3 font-display text-[11px] tracking-[0.18em] text-av-text">
+                  {stat.unit}
+                </p>
+                <p className="mt-2.5 text-[11px] tracking-[0.16em] text-av-text-faint">
+                  {stat.note}
+                </p>
+              </div>
+            ))}
+          </div>
+        </section>
+      </Reveal>
     </main>
   );
 }
