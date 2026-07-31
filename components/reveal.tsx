@@ -61,7 +61,7 @@ export function Reveal({
     <div
       ref={ref}
       style={delay ? { transitionDelay: `${delay}ms` } : undefined}
-      className={`transition-[opacity,translate] duration-600 ease-out motion-reduce:transition-none motion-reduce:[transition-delay:0ms] ${
+      className={`transition-[opacity,translate] duration-600 ease-out motion-reduce:transition-none motion-reduce:delay-0 ${
         isHidden ? "translate-y-6 opacity-0" : "translate-y-0 opacity-100"
       } ${className}`}
     >

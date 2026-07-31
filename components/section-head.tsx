@@ -37,7 +37,7 @@ export function SectionHead({
       >
         {`// ${String(index).padStart(2, "0")}`}
       </span>
-      <h2 className="min-w-0 font-display text-[clamp(13px,2.8vw,28px)] leading-[1.25] tracking-av text-av-text">
+      <h2 className="min-w-0 font-display text-[clamp(13px,2.8vw,28px)] leading-tight tracking-av text-av-text">
         {title}
       </h2>
       <span className="h-px min-w-6 flex-1 bg-linear-to-r from-av-line to-transparent" />
