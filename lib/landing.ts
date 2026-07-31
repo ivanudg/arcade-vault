@@ -105,7 +105,9 @@ export const PLAN = {
   name: "JUGADOR VAULT",
   amount: "$0",
   unit: "/ SIEMPRE",
-  tag: "SIN TRUCOS · SIN LETRA PEQUEÑA",
+  // El template dice «SIN LETRA PEQUEÑA», pero Press Start 2P no tiene Ñ y el
+  // navegador la sustituye por un glifo de otra fuente que rompe el renglón.
+  tag: "SIN TRUCOS · SIN PAGOS OCULTOS",
   perks: [
     "Acceso a todos los juegos",
     "Ranking global y salón de la fama",

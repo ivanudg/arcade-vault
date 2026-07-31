@@ -264,11 +264,13 @@ export default function HomePage() {
               </p>
             </article>
 
-            <div className="flex flex-col justify-center gap-3.5">
+            {/* Las tres preguntas se reparten el alto de la tarjeta: alineadas
+                al centro dejaban un hueco de cien píxeles arriba y otro abajo. */}
+            <div className="flex flex-col gap-3.5">
               {FAQ.map((item, i) => (
                 <article
                   key={item.q}
-                  className={`border border-av-line border-l-4 bg-av-panel-raised px-5 py-4.5 ${FAQ_EDGE[i % FAQ_EDGE.length]}`}
+                  className={`flex flex-1 flex-col justify-center border border-av-line border-l-4 bg-av-panel-raised px-5 py-4.5 ${FAQ_EDGE[i % FAQ_EDGE.length]}`}
                 >
                   <h3 className="font-display text-[10px] leading-[1.6] tracking-[0.12em] text-av-text">
                     {item.q}
