@@ -11,11 +11,13 @@
  */
 
 import Link from "next/link";
+import { ActivityFeed } from "@/components/activity-feed";
 import { FeatureIcon } from "@/components/feature-icon";
 import { HeroSilhouettes } from "@/components/hero-silhouettes";
 import { MiniGameCard } from "@/components/mini-game-card";
 import { Reveal } from "@/components/reveal";
 import { SectionHead } from "@/components/section-head";
+import { TopPlayers } from "@/components/top-players";
 import { GAMES } from "@/lib/games";
 import { type Accent, FEATURES, STATS } from "@/lib/landing";
 
@@ -166,6 +168,21 @@ export default function HomePage() {
           </div>
         </section>
       </Reveal>
+
+      {/* 03 — Actividad. Los dos paneles leen `lib/scores.ts`: la portada
+          reacciona a lo que juegas y no contradice al salón. */}
+      <section className="mx-auto max-w-330 px-[clamp(14px,3vw,40px)] py-[clamp(52px,8vw,80px)]">
+        <Reveal>
+          <SectionHead index={3} title="ACTIVIDAD EN VIVO" accent="yellow" />
+        </Reveal>
+
+        <Reveal>
+          <div className="grid items-start gap-4.5 lg:grid-cols-[1.2fr_1fr]">
+            <ActivityFeed />
+            <TopPlayers />
+          </div>
+        </Reveal>
+      </section>
     </main>
   );
 }
