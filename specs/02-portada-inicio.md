@@ -137,51 +137,51 @@ Cada paso deja el sitio navegable y se puede confirmar por separado.
 
 **Rutas y navegación**
 
-- [ ] `/` muestra la portada y no contiene la rejilla de tarjetas de la biblioteca.
-- [ ] `/biblioteca` lista las ocho máquinas, con el buscador y los filtros por categoría funcionando igual que antes.
-- [ ] La cabecera muestra exactamente tres enlaces: `Inicio`, `Biblioteca` y `Salón de la Fama`.
-- [ ] Estando en `/juego/muro`, el enlace `Biblioteca` aparece subrayado en cian.
-- [ ] Pulsar el logo `ARCADE VAULT` desde cualquier pantalla lleva a `/`.
-- [ ] El botón `VOLVER AL VAULT` de una URL inexistente lleva a `/biblioteca`.
-- [ ] El cajón lateral en móvil ofrece los mismos tres enlaces más `Cuenta`, y `CREDITOS · 03` al fondo.
-- [ ] En pantallas de 1024 px o más, la cabecera muestra la moneda y `CREDITOS · 03` a la izquierda del bloque de sesión; por debajo, no.
-- [ ] Ningún texto en Press Start 2P contiene caracteres fuera de ASCII imprimible, salvo `·`.
+- [x] `/` muestra la portada y no contiene la rejilla de tarjetas de la biblioteca.
+- [x] `/biblioteca` lista las ocho máquinas, con el buscador y los filtros por categoría funcionando igual que antes.
+- [x] La cabecera muestra exactamente tres enlaces: `Inicio`, `Biblioteca` y `Salón de la Fama`.
+- [x] Estando en `/juego/muro`, el enlace `Biblioteca` aparece subrayado en cian.
+- [x] Pulsar el logo `ARCADE VAULT` desde cualquier pantalla lleva a `/`.
+- [x] El botón `VOLVER AL VAULT` de una URL inexistente lleva a `/biblioteca`.
+- [x] El cajón lateral en móvil ofrece los mismos tres enlaces más `Cuenta`, y `CREDITOS · 03` al fondo.
+- [x] En pantallas de 1024 px o más, la cabecera muestra la moneda y `CREDITOS · 03` a la izquierda del bloque de sesión; por debajo, no.
+- [x] Ningún texto en Press Start 2P contiene caracteres fuera de ASCII imprimible, salvo `·`.
 
 **Portada**
 
-- [ ] La portada tiene siete secciones en este orden: hero, ventajas, rail de juegos, cifras, actividad, precios y llamada final.
-- [ ] El titular del hero dice `EL ARCADE / CLASICO ESTA / DE VUELTA`, sin tildes, en tres líneas.
-- [ ] Las tres líneas del titular parpadean con `animate-av-flicker`, desfasadas entre sí; la segunda es cian y la tercera magenta, ambas con halo.
-- [ ] Ningún color fuera de `--av-cyan`, `--av-magenta`, `--av-yellow`, `--av-amber` y la escala de grises `--av-*` aparece en el código de la portada, salvo el oro, plata y bronce del podio que ya usa el salón.
-- [ ] Las siluetas del hero son ocho, flotan y no capturan el puntero (`aria-hidden`).
-- [ ] La cuarta tarjeta de ventajas usa `--av-amber`, no verde.
-- [ ] El rail muestra seis máquinas con su portada animada, y cada una lleva a su ficha.
-- [ ] La primera cifra de la franja coincide con `GAMES.length`.
-- [ ] Al bajar, cada sección aparece con desplazamiento y opacidad, y no vuelve a ocultarse al subir.
-- [ ] Con `prefers-reduced-motion: reduce` activo, todas las secciones son visibles sin animación.
+- [x] La portada tiene siete secciones en este orden: hero, ventajas, rail de juegos, cifras, actividad, precios y llamada final.
+- [x] El titular del hero dice `EL ARCADE / CLASICO ESTA / DE VUELTA`, sin tildes, en tres líneas.
+- [x] Las tres líneas del titular parpadean con `animate-av-flicker`, desfasadas entre sí; la segunda es cian y la tercera magenta, ambas con halo.
+- [x] Ningún color fuera de `--av-cyan`, `--av-magenta`, `--av-yellow`, `--av-amber` y la escala de grises `--av-*` aparece en el código de la portada, salvo el oro, plata y bronce del podio que ya usa el salón.
+- [x] Las siluetas del hero son ocho, flotan y no capturan el puntero (`aria-hidden`).
+- [x] La cuarta tarjeta de ventajas usa `--av-amber`, no verde.
+- [x] El rail muestra seis máquinas con su portada animada, y cada una lleva a su ficha.
+- [x] La primera cifra de la franja coincide con `GAMES.length`.
+- [x] Al bajar, cada sección aparece con desplazamiento y opacidad, y no vuelve a ocultarse al subir.
+- [x] Con `prefers-reduced-motion: reduce` activo, todas las secciones son visibles sin animación.
 
 **Actividad**
 
-- [ ] El panel de últimas puntuaciones muestra siete filas con jugador, máquina, puntuación y fecha `dd/mm/aa`.
-- [ ] Las siete filas están ordenadas de fecha más reciente a más antigua.
-- [ ] El panel de mejores jugadores muestra cinco nombres distintos, ordenados de mayor a menor puntuación.
-- [ ] Las tres primeras filas del ranking se pintan en oro, plata y bronce.
-- [ ] La barra de cada fila es más corta que la de la fila anterior.
-- [ ] Tras guardar una marca de 999.999 puntos en cualquier máquina, esa marca encabeza ambos paneles al recargar `/`.
-- [ ] La consola no muestra ningún aviso de discrepancia de hidratación al cargar `/`.
-- [ ] `VER SALÓN →` lleva a `/salon`.
+- [x] El panel de últimas puntuaciones muestra siete filas con jugador, máquina, puntuación y fecha `dd/mm/aa`.
+- [x] Las siete filas están ordenadas de fecha más reciente a más antigua.
+- [x] El panel de mejores jugadores muestra cinco nombres distintos, ordenados de mayor a menor puntuación.
+- [x] Las tres primeras filas del ranking se pintan en oro, plata y bronce.
+- [x] La barra de cada fila es más corta que la de la fila anterior.
+- [x] Tras guardar una marca de 999.999 puntos en cualquier máquina, esa marca encabeza ambos paneles al recargar `/`.
+- [x] La consola no muestra ningún aviso de discrepancia de hidratación al cargar `/`.
+- [x] `VER SALÓN →` lleva a `/salon`.
 
 **Sesión y destinos**
 
-- [ ] Sin sesión, el hero ofrece `* CREAR CUENTA` y la tarjeta de precios `EMPEZAR GRATIS →`.
-- [ ] Con sesión iniciada, esos dos botones dicen `* MI CUENTA` e `IR A MI CUENTA →`.
-- [ ] `> EXPLORAR JUEGOS`, `VER TODOS LOS JUEGOS →` e `INSERTAR MONEDA →` llevan a `/biblioteca`.
+- [x] Sin sesión, el hero ofrece `* CREAR CUENTA` y la tarjeta de precios `EMPEZAR GRATIS →`.
+- [x] Con sesión iniciada, esos dos botones dicen `* MI CUENTA` e `IR A MI CUENTA →`.
+- [x] `> EXPLORAR JUEGOS`, `VER TODOS LOS JUEGOS →` e `INSERTAR MONEDA →` llevan a `/biblioteca`.
 
 **Cierre**
 
-- [ ] `npm run build` y `npx tsc --noEmit` terminan sin errores.
-- [ ] `npm run lint` no reporta errores nuevos.
-- [ ] La portada no desborda en horizontal a 360 px de ancho.
+- [x] `npm run build` y `npx tsc --noEmit` terminan sin errores.
+- [x] `npm run lint` no reporta errores nuevos.
+- [x] La portada no desborda en horizontal a 360 px de ancho.
 
 ## Decisiones tomadas y descartadas
 
