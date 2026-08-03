@@ -80,7 +80,7 @@ export default function AboutPage() {
                 className={`flex h-full items-center gap-4 border border-av-line bg-av-panel-raised px-5 py-4.5 text-left transition duration-200 hover:-translate-y-0.75 hover:border-current hover:shadow-[0_12px_28px_-14px_currentColor] ${ACCENT[highlight.accent]}`}
               >
                 <HighlightIcon kind={highlight.icon} />
-                <h2 className="font-display text-[10px] leading-[1.5] tracking-[0.1em] text-av-text">
+                <h2 className="font-display text-[10px] leading-normal tracking-widest text-av-text">
                   {highlight.text}
                 </h2>
               </article>

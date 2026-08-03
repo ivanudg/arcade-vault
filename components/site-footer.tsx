@@ -23,6 +23,7 @@ const BY_SECTION: ReadonlyArray<[test: (path: string) => boolean, text: string]>
     [(p) => p.startsWith("/biblioteca"), LIBRARY_TEXT],
     [(p) => p.startsWith("/salon"), "ARCADE VAULT · SALÓN DE LA FAMA"],
     [(p) => p.startsWith("/cuenta"), "ARCADE VAULT · ACCESO DE JUGADORES"],
+    [(p) => p.startsWith("/acerca-de"), "ARCADE VAULT · QUIENES SOMOS"],
     // Sólo si la máquina existe: en el 404 de `/juego/inventado` este pie
     // anunciaría una ficha que no se está mostrando.
     [
