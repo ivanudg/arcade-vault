@@ -104,6 +104,7 @@
   --animate-av-float: av-float 6s ease-in-out infinite;
   --animate-av-bounce: av-bounce 1.6s ease-in-out infinite;
   --animate-av-px: av-px 2.4s steps(2) infinite;
+  --animate-av-shake: av-shake 0.4s;
 }
 
 /* ============================================================
@@ -287,6 +288,15 @@
    todo, bajan a un quinto. Con `steps(2)` el cambio es seco, como un LED. */
 @keyframes av-px {
   50% { opacity: 0.2; }
+}
+
+/* La negativa del formulario de contacto: falta algo y el marco se sacude. */
+@keyframes av-shake {
+  0%, 100% { transform: translateX(0); }
+  20% { transform: translateX(-6px); }
+  40% { transform: translateX(6px); }
+  60% { transform: translateX(-4px); }
+  80% { transform: translateX(4px); }
 }
 
 /* El parpadeo y la rejilla marean a quien pide menos movimiento:

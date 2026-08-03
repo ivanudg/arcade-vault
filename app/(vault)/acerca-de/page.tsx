@@ -14,9 +14,10 @@
  */
 
 import type { Metadata } from "next";
+import { ContactForm } from "@/components/contact-form";
 import { HighlightIcon } from "@/components/highlight-icon";
 import { Reveal } from "@/components/reveal";
-import { HIGHLIGHTS, MISSION } from "@/lib/about";
+import { CONTACT_INTRO, CONTACT_TIPS, HIGHLIGHTS, MISSION } from "@/lib/about";
 import type { Accent } from "@/lib/landing";
 
 export const metadata: Metadata = {
@@ -31,6 +32,14 @@ const ACCENT: Record<Accent, string> = {
   magenta: "text-av-magenta",
   yellow: "text-av-yellow",
   amber: "text-av-amber",
+};
+
+/** El LED de cada aviso de la columna de contacto, encendido en su acento. */
+const LED: Record<Accent, string> = {
+  cyan: "bg-av-cyan shadow-[0_0_6px_var(--av-cyan)]",
+  magenta: "bg-av-magenta shadow-[0_0_6px_var(--av-magenta)]",
+  yellow: "bg-av-yellow shadow-[0_0_6px_var(--av-yellow)]",
+  amber: "bg-av-amber shadow-[0_0_6px_var(--av-amber)]",
 };
 
 /** Los tres colores que alternan los píxeles de la banda divisoria. */
@@ -111,6 +120,46 @@ export default function AboutPage() {
 
           <span className="h-px flex-1 bg-linear-to-r from-transparent via-av-magenta to-transparent" />
         </div>
+      </Reveal>
+
+      {/* Contacto. La invitación a la izquierda y el formulario a la derecha,
+          que es algo más ancho: lo que se escribe pesa más que lo que se lee.
+          Por debajo de 900px se apilan, invitación primero. */}
+      <Reveal>
+        <section className="mx-auto max-w-300 px-[clamp(14px,3vw,40px)] pb-20">
+          <div className="grid items-start gap-10 max-[900px]:gap-6 min-[900px]:grid-cols-[1fr_1.2fr]">
+            <div>
+              <p className="font-display text-[11px] tracking-[0.24em] text-av-cyan av-glow-cyan">
+                &gt;&gt; CONTACTO
+              </p>
+
+              <h2 className="mt-3.5 font-display text-[clamp(18px,3.5vw,36px)] leading-[1.35] tracking-av-wide text-av-cyan av-glow-cyan">
+                CONTACTANOS
+              </h2>
+
+              <p className="mt-4.5 mb-6 text-[14px] leading-[1.7] tracking-av text-pretty text-av-text-dim">
+                {CONTACT_INTRO}
+              </p>
+
+              <ul className="flex flex-col gap-2.5">
+                {CONTACT_TIPS.map((tip) => (
+                  <li
+                    key={tip.text}
+                    className="flex items-center gap-2.5 font-display text-[9px] leading-[1.6] tracking-[0.14em] text-av-text-dim"
+                  >
+                    <span
+                      aria-hidden="true"
+                      className={`size-2 flex-none rounded-full ${LED[tip.accent]}`}
+                    />
+                    {tip.text}
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            <ContactForm />
+          </div>
+        </section>
       </Reveal>
     </main>
   );
