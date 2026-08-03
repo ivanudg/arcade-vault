@@ -103,6 +103,7 @@
   --animate-av-pulse: av-pulse 1.8s ease-in-out infinite;
   --animate-av-float: av-float 6s ease-in-out infinite;
   --animate-av-bounce: av-bounce 1.6s ease-in-out infinite;
+  --animate-av-px: av-px 2.4s steps(2) infinite;
 }
 
 /* ============================================================
@@ -280,6 +281,12 @@
 /* Flecha del "DESLIZA ▼" */
 @keyframes av-bounce {
   50% { transform: translateY(6px); }
+}
+
+/* Píxeles de la banda que separa «Acerca de» de «Contacto»: no se apagan del
+   todo, bajan a un quinto. Con `steps(2)` el cambio es seco, como un LED. */
+@keyframes av-px {
+  50% { opacity: 0.2; }
 }
 
 /* El parpadeo y la rejilla marean a quien pide menos movimiento:
