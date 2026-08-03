@@ -1,6 +1,6 @@
 # SPEC 03 — Acerca de y formulario de contacto
 
-> **Estado:** Aprobado
+> **Estado:** Implementado
 > **Depende de:** SPEC 01, SPEC 02
 > **Fecha:** 2026-08-01
 > **Objetivo:** Portar `references/templates/home-about/about.jsx` a `/acerca-de` y hacer que su formulario envíe un correo real al equipo con Resend desde una Server Action.
@@ -123,53 +123,53 @@ El prerelleno del nombre del paso 7 se hace en el cliente, tras montar, porque `
 
 **Ruta y navegación**
 
-- [ ] `/acerca-de` responde y muestra, en este orden: misión, banda divisoria y contacto.
-- [ ] La cabecera muestra cuatro enlaces: `Inicio`, `Biblioteca`, `Salón de la Fama` y `Acerca de`.
-- [ ] Estando en `/acerca-de`, ese enlace aparece subrayado en ámbar.
-- [ ] El cajón lateral en móvil ofrece los mismos cuatro enlaces más `Cuenta`.
-- [ ] El pie de `/acerca-de` dice `ARCADE VAULT · QUIENES SOMOS`.
-- [ ] La pestaña del navegador muestra un título propio, distinto del de la portada.
+- [x] `/acerca-de` responde y muestra, en este orden: misión, banda divisoria y contacto.
+- [x] La cabecera muestra cuatro enlaces: `Inicio`, `Biblioteca`, `Salón de la Fama` y `Acerca de`.
+- [x] Estando en `/acerca-de`, ese enlace aparece subrayado en ámbar.
+- [x] El cajón lateral en móvil ofrece los mismos cuatro enlaces más `Cuenta`.
+- [x] El pie de `/acerca-de` dice `ARCADE VAULT · QUIENES SOMOS`.
+- [x] La pestaña del navegador muestra un título propio, distinto del de la portada.
 
 **Acabado**
 
-- [ ] Las tres tarjetas destacadas usan magenta, cian y ámbar; no aparece verde en ningún punto de la pantalla.
-- [ ] Al pasar el ratón por una tarjeta, sube tres píxeles y su borde toma su acento.
-- [ ] Los veinticuatro píxeles de la banda parpadean con retardo escalonado y alternan cian, magenta y amarillo.
-- [ ] Ningún texto en Press Start 2P contiene caracteres fuera de ASCII imprimible, salvo `·`; en particular no hay `❤️` ni `▸`.
-- [ ] La sección de contacto se apila en una columna por debajo de 900 px, y las tarjetas destacadas por debajo de 820 px.
-- [ ] La pantalla no desborda en horizontal a 360 px de ancho.
-- [ ] Con `prefers-reduced-motion: reduce`, todo es visible sin animación de aparición.
+- [x] Las tres tarjetas destacadas usan magenta, cian y ámbar; no aparece verde en ningún punto de la pantalla.
+- [x] Al pasar el ratón por una tarjeta, sube tres píxeles y su borde toma su acento.
+- [x] Los veinticuatro píxeles de la banda parpadean con retardo escalonado y alternan cian, magenta y amarillo.
+- [x] Ningún texto en Press Start 2P contiene caracteres fuera de ASCII imprimible, salvo `·`; en particular no hay `❤️` ni `▸`.
+- [x] La sección de contacto se apila en una columna por debajo de 900 px, y las tarjetas destacadas por debajo de 820 px.
+- [x] La pantalla no desborda en horizontal a 360 px de ancho.
+- [x] Con `prefers-reduced-motion: reduce`, todo es visible sin animación de aparición.
 
 **Formulario**
 
-- [ ] Enviar con cualquiera de los tres campos vacío sacude el marco y no dispara ninguna petición de red.
-- [ ] Con sesión iniciada, `NOMBRE` llega relleno con el usuario y se puede editar; sin sesión, vacío.
-- [ ] Los campos no admiten más de 80, 120 y 2000 caracteres.
-- [ ] Mientras se envía, el botón está deshabilitado y dice `ENVIANDO...`.
-- [ ] La consola no muestra ningún aviso de discrepancia de hidratación al cargar `/acerca-de`.
-- [ ] El campo trampa no es visible, no recibe foco con el tabulador y no lo anuncia un lector de pantalla.
+- [x] Enviar con cualquiera de los tres campos vacío sacude el marco y no dispara ninguna petición de red.
+- [x] Con sesión iniciada, `NOMBRE` llega relleno con el usuario y se puede editar; sin sesión, vacío.
+- [x] Los campos no admiten más de 80, 120 y 2000 caracteres.
+- [x] Mientras se envía, el botón está deshabilitado y dice `ENVIANDO...`.
+- [x] La consola no muestra ningún aviso de discrepancia de hidratación al cargar `/acerca-de`.
+- [x] El campo trampa no es visible, no recibe foco con el tabulador y no lo anuncia un lector de pantalla.
 
 **Estados de respuesta**
 
-- [ ] Un envío correcto sustituye el formulario por el terminal cian, con el nombre en mayúsculas en la línea final.
-- [ ] `ENVIAR OTRO MENSAJE` devuelve el formulario con los tres campos vacíos.
-- [ ] Un fallo del envío muestra el terminal magenta con `[ERR] Transmision rechazada`.
-- [ ] `REINTENTAR` devuelve el formulario conservando lo que estaba escrito.
+- [x] Un envío correcto sustituye el formulario por el terminal cian, con el nombre en mayúsculas en la línea final.
+- [x] `ENVIAR OTRO MENSAJE` devuelve el formulario con los tres campos vacíos.
+- [x] Un fallo del envío muestra el terminal magenta con `[ERR] Transmision rechazada`.
+- [x] `REINTENTAR` devuelve el formulario conservando lo que estaba escrito.
 
 **Server Action**
 
-- [ ] Invocada con el campo trampa relleno, devuelve éxito y no envía ningún correo.
-- [ ] Invocada con un correo sin `@` o sin dominio, devuelve `invalid` señalando `email`, aunque el navegador se saltara la validación del cliente.
-- [ ] Invocada con un mensaje de 2001 caracteres, devuelve `invalid` señalando `message`.
-- [ ] Sin `RESEND_API_KEY`, devuelve éxito, no llama a Resend y deja el mensaje en la consola del servidor.
-- [ ] Con `RESEND_API_KEY`, el correo llega a `ivandg1909@gmail.com` con asunto `[Arcade Vault] Mensaje de <nombre>`.
-- [ ] Al responder ese correo, el destinatario es la dirección escrita en el formulario, no `onboarding@resend.dev`.
+- [x] Invocada con el campo trampa relleno, devuelve éxito y no envía ningún correo.
+- [x] Invocada con un correo sin `@` o sin dominio, devuelve `invalid` señalando `email`, aunque el navegador se saltara la validación del cliente.
+- [x] Invocada con un mensaje de 2001 caracteres, devuelve `invalid` señalando `message`.
+- [x] Sin `RESEND_API_KEY`, devuelve éxito, no llama a Resend y deja el mensaje en la consola del servidor.
+- [x] Con `RESEND_API_KEY`, el correo llega a `ivandg1909@gmail.com` con asunto `[Arcade Vault] Mensaje de <nombre>`.
+- [x] Al responder ese correo, el destinatario es la dirección escrita en el formulario, no `onboarding@resend.dev`.
 
 **Cierre**
 
-- [ ] `npm run build` y `npx tsc --noEmit` terminan sin errores **sin** `.env.local` presente.
-- [ ] `npm run lint` no reporta errores nuevos.
-- [ ] `RESEND_API_KEY` no aparece en ningún archivo versionado; `.env.example` solo lleva la clave vacía.
+- [x] `npm run build` y `npx tsc --noEmit` terminan sin errores **sin** `.env.local` presente.
+- [x] `npm run lint` no reporta errores nuevos.
+- [x] `RESEND_API_KEY` no aparece en ningún archivo versionado; `.env.example` solo lleva la clave vacía.
 
 ## Decisiones tomadas y descartadas
 
