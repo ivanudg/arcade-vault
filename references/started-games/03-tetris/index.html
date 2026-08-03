@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Tetris</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="wrapper">
+    <div class="header-row">
+      <h1 class="game-title">TETRIS</h1>
+      <button
+        id="theme-toggle"
+        class="theme-toggle"
+        type="button"
+        role="switch"
+        aria-checked="false"
+        aria-label="Cambiar a modo claro"
+        title="Cambiar tema"
+      >
+        <span class="theme-toggle-icons" aria-hidden="true">
+          <span>🌙</span>
+          <span>☀️</span>
+        </span>
+        <span class="theme-toggle-thumb" aria-hidden="true"></span>
+      </button>
+      <button
+        id="mute-toggle"
+        class="mute-toggle"
+        type="button"
+        role="switch"
+        aria-checked="true"
+        aria-label="Silenciar sonido"
+        title="Sonido"
+      >🔊</button>
+      <select id="skin-select" class="skin-select" aria-label="Estilo visual" title="Estilo visual">
+        <option value="retro">Retro</option>
+        <option value="neon">Neón</option>
+        <option value="pastel">Pastel</option>
+        <option value="pixel">Pixel art</option>
+      </select>
+    </div>
+    <div class="game-container">
+      <aside class="panel panel-left">
+        <div class="panel-section">
+          <span class="label">ENERGÍA</span>
+          <div class="energy-bar" id="energy-bar">
+            <div class="energy-fill" id="energy-fill"></div>
+          </div>
+          <span class="energy-value" id="energy-value">0 / 100</span>
+        </div>
+
+        <div class="panel-section powerup-legend">
+          <span class="label">POWER-UPS</span>
+          <ul>
+            <li><span class="powerup-icon">💣</span> Bomba</li>
+            <li><span class="powerup-icon">⚡</span> Rayo</li>
+            <li><span class="powerup-icon">🎨</span> Tinte</li>
+            <li><span class="powerup-icon">⬇️</span> Gravedad</li>
+            <li><span class="powerup-icon">❄️</span> Congelar</li>
+          </ul>
+        </div>
+
+        <div class="panel-section controls">
+          <span class="label">CONTROLS</span>
+          <ul>
+            <li><kbd>←</kbd><kbd>→</kbd> mover</li>
+            <li><kbd>↑</kbd><kbd>X</kbd> rotar</li>
+            <li><kbd>Z</kbd> rotar al revés</li>
+            <li><kbd>↓</kbd> bajar</li>
+            <li><kbd>Space</kbd> caída</li>
+            <li><kbd>C</kbd><kbd>Shift</kbd> reservar</li>
+            <li><kbd>E</kbd> habilidades</li>
+            <li><kbd>P</kbd> pausa</li>
+          </ul>
+        </div>
+      </aside>
+
+      <canvas id="board" width="300" height="600"></canvas>
+
+      <aside class="panel">
+        <div class="panel-section">
+          <span class="label">SCORE</span>
+          <span class="value" id="score">0</span>
+        </div>
+        <div class="panel-section">
+          <span class="label">LINES</span>
+          <span class="value" id="lines">0</span>
+        </div>
+        <div class="panel-section">
+          <span class="label">LEVEL</span>
+          <span class="value" id="level">1</span>
+        </div>
+
+        <div class="panel-section objective-panel hidden" id="objective-panel">
+          <span class="label">OBJETIVO</span>
+          <div class="objective-row hidden" id="objective-timer-row">
+            <span class="objective-name">⏱ Tiempo</span>
+            <span class="objective-value" id="objective-timer">0</span>
+          </div>
+          <div class="objective-row hidden" id="objective-lines-row">
+            <span class="objective-name">🎯 Líneas</span>
+            <span class="objective-value" id="objective-lines">0/0</span>
+          </div>
+          <div class="objective-row hidden" id="objective-garbage-row">
+            <span class="objective-name">🧱 Basura</span>
+            <span class="objective-value" id="objective-garbage">0</span>
+          </div>
+        </div>
+
+        <div id="mutator-badges" class="mutator-badges hidden"></div>
+
+        <div id="vision-badge" class="skill-badge hidden">👁 <span id="vision-count"></span> piezas</div>
+        <div id="slow-badge" class="skill-badge hidden">⏳ <span id="slow-time"></span>s</div>
+
+        <div class="panel-section">
+          <span class="label">NEXT</span>
+          <canvas id="next-canvas" width="120" height="120"></canvas>
+        </div>
+
+        <div class="panel-section" id="hold-panel">
+          <span class="label">RESERVA</span>
+          <canvas id="hold-canvas" width="120" height="120"></canvas>
+        </div>
+
+        <div id="combo-indicator" class="combo-indicator hidden">
+          <span class="label">COMBO</span>
+          <span class="combo-count" id="combo-count">x2</span>
+        </div>
+
+        <div id="b2b-badge" class="b2b-badge hidden">BACK-TO-BACK</div>
+
+        <div id="freeze-indicator" class="freeze-indicator hidden">
+          ❄️ <span id="freeze-time"></span>s
+        </div>
+      </aside>
+    </div>
+
+    <div id="overlay" class="overlay hidden">
+      <div class="overlay-box">
+        <p id="overlay-title">GAME OVER</p>
+        <p id="overlay-score"></p>
+
+        <div id="records-panel" class="records-panel hidden">
+          <p class="records-title">🏆 MEJORES PUNTUACIONES</p>
+          <ol id="records-list" class="records-list"></ol>
+          <p id="records-empty" class="records-empty hidden">Aún no hay récords</p>
+          <div class="records-stats">
+            <div class="records-stat">
+              <span class="label">MEJOR COMBO</span>
+              <span class="value" id="record-combo">—</span>
+            </div>
+            <div class="records-stat">
+              <span class="label">LÍNEAS MÁX.</span>
+              <span class="value" id="record-lines">0</span>
+            </div>
+          </div>
+          <div id="name-entry" class="name-entry hidden">
+            <label for="record-name">¡Nuevo récord! Tu nombre:</label>
+            <div class="name-entry-row">
+              <input type="text" id="record-name" maxlength="8" autocomplete="off" placeholder="AAA" />
+              <button id="save-record-btn" type="button">Guardar</button>
+            </div>
+          </div>
+          <button id="reset-records-btn" type="button" class="reset-records-btn">Borrar récords</button>
+        </div>
+
+        <div id="challenge-config" class="challenge-config hidden" data-mode="classic">
+          <label class="challenge-field" for="mode-select">
+            <span>Modo de juego</span>
+            <select id="mode-select">
+              <option value="classic">Clásico — sin límite</option>
+              <option value="timeAttack">Contra Reloj — 20 líneas en 2:00</option>
+              <option value="survival">Supervivencia — basura cada 15 s</option>
+            </select>
+          </label>
+
+          <label class="challenge-field" for="start-level-select-menu">
+            <span>Nivel inicial</span>
+            <select id="start-level-select-menu"></select>
+          </label>
+
+          <fieldset class="challenge-mutators">
+            <legend>Modificadores</legend>
+            <label><input type="checkbox" id="mut-puzzle" /> 🧩 Tablero puzzle <small>(bloques indestructibles)</small></label>
+            <label><input type="checkbox" id="mut-invisible" /> 👻 Piezas invisibles <small>(al tocar suelo)</small></label>
+            <label><input type="checkbox" id="mut-reverse" /> 🔄 Rotación inversa</label>
+          </fieldset>
+        </div>
+
+        <button id="restart-btn">Jugar</button>
+      </div>
+    </div>
+
+    <!-- Overlay propio: #overlay ya despacha tres estados desde restartBtn. -->
+    <div id="skill-menu" class="overlay skill-menu hidden">
+      <div class="overlay-box">
+        <p class="skill-menu-title">HABILIDADES</p>
+        <div class="skill-energy">
+          <div class="energy-bar">
+            <div class="energy-fill" id="skill-energy-fill"></div>
+          </div>
+          <span class="energy-value" id="skill-energy-value">0 / 100</span>
+        </div>
+        <ul id="skill-list" class="skill-list"></ul>
+        <p class="skill-hint">1–4 para activar · <kbd>Esc</kbd> volver</p>
+      </div>
+    </div>
+
+    <!-- Overlay propio del menú de pausa, hermano de #skill-menu. -->
+    <div id="pause-menu" class="overlay pause-menu hidden">
+      <div class="overlay-box">
+        <p class="pause-menu-title">PAUSA</p>
+
+        <label class="pause-field" for="start-level-select">
+          <span>Nivel inicial</span>
+          <select id="start-level-select"></select>
+        </label>
+
+        <div class="pause-buttons">
+          <button id="resume-btn" class="menu-btn" type="button">Reanudar</button>
+          <button id="pause-restart-btn" class="menu-btn" type="button">Reiniciar</button>
+          <button id="controls-toggle-btn" class="menu-btn menu-btn-secondary" type="button">Ver controles</button>
+        </div>
+
+        <ul id="pause-controls" class="controls-list hidden">
+          <li><kbd>←</kbd><kbd>→</kbd> mover</li>
+          <li><kbd>↑</kbd><kbd>X</kbd> rotar</li>
+          <li><kbd>Z</kbd> rotar al revés</li>
+          <li><kbd>↓</kbd> bajar</li>
+          <li><kbd>Space</kbd> caída</li>
+          <li><kbd>C</kbd><kbd>Shift</kbd> reservar</li>
+          <li><kbd>E</kbd> habilidades</li>
+          <li><kbd>P</kbd><kbd>Esc</kbd> pausa</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <script src="game.js"></script>
+</body>
+</html>
