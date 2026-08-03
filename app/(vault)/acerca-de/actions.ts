@@ -14,7 +14,16 @@
  * silencio y sólo lo delata este registro.
  */
 
+import { Resend } from "resend";
 import { LIMITS } from "@/lib/about";
+
+/**
+ * Remitente de pruebas de Resend: sin dominio verificado es el único que se
+ * puede usar, y sólo entrega a la dirección dueña de la cuenta —que es
+ * justamente el destino—. Con dominio propio, esto es cambiar la constante.
+ */
+const FROM = "Arcade Vault <onboarding@resend.dev>";
+const TO = "ivandg1909@gmail.com";
 
 /** Lo que devuelve la acción; es el estado de `useActionState`. */
 export type ContactState =
@@ -64,7 +73,9 @@ export async function sendContactMessage(
     return { status: "invalid", field: "message" };
   }
 
-  if (!process.env.RESEND_API_KEY) {
+  const apiKey = process.env.RESEND_API_KEY;
+
+  if (!apiKey) {
     console.warn(
       `[acerca-de] Sin RESEND_API_KEY: el mensaje NO se envió.\n` +
         `  De: ${name} <${email}>\n` +
@@ -73,13 +84,28 @@ export async function sendContactMessage(
     return { status: "sent", name };
   }
 
-  // Paso 9 de SPEC 03: aquí entra la llamada a Resend. Hasta entonces tener
-  // clave se comporta igual que no tenerla, sólo que el aviso lo dice.
-  console.warn(
-    `[acerca-de] Envío todavía sin conectar: el mensaje NO salió.\n` +
-      `  De: ${name} <${email}>\n` +
-      `  Mensaje: ${message}`,
-  );
+  // El cliente se crea aquí y no en el módulo: su constructor exige la clave,
+  // y a nivel de módulo reventaría el arranque de quien no la tiene.
+  try {
+    const { error } = await new Resend(apiKey).emails.send({
+      from: FROM,
+      to: TO,
+      // El visitante no puede ir en `from` —Resend rechaza remitentes de
+      // dominio ajeno—, así que responder desde el correo del equipo le llega
+      // a él por aquí.
+      replyTo: email,
+      subject: `[Arcade Vault] Mensaje de ${name}`,
+      text: `De: ${name} <${email}>\n\n${message}\n`,
+    });
+
+    if (error) {
+      console.error("[acerca-de] Resend rechazó el envío:", error);
+      return { status: "error" };
+    }
+  } catch (cause) {
+    console.error("[acerca-de] El envío no llegó a salir:", cause);
+    return { status: "error" };
+  }
 
   return { status: "sent", name };
 }
