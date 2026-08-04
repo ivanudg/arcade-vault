@@ -4,20 +4,26 @@
  * Gabinete y superpuestos de la pantalla de juego. Puerto de
  * references/templates/jugar.dc.html.
  *
- * No hay motor: el canvas muestra la escena de `drawPreview()` congelada y el
- * HUD lee las cifras fijas de `DEMO_RUN`. El D-pad y FUEGO sólo responden
- * visualmente; PAUSA, el superpuesto de carga y el de fin de partida sí son
- * interfaz de verdad, y GUARDAR PUNTUACION escribe en `localStorage`.
+ * Bifurca según la máquina tenga motor en `ENGINES` o no:
  *
- * Sin motor no hay forma de morir, así que el fin de partida se dispara con un
- * botón de demo — la pieza con más interfaz de la pantalla no puede quedar sin
- * poder verse.
+ * - **Con motor** (hoy sólo `asteroids`): el canvas es el juego, el HUD lee la
+ *   partida por `onState` y el fin de partida lo dispara el motor.
+ * - **Sin motor**: el canvas muestra la escena de `drawPreview()` congelada y
+ *   el HUD lee las cifras fijas de `DEMO_RUN`. Como no hay forma de morir, el
+ *   fin de partida se dispara con un botón de demo — la pieza con más interfaz
+ *   de la pantalla no puede quedar sin poder verse.
+ *
+ * PAUSA, el superpuesto de carga y el de fin de partida son interfaz de verdad
+ * en ambos casos, y GUARDAR PUNTUACION escribe en `localStorage`.
  */
 
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { GameCanvas } from "@/components/game-canvas";
 import { GamePreview } from "@/components/game-preview";
 import { DEMO_RUN, type DemoRun } from "@/lib/demo-run";
+import type { GameHandle, GameState } from "@/lib/games/engine";
+import { ENGINES } from "@/lib/games/engines";
 import type { Game } from "@/lib/games";
 import { addScore, formatScore } from "@/lib/scores";
 import { useSession } from "@/lib/session";
@@ -26,8 +32,10 @@ import { useSession } from "@/lib/session";
 const PAD = ["←", "↑", "↓", "→", "FUEGO"];
 
 const SAVED_MESSAGE = "PUNTUACION GUARDADA";
-/** HUD de una máquina sin partida de ejemplo: todo a cero hasta que haya motor. */
+/** HUD de una máquina sin partida de ejemplo ni motor: todo a cero. */
 const NO_RUN: DemoRun = { score: 0, lives: 0, level: 0 };
+/** Lo que enseña el HUD de una máquina con motor antes del primer `onState`. */
+const FRESH_RUN: GameState = { score: 0, lives: 3, level: 1 };
 /** 750 ms al entrar, 450 ms al reintentar: el cartucho ya está en la máquina. */
 const LOAD_MS = 750;
 const RELOAD_MS = 450;
@@ -39,9 +47,13 @@ export function PlayCabinet({ game }: { game: Game }) {
   const [over, setOver] = useState(false);
   const [saved, setSaved] = useState(false);
   const [savedText, setSavedText] = useState("");
+  /** Las tres cifras de la partida real. `null` hasta el primer `onState`. */
+  const [live, setLive] = useState<GameState | null>(null);
 
+  const engine = ENGINES[game.id];
   const loadTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
   const typer = useRef<ReturnType<typeof setInterval>>(undefined);
+  const handle = useRef<GameHandle | null>(null);
 
   const startLoading = useCallback((ms: number) => {
     setLoading(true);
@@ -58,9 +70,17 @@ export function PlayCabinet({ game }: { game: Game }) {
     };
   }, []);
 
+  // La partida arranca cuando el cartucho termina de cargar, no al montar: el
+  // superpuesto tapa la pantalla y el juego correría a ciegas debajo.
+  useEffect(() => {
+    if (!engine || loading) return;
+    handle.current?.start();
+  }, [engine, loading]);
+
   // Puede no haberla: las máquinas con motor no tienen partida de ejemplo.
   const demo = DEMO_RUN[game.id];
-  const run = demo ?? NO_RUN;
+  /** Las tres cifras del HUD: de la partida real si hay motor, si no del demo. */
+  const run = engine ? (live ?? FRESH_RUN) : (demo ?? NO_RUN);
   const playerName = ready && user ? user.name : "INVITADO";
 
   function saveScore() {
@@ -134,7 +154,19 @@ export function PlayCabinet({ game }: { game: Game }) {
 
         <div className="mx-auto mt-6.5 rounded-[34px] border border-av-cyan/22 bg-[linear-gradient(#15171f,#0b0c12)] p-5.5 shadow-[0_0_46px_rgba(0,245,255,0.12),inset_0_0_0_1px_rgba(255,255,255,0.04)]">
           <div className="relative overflow-hidden rounded-[22px] bg-av-void shadow-[inset_0_0_60px_rgba(0,0,0,0.9),inset_0_0_12px_rgba(0,245,255,0.16)]">
-            <GamePreview id={game.id} width={480} height={480} className="h-auto w-full" />
+            {engine ? (
+              <GameCanvas
+                game={engine}
+                label={`Partida de ${game.title}`}
+                onState={setLive}
+                onReady={(h) => {
+                  handle.current = h;
+                }}
+                className="block h-auto w-full"
+              />
+            ) : (
+              <GamePreview id={game.id} width={480} height={480} className="h-auto w-full" />
+            )}
 
             {/* Viñeta del tubo y barrido de brillo que recorre la pantalla. */}
             <div className="pointer-events-none absolute inset-0 rounded-[22px] bg-[radial-gradient(115%_115%_at_50%_50%,rgba(0,0,0,0)_55%,rgba(0,0,0,0.72)_100%)]" />
