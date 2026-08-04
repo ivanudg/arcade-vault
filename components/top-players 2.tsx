@@ -11,12 +11,16 @@
  * La barra es proporcional a la marca del primero, no un decorado de anchos
  * fijos: si dos jugadores empatan, sus barras miden lo mismo.
  *
- * El ranking llega resuelto del servidor: aquí no se consulta nada.
+ * Arranca con las semillas —lo único que puede pintar el servidor— y pasa al
+ * ranking real tras montar, que es cuando existe `localStorage`.
  */
 
 import Link from "next/link";
+import { useEffect, useState } from "react";
 import { getGame, tint } from "@/lib/games";
-import { formatScore, type PlayerRank } from "@/lib/scores";
+import { formatScore, seedTopPlayers, topPlayers } from "@/lib/scores";
+
+const LIMIT = 5;
 
 /** Oro, plata y bronce, los mismos tres del salón. */
 const MEDALS = ["#f5ff00", "#d8dee9", "#ff9d4d"];
@@ -25,12 +29,11 @@ const NO_MEDAL = "#4a5160";
 /** Ancho del carril del rango: la barra empieza donde acaba. */
 const RANK_COLUMN = "38px";
 
-export function TopPlayers({
-  rows,
-}: {
-  /** Los mejores del vault, ya ordenados y numerados. */
-  rows: PlayerRank[];
-}) {
+export function TopPlayers() {
+  const [rows, setRows] = useState(() => seedTopPlayers(LIMIT));
+  // eslint-disable-next-line react-hooks/set-state-in-effect -- lectura única de localStorage tras hidratar
+  useEffect(() => setRows(topPlayers(LIMIT)), []);
+
   const best = rows[0]?.score ?? 0;
 
   return (

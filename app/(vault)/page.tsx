@@ -22,6 +22,7 @@ import { SectionHead } from "@/components/section-head";
 import { TopPlayers } from "@/components/top-players";
 import { GAMES } from "@/lib/games";
 import { type Accent, FAQ, FEATURES, PLAN, STATS } from "@/lib/landing";
+import { recentScores, topPlayers } from "@/lib/leaderboard";
 
 /**
  * El título va en `absolute`: la plantilla del layout (`%s · Arcade Vault`)
@@ -43,13 +44,20 @@ const ACCENT: Record<Accent, string> = {
 };
 
 /** El filo izquierdo de cada pregunta del FAQ, en el orden en que se leen. */
-const FAQ_EDGE = [
-  "border-l-av-cyan",
-  "border-l-av-magenta",
-  "border-l-av-yellow",
-];
+const FAQ_EDGE = ["border-l-av-cyan", "border-l-av-magenta", "border-l-av-yellow"];
 
-export default function HomePage() {
+/**
+ * La portada lee el marcador, así que se renderiza en cada visita. Ver la nota
+ * de `app/(vault)/juego/[id]/page.tsx`.
+ */
+export const dynamic = "force-dynamic";
+
+export default async function HomePage() {
+  // Las dos consultas en paralelo: no dependen una de otra y la portada no
+  // tiene por qué esperar dos viajes seguidos.
+  const [recent, ranking] = await Promise.all([recentScores(), topPlayers()]);
+  const hasActivity = recent.length > 0 || ranking.length > 0;
+
   return (
     <main className="flex-1">
       {/* 61px es el alto de la cabecera pegajosa: el hero ocupa lo que queda
@@ -83,8 +91,7 @@ export default function HomePage() {
 
           <p className="mx-auto mt-7.5 max-w-160 text-[15px] leading-[1.7] tracking-av text-pretty text-av-text-dim">
             Juega los mejores clásicos directamente en tu navegador.
-            <br className="max-sm:hidden" /> Sin descargas. Sin costo. Solo
-            diversión.
+            <br className="max-sm:hidden" /> Sin descargas. Sin costo. Solo diversión.
           </p>
 
           <div className="mt-9 flex flex-wrap justify-center gap-4">
@@ -115,11 +122,7 @@ export default function HomePage() {
           el borde lo recoge con `currentColor` al pasar el ratón. */}
       <section className="mx-auto max-w-330 px-[clamp(14px,3vw,40px)] py-[clamp(52px,8vw,80px)]">
         <Reveal>
-          <SectionHead
-            index={1}
-            title="¿POR QUE ARCADE VAULT?"
-            accent="magenta"
-          />
+          <SectionHead index={1} title="¿POR QUE ARCADE VAULT?" accent="magenta" />
         </Reveal>
 
         <div className="grid gap-4.5 sm:grid-cols-2 lg:grid-cols-4">
@@ -132,9 +135,7 @@ export default function HomePage() {
                 <h3 className="font-display text-[12px] tracking-widest [text-shadow:0_0_8px_currentColor]">
                   {feature.title}
                 </h3>
-                <p className="text-[13px] leading-[1.6] text-av-text-dim">
-                  {feature.desc}
-                </p>
+                <p className="text-[13px] leading-[1.6] text-av-text-dim">{feature.desc}</p>
               </article>
             </Reveal>
           ))}
@@ -192,20 +193,26 @@ export default function HomePage() {
         </section>
       </Reveal>
 
-      {/* 03 — Actividad. Los dos paneles leen `lib/scores.ts`: la portada
-          reacciona a lo que juegas y no contradice al salón. */}
-      <section className="mx-auto max-w-330 px-[clamp(14px,3vw,40px)] py-[clamp(52px,8vw,80px)]">
-        <Reveal>
-          <SectionHead index={3} title="ACTIVIDAD EN VIVO" accent="yellow" />
-        </Reveal>
+      {/* 03 — Actividad. Los dos paneles salen del marcador compartido: la
+          portada reacciona a lo que se juega y no contradice al salón.
 
-        <Reveal>
-          <div className="grid items-start gap-4.5 lg:grid-cols-[1.2fr_1fr]">
-            <ActivityFeed />
-            <TopPlayers />
-          </div>
-        </Reveal>
-      </section>
+          Sin marcador no hay sección: una cabecera de actividad sobre dos
+          huecos afirma que no pasa nada, y lo que pasa es que no se sabe. El
+          resto de la portada se ve igual. */}
+      {hasActivity && (
+        <section className="mx-auto max-w-330 px-[clamp(14px,3vw,40px)] py-[clamp(52px,8vw,80px)]">
+          <Reveal>
+            <SectionHead index={3} title="ACTIVIDAD EN VIVO" accent="yellow" />
+          </Reveal>
+
+          <Reveal>
+            <div className="grid items-start gap-4.5 lg:grid-cols-[1.2fr_1fr]">
+              {recent.length > 0 && <ActivityFeed rows={recent} />}
+              {ranking.length > 0 && <TopPlayers rows={ranking} />}
+            </div>
+          </Reveal>
+        </section>
+      )}
 
       {/* 04 — Precios. El plan es gratis, así que la sección no vende: afirma.
           El template pinta esta tarjeta en verde y el importe con un degradado
@@ -229,9 +236,7 @@ export default function HomePage() {
               {/* Sale del marco por la esquina, como el sello que se estampa
                   encima cuando ya está impreso. El desbordamiento cabe en el
                   acolchado de la sección: a 360 px no empuja la página. */}
-              <span
-                className="absolute -top-3.5 -right-1 z-10 rotate-14 border-2 border-av-magenta bg-av-void/85 px-4 py-2.5 text-center font-display text-[clamp(10px,2.4vw,13px)] leading-[1.15] tracking-[0.16em] text-av-magenta av-glow-magenta av-halo-magenta"
-              >
+              <span className="absolute -top-3.5 -right-1 z-10 rotate-14 border-2 border-av-magenta bg-av-void/85 px-4 py-2.5 text-center font-display text-[clamp(10px,2.4vw,13px)] leading-[1.15] tracking-[0.16em] text-av-magenta av-glow-magenta av-halo-magenta">
                 FREE
                 <br />
                 PLAY
@@ -290,9 +295,7 @@ export default function HomePage() {
                   <h3 className="font-display text-[10px] leading-[1.6] tracking-[0.12em] text-av-text">
                     {item.q}
                   </h3>
-                  <p className="mt-2 text-[13px] leading-[1.6] text-av-text-dim">
-                    {item.a}
-                  </p>
+                  <p className="mt-2 text-[13px] leading-[1.6] text-av-text-dim">{item.a}</p>
                 </article>
               ))}
             </div>
