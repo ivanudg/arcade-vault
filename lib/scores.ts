@@ -131,6 +131,22 @@ const SEED_ROWS: Record<GameId, readonly (readonly [string, number])[]> = {
     ["IRIS", 4380],
     ["JON", 3140],
   ],
+  // La única máquina con motor: aquí las cifras salen de partidas de verdad, no
+  // del prototipo. Rango 1.500–9.000, para que una buena partida entre en el top
+  // 10 y una excelente llegue al podio. Si la realidad se desvía se ajusta esta
+  // tabla, nunca las constantes del juego.
+  asteroids: [
+    ["VECTOR", 8940],
+    ["NOVA_7", 7620],
+    ["ORION", 6480],
+    ["LYRA", 5510],
+    ["DEIMOS", 4720],
+    ["QUASAR", 3960],
+    ["TALIA", 3240],
+    ["CERES", 2580],
+    ["OMEGA_3", 1980],
+    ["JUNO", 1540],
+  ],
 };
 
 /** Las 10 marcas semilla de cada máquina, ya con su fecha. */

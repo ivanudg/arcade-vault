@@ -17,7 +17,7 @@
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { GamePreview } from "@/components/game-preview";
-import { DEMO_RUN } from "@/lib/demo-run";
+import { DEMO_RUN, type DemoRun } from "@/lib/demo-run";
 import type { Game } from "@/lib/games";
 import { addScore, formatScore } from "@/lib/scores";
 import { useSession } from "@/lib/session";
@@ -26,6 +26,8 @@ import { useSession } from "@/lib/session";
 const PAD = ["←", "↑", "↓", "→", "FUEGO"];
 
 const SAVED_MESSAGE = "PUNTUACION GUARDADA";
+/** HUD de una máquina sin partida de ejemplo: todo a cero hasta que haya motor. */
+const NO_RUN: DemoRun = { score: 0, lives: 0, level: 0 };
 /** 750 ms al entrar, 450 ms al reintentar: el cartucho ya está en la máquina. */
 const LOAD_MS = 750;
 const RELOAD_MS = 450;
@@ -56,7 +58,9 @@ export function PlayCabinet({ game }: { game: Game }) {
     };
   }, []);
 
-  const run = DEMO_RUN[game.id];
+  // Puede no haberla: las máquinas con motor no tienen partida de ejemplo.
+  const demo = DEMO_RUN[game.id];
+  const run = demo ?? NO_RUN;
   const playerName = ready && user ? user.name : "INVITADO";
 
   function saveScore() {
@@ -130,12 +134,7 @@ export function PlayCabinet({ game }: { game: Game }) {
 
         <div className="mx-auto mt-6.5 rounded-[34px] border border-av-cyan/22 bg-[linear-gradient(#15171f,#0b0c12)] p-5.5 shadow-[0_0_46px_rgba(0,245,255,0.12),inset_0_0_0_1px_rgba(255,255,255,0.04)]">
           <div className="relative overflow-hidden rounded-[22px] bg-av-void shadow-[inset_0_0_60px_rgba(0,0,0,0.9),inset_0_0_12px_rgba(0,245,255,0.16)]">
-            <GamePreview
-              id={game.id}
-              width={480}
-              height={480}
-              className="h-auto w-full"
-            />
+            <GamePreview id={game.id} width={480} height={480} className="h-auto w-full" />
 
             {/* Viñeta del tubo y barrido de brillo que recorre la pantalla. */}
             <div className="pointer-events-none absolute inset-0 rounded-[22px] bg-[radial-gradient(115%_115%_at_50%_50%,rgba(0,0,0,0)_55%,rgba(0,0,0,0.72)_100%)]" />
@@ -168,14 +167,16 @@ export function PlayCabinet({ game }: { game: Game }) {
           </p>
 
           {/* Andamio: sin motor, es la única forma de llegar al fin de partida.
-              Se va con la spec que traiga los juegos. */}
-          <button
-            type="button"
-            onClick={() => setOver(true)}
-            className="mx-auto mt-4.5 block cursor-pointer border border-dashed border-av-line-strong px-3.5 py-2.5 font-display text-[8px] tracking-av text-av-text-faint hover:border-av-magenta/50 hover:text-av-magenta"
-          >
-            SIMULAR FIN DE PARTIDA
-          </button>
+              Cada máquina que estrene motor deja de pintarlo. */}
+          {demo && (
+            <button
+              type="button"
+              onClick={() => setOver(true)}
+              className="mx-auto mt-4.5 block cursor-pointer border border-dashed border-av-line-strong px-3.5 py-2.5 font-display text-[8px] tracking-av text-av-text-faint hover:border-av-magenta/50 hover:text-av-magenta"
+            >
+              SIMULAR FIN DE PARTIDA
+            </button>
+          )}
         </div>
       </section>
 
@@ -205,19 +206,13 @@ function LoadingOverlay() {
   return (
     <div className="fixed inset-0 z-60 grid place-items-center bg-[rgba(5,6,10,0.94)]">
       <div className="grid justify-items-center gap-4.5">
-        <div
-          aria-hidden
-          className="grid size-13.5 grid-cols-2 gap-1.5 animate-av-spin"
-        >
+        <div aria-hidden className="grid size-13.5 grid-cols-2 gap-1.5 animate-av-spin">
           <span className="bg-av-cyan shadow-[0_0_12px_#00f5ff]" />
           <span className="bg-av-magenta shadow-[0_0_12px_#ff006e]" />
           <span className="bg-av-yellow shadow-[0_0_12px_#f5ff00]" />
           <span className="bg-av-cyan shadow-[0_0_12px_#00f5ff]" />
         </div>
-        <span
-          role="status"
-          className="font-display text-[10px] tracking-av-wider text-av-cyan"
-        >
+        <span role="status" className="font-display text-[10px] tracking-av-wider text-av-cyan">
           CARGANDO CARTUCHO...
         </span>
       </div>
@@ -256,9 +251,7 @@ function GameOverOverlay({
         <p className="font-display text-av-title text-av-yellow [text-shadow:0_0_18px_rgba(245,255,0,0.6)]">
           {formatScore(score)}
         </p>
-        <p className="mt-3.5 mb-5.5 text-[13px] tracking-av text-av-text-muted">
-          {note}
-        </p>
+        <p className="mt-3.5 mb-5.5 text-[13px] tracking-av text-av-text-muted">{note}</p>
 
         <div className="flex flex-col gap-3">
           {canSave && (
@@ -277,9 +270,7 @@ function GameOverOverlay({
               className="font-display text-[10px] tracking-av text-av-cyan [text-shadow:0_0_12px_rgba(0,245,255,0.6)]"
             >
               {savedText}
-              <span className="animate-[av-caret_0.9s_steps(1)_infinite]">
-                _
-              </span>
+              <span className="animate-[av-caret_0.9s_steps(1)_infinite]">_</span>
             </p>
           )}
 

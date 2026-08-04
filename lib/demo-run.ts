@@ -20,7 +20,12 @@ export interface DemoRun {
   level: number;
 }
 
-export const DEMO_RUN: Record<GameId, DemoRun> = {
+/**
+ * Parcial desde SPEC 05: las máquinas con motor no tienen partida de ejemplo
+ * porque su HUD lee la partida de verdad. Hoy la única sin entrada es
+ * `asteroids`; cada juego que estrene motor irá perdiendo la suya.
+ */
+export const DEMO_RUN: Partial<Record<GameId, DemoRun>> = {
   muro: { score: 12480, lives: 2, level: 4 },
   serpiente: { score: 6180, lives: 1, level: 3 },
   invasores: { score: 15340, lives: 2, level: 5 },
