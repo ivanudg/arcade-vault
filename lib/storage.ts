@@ -1,13 +1,14 @@
 /**
  * Persistencia del vault en `localStorage`.
  *
- * Es la única pieza que hay que sustituir cuando llegue el backend: nadie más
- * toca `localStorage` directamente. Misma clave que el prototipo, así que los
- * datos guardados por `references/templates/` siguen siendo válidos.
+ * Nadie más toca `localStorage` directamente. Aquí ya sólo quedan la sesión y
+ * el identificador de este navegador: desde SPEC 06 las puntuaciones viven en
+ * Supabase.
+ *
+ * La clave sigue siendo la del prototipo. Estrenar una `v2` para tirar el campo
+ * `scores` habría cerrado la sesión a todo el mundo por un campo que ya no lee
+ * nadie; lo que hubiera guardado se queda ahí hasta que el navegador lo tire.
  */
-
-import type { GameId } from "@/lib/games";
-import type { ScoreEntry } from "@/lib/scores";
 
 /** La versión va en la clave: un cambio de esquema estrena clave y olvida lo viejo. */
 const KEY = "arcadevault:v1";
@@ -19,7 +20,6 @@ export interface VaultUser {
 
 export interface VaultData {
   user?: VaultUser | null;
-  scores?: Partial<Record<GameId, ScoreEntry[]>>;
   /** UUID de este navegador. Lo crea `deviceId()` la primera vez. */
   deviceId?: string;
 }
