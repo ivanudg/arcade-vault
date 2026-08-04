@@ -11,19 +11,21 @@
  */
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
 import { GamePreview } from "@/components/game-preview";
 import { tint, type Game } from "@/lib/games";
-import { best, seedBest } from "@/lib/scores";
+import { formatScore } from "@/lib/scores";
 
-export function GameCard({ game }: { game: Game }) {
-  // Arranca con la semilla —lo mismo que pinta el servidor— y pasa a la mejor
-  // marca real, propias incluidas, en cuanto hay `localStorage`. Es la
-  // mitigación de hidratación que pide la spec, y sólo puede ocurrir tras
-  // montar: en el render aún no existe `localStorage`.
-  const [top, setTop] = useState(() => seedBest(game.id));
-  // eslint-disable-next-line react-hooks/set-state-in-effect -- lectura única de localStorage tras hidratar
-  useEffect(() => setTop(best(game.id)), [game.id]);
+export function GameCard({
+  game,
+  record,
+}: {
+  game: Game;
+  /** Mejor marca de esta máquina. `undefined` si no hay marcas o no se pudo leer. */
+  record?: number;
+}) {
+  // La cifra llega resuelta del servidor, así que se pinta ya en el HTML: ni
+  // efecto, ni estado, ni parpadeo de valor al hidratar.
+  const top = record === undefined ? "—" : formatScore(record);
 
   const playHref = game.playable ? `/jugar/${game.id}` : `/juego/${game.id}`;
 
@@ -51,9 +53,7 @@ export function GameCard({ game }: { game: Game }) {
         <h3 className="font-display text-[13px] leading-normal tracking-av text-av-text-bright">
           {game.title}
         </h3>
-        <p className="text-[13px] leading-[1.55] text-pretty text-av-text-muted">
-          {game.desc}
-        </p>
+        <p className="text-[13px] leading-[1.55] text-pretty text-av-text-muted">{game.desc}</p>
 
         <div className="flex items-center justify-between gap-2.5 border border-av-yellow/22 bg-av-void px-2.5 py-2.25">
           <span className="font-display text-[7px] tracking-av text-av-text-dim">

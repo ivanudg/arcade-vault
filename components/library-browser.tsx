@@ -11,12 +11,17 @@
 
 import { useMemo, useState } from "react";
 import { GameCard } from "@/components/game-card";
-import { GAMES } from "@/lib/games";
+import { GAMES, type GameId } from "@/lib/games";
 
 /** 'TODOS' más las categorías del catálogo, sin repetir y en orden de aparición. */
 const CATEGORIES = ["TODOS", ...new Set(GAMES.map((g) => g.cat))];
 
-export function LibraryBrowser() {
+export function LibraryBrowser({
+  records,
+}: {
+  /** Mejor marca de cada máquina, resuelta en el servidor. Sólo va de paso. */
+  records: Partial<Record<GameId, number>>;
+}) {
   const [query, setQuery] = useState("");
   const [cat, setCat] = useState("TODOS");
 
@@ -67,7 +72,7 @@ export function LibraryBrowser() {
 
       <div className="mt-6.5 grid grid-cols-[repeat(auto-fill,minmax(268px,1fr))] gap-5.5">
         {visible.map((g) => (
-          <GameCard key={g.id} game={g} />
+          <GameCard key={g.id} game={g} record={records[g.id]} />
         ))}
       </div>
 

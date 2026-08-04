@@ -18,13 +18,24 @@
 import type { Metadata } from "next";
 import { LibraryBrowser } from "@/components/library-browser";
 import { GAMES } from "@/lib/games";
+import { bests } from "@/lib/leaderboard";
 
 export const metadata: Metadata = {
   title: "BIBLIOTECA",
   description: `Las ${GAMES.length} máquinas del vault, listas para jugar.`,
 };
 
-export default function LibraryPage() {
+/**
+ * La rejilla lee el marcador, así que se renderiza en cada visita. Ver la nota
+ * de `app/(vault)/juego/[id]/page.tsx`.
+ */
+export const dynamic = "force-dynamic";
+
+export default async function LibraryPage() {
+  // Una sola consulta para las nueve tarjetas: la cifra viaja ya en el HTML del
+  // servidor, así que no hay parpadeo de valor al hidratar.
+  const records = await bests();
+
   return (
     <main className="flex-1 px-[clamp(14px,3vw,40px)] pt-[clamp(22px,4vw,44px)] pb-22.5">
       <section className="mx-auto w-full max-w-310 animate-av-fade">
@@ -37,7 +48,7 @@ export default function LibraryPage() {
           </p>
         </div>
 
-        <LibraryBrowser />
+        <LibraryBrowser records={records} />
       </section>
     </main>
   );
