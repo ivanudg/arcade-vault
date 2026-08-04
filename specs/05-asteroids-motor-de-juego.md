@@ -1,6 +1,6 @@
 # SPEC 05 — Asteroids: primer motor de juego real
 
-> **Estado:** Aprobado
+> **Estado:** Implementado
 > **Depende de:** SPEC 01
 > **Fecha:** 2026-08-04
 > **Objetivo:** Portar el Asteroids de `references/started-games/02-asteroids/` a un motor en TypeScript y añadirlo como novena máquina jugable de verdad, definiendo de paso el contrato que usarán los motores siguientes, sin tocar ninguna de las ocho máquinas simuladas.
@@ -327,85 +327,85 @@ no los consume nadie todavía: se verifican con `npm run build` y `npx tsc --noE
 
 **Contrato y motor**
 
-- [ ] Existen `lib/games/engine.ts`, `lib/games/input.ts`, `lib/games/engines.ts`,
+- [x] Existen `lib/games/engine.ts`, `lib/games/input.ts`, `lib/games/engines.ts`,
       `components/game-canvas.tsx` y los cuatro archivos de `lib/games/asteroids/`.
-- [ ] `lib/games/asteroids/` no importa nada de `react`, `next` ni de `@/components`.
-- [ ] `grep -n "^let \|^var \|^const .*=" lib/games/asteroids/index.ts` no muestra
+- [x] `lib/games/asteroids/` no importa nada de `react`, `next` ni de `@/components`.
+- [x] `grep -n "^let \|^var \|^const .*=" lib/games/asteroids/index.ts` no muestra
       estado de partida en el ámbito de módulo: todo vive dentro de `mount()`.
-- [ ] Montar el juego dos veces y destruirlo dos veces no deja ningún
+- [x] Montar el juego dos veces y destruirlo dos veces no deja ningún
       `requestAnimationFrame` vivo ni ningún listener enganchado en `window`.
-- [ ] `ENGINES` tiene exactamente una entrada, `asteroids`.
+- [x] `ENGINES` tiene exactamente una entrada, `asteroids`.
 
 **La máquina nueva**
 
-- [ ] `/biblioteca` muestra nueve tarjetas y la novena es `ASTEROIDS`, la última.
-- [ ] `/juego/asteroids` y `/jugar/asteroids` responden 200; `/juego/rocas` y
+- [x] `/biblioteca` muestra nueve tarjetas y la novena es `ASTEROIDS`, la última.
+- [x] `/juego/asteroids` y `/jugar/asteroids` responden 200; `/juego/rocas` y
       `/jugar/rocas` siguen respondiendo 200.
-- [ ] La tabla de `/juego/asteroids` arranca con diez semillas, la mayor por
+- [x] La tabla de `/juego/asteroids` arranca con diez semillas, la mayor por
       debajo de 10.000.
-- [ ] La ficha de `/juego/asteroids` nombra los cinco potenciadores.
-- [ ] La tarjeta y la ficha muestran una miniatura propia, distinta de la que
+- [x] La ficha de `/juego/asteroids` nombra los cinco potenciadores.
+- [x] La tarjeta y la ficha muestran una miniatura propia, distinta de la que
       pinta el `default` de `preview-art.ts`.
 
 **Jugabilidad**
 
-- [ ] `←` y `→` giran la nave, `↑` la empuja con inercia y `ESPACIO` dispara.
-- [ ] La nave sale por un borde y entra por el opuesto; los asteroides también.
-- [ ] Un asteroide grande se parte en dos medianos y cada mediano en dos pequeños.
-- [ ] Destruir un asteroide suma 20, 50 o 100 puntos según sea grande, mediano o
+- [x] `←` y `→` giran la nave, `↑` la empuja con inercia y `ESPACIO` dispara.
+- [x] La nave sale por un borde y entra por el opuesto; los asteroides también.
+- [x] Un asteroide grande se parte en dos medianos y cada mediano en dos pequeños.
+- [x] Destruir un asteroide suma 20, 50 o 100 puntos según sea grande, mediano o
       pequeño.
-- [ ] Limpiar la pantalla sube de nivel y repuebla el campo con más asteroides.
-- [ ] Chocar sin escudo resta una vida, muestra la explosión y reaparece la nave
+- [x] Limpiar la pantalla sube de nivel y repuebla el campo con más asteroides.
+- [x] Chocar sin escudo resta una vida, muestra la explosión y reaparece la nave
       parpadeando e invulnerable.
-- [ ] Los cinco potenciadores aparecen y funcionan: triple abre el abanico de tres
+- [x] Los cinco potenciadores aparecen y funcionan: triple abre el abanico de tres
       balas, escudo absorbe un impacto y se consume, cámara lenta frena solo a los
       asteroides, hiperpropulsión acelera la nave y la bomba nova limpia la
       pantalla puntuando cada asteroide.
-- [ ] Con un potenciador activo se ve su barra en el canvas, y solo esa.
-- [ ] El canvas **no** pinta `SCORE`, `NIVEL` ni los iconos de vidas.
+- [x] Con un potenciador activo se ve su barra en el canvas, y solo esa.
+- [x] El canvas **no** pinta `SCORE`, `NIVEL` ni los iconos de vidas.
 
 **HUD, pausa y fin de partida**
 
-- [ ] PUNTUACION, VIDAS y NIVEL del HUD coinciden en todo momento con la partida.
-- [ ] El HUD no se actualiza en frames donde ninguna de las tres cifras cambia.
-- [ ] PAUSA congela el canvas, muestra `EN PAUSA` y deja el teclado sin efecto;
+- [x] PUNTUACION, VIDAS y NIVEL del HUD coinciden en todo momento con la partida.
+- [x] El HUD no se actualiza en frames donde ninguna de las tres cifras cambia.
+- [x] PAUSA congela el canvas, muestra `EN PAUSA` y deja el teclado sin efecto;
       SEGUIR reanuda en el mismo punto.
-- [ ] Cambiar de pestaña pausa la partida sola, y al volver sigue pausada.
-- [ ] Perder la tercera vida abre `FIN DEL JUEGO` con la puntuación real de la
+- [x] Cambiar de pestaña pausa la partida sola, y al volver sigue pausada.
+- [x] Perder la tercera vida abre `FIN DEL JUEGO` con la puntuación real de la
       partida, y el bucle se detiene.
-- [ ] `ESPACIO` en el fin de partida no reinicia nada: solo lo hacen los botones.
-- [ ] GUARDAR PUNTUACION mete la marca en `localStorage` y aparece en
+- [x] `ESPACIO` en el fin de partida no reinicia nada: solo lo hacen los botones.
+- [x] GUARDAR PUNTUACION mete la marca en `localStorage` y aparece en
       `/juego/asteroids` y en `/salon`; recargar la página la conserva.
-- [ ] JUGAR DE NUEVO reinicia a 0 puntos, 3 vidas y nivel 1 sin recargar la página.
+- [x] JUGAR DE NUEVO reinicia a 0 puntos, 3 vidas y nivel 1 sin recargar la página.
 
 **Mando**
 
-- [ ] Con el ratón o el dedo, `←` `↑` `→` y `FUEGO` controlan la nave sin tocar el
+- [x] Con el ratón o el dedo, `←` `↑` `→` y `FUEGO` controlan la nave sin tocar el
       teclado, y mantener pulsado mantiene la acción.
-- [ ] Soltar el botón, sacar el puntero de él o cancelar el gesto suelta la tecla:
+- [x] Soltar el botón, sacar el puntero de él o cancelar el gesto suelta la tecla:
       la nave nunca se queda girando sola.
-- [ ] En `/jugar/asteroids` el botón `↓` se ve deshabilitado.
-- [ ] En `/jugar/rocas` los cinco botones siguen siendo decorativos.
+- [x] En `/jugar/asteroids` el botón `↓` se ve deshabilitado.
+- [x] En `/jugar/rocas` los cinco botones siguen siendo decorativos.
 
 **Nada más se ha movido**
 
-- [ ] `npm run build` y `npx tsc --noEmit` terminan sin errores.
-- [ ] `npm run lint` no añade avisos nuevos.
-- [ ] `lib/storage.ts`, `lib/session.tsx` y `lib/supabase/` no tienen ni una línea
+- [x] `npm run build` y `npx tsc --noEmit` terminan sin errores.
+- [x] `npm run lint` no añade avisos nuevos.
+- [x] `lib/storage.ts`, `lib/session.tsx` y `lib/supabase/` no tienen ni una línea
       modificada.
-- [ ] Los ocho ids, títulos, textos y semillas que ya existían están intactos:
+- [x] Los ocho ids, títulos, textos y semillas que ya existían están intactos:
       `git diff` sobre `lib/games.ts` y `lib/scores.ts` solo añade líneas.
-- [ ] `/jugar/rocas` conserva su escena congelada, su HUD de `DEMO_RUN` y su botón
+- [x] `/jugar/rocas` conserva su escena congelada, su HUD de `DEMO_RUN` y su botón
       `SIMULAR FIN DE PARTIDA`.
-- [ ] `references/started-games/02-asteroids/` no tiene ningún cambio.
-- [ ] Las flechas y `ESPACIO` solo dejan de hacer scroll dentro de
+- [x] `references/started-games/02-asteroids/` no tiene ningún cambio.
+- [x] Las flechas y `ESPACIO` solo dejan de hacer scroll dentro de
       `/jugar/asteroids` con la partida activa; en el resto del sitio, y en esa
       misma pantalla en pausa o con la partida terminada, la página se desplaza
       con normalidad.
 
 **Documentación**
 
-- [ ] `CLAUDE.md` tiene un apartado que nombra `lib/games/engine.ts`,
+- [x] `CLAUDE.md` tiene un apartado que nombra `lib/games/engine.ts`,
       `lib/games/engines.ts` y `components/game-canvas.tsx`, y explica cómo se
       añade un motor nuevo.
 
