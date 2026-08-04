@@ -20,6 +20,8 @@ export interface VaultUser {
 export interface VaultData {
   user?: VaultUser | null;
   scores?: Partial<Record<GameId, ScoreEntry[]>>;
+  /** UUID de este navegador. Lo crea `deviceId()` la primera vez. */
+  deviceId?: string;
 }
 
 /**
@@ -30,7 +32,7 @@ export interface VaultData {
 export function read(): VaultData {
   try {
     const raw = window.localStorage.getItem(KEY);
-    return raw ? (JSON.parse(raw) as VaultData) ?? {} : {};
+    return raw ? ((JSON.parse(raw) as VaultData) ?? {}) : {};
   } catch {
     return {};
   }
@@ -43,5 +45,29 @@ export function persist(patch: Partial<VaultData>): void {
     window.localStorage.setItem(KEY, JSON.stringify(next));
   } catch {
     // localStorage bloqueado: se pierde la escritura, no la sesión en curso.
+  }
+}
+
+/**
+ * Identificador de este navegador: lo lee o lo crea la primera vez.
+ *
+ * Es lo que viaja con cada marca guardada para poder resaltar las propias en el
+ * marcador compartido. No identifica a una persona: es un UUID aleatorio sin
+ * relación con nada más.
+ *
+ * Devuelve `undefined` si no se puede generar —`crypto.randomUUID()` sólo existe
+ * en contexto seguro, así que probando desde el móvil por `http://192.168.x.x`
+ * no está— o si `localStorage` está bloqueado. La marca se guarda igual, sin
+ * dueño: se pierde un color, no una puntuación.
+ */
+export function deviceId(): string | undefined {
+  const stored = read().deviceId;
+  if (stored) return stored;
+  try {
+    const id = window.crypto.randomUUID();
+    persist({ deviceId: id });
+    return id;
+  } catch {
+    return undefined;
   }
 }
