@@ -17,10 +17,14 @@ import {
   DROP_CHANCE,
   DROP_GUARANTEE,
   H,
+  HYPER_COLOR,
   HYPER_DURATION,
   NOVA_CHANCE,
   POINTS,
+  PU_COLOR,
+  SHIELD_COLOR,
   SHIELD_DURATION,
+  SLOW_COLOR,
   SLOW_DURATION,
   SLOW_FACTOR,
   TRIPLE_DURATION,
@@ -62,8 +66,11 @@ export const asteroidsGame: GameMount = {
   world: { width: W, height: H },
 
   mount(canvas: HTMLCanvasElement, cb: GameCallbacks): GameHandle {
-    const ctx = canvas.getContext("2d");
-    if (!ctx) throw new Error("Asteroids: el canvas no da contexto 2D.");
+    const context2d = canvas.getContext("2d");
+    if (!context2d) throw new Error("Asteroids: el canvas no da contexto 2D.");
+    // Con tipo declarado: el estrechamiento del `throw` no llega solo hasta las
+    // funciones de dibujo, que están declaradas más abajo.
+    const ctx: CanvasRenderingContext2D = context2d;
 
     const input = createInput();
 
@@ -291,7 +298,62 @@ export const asteroidsGame: GameMount = {
       if (r.asteroids.length === 0) nextLevel(r);
     }
 
-    function draw() {}
+    /** Barra de un power-up activo, en la esquina inferior izquierda. */
+    function drawPowerBar(label: string, frac: number, color: string, y: number) {
+      ctx.fillStyle = color;
+      ctx.strokeStyle = color;
+      ctx.font = "15px monospace";
+      ctx.textAlign = "left";
+      ctx.lineWidth = 1;
+      ctx.fillText(label, 14, y);
+      const bx = 84;
+      const bw = 120;
+      const bh = 10;
+      const by = y - 10;
+      ctx.strokeRect(bx, by, bw, bh);
+      ctx.fillRect(bx, by, bw * frac, bh);
+    }
+
+    function drawShield(r: Run) {
+      if (r.timers.shield <= 0 || r.ship.dead) return;
+      // Parpadeo en el último ~1s antes de expirar
+      if (r.timers.shield < 1 && Math.floor(r.timers.shield * 8) % 2 === 0) return;
+      ctx.strokeStyle = SHIELD_COLOR;
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.arc(r.ship.x, r.ship.y, r.ship.radius + 7, 0, Math.PI * 2);
+      ctx.stroke();
+    }
+
+    /**
+     * El `SCORE`, el `NIVEL` y los iconos de vidas del original no se pintan:
+     * están en el HUD de React, a veinte píxeles del canvas. Del `drawHUD`
+     * original solo sobreviven las barras de power-up, que no tienen sitio
+     * fuera. El `GAME OVER` tampoco: lo pinta el superpuesto que ya existe.
+     */
+    function draw() {
+      const r = run;
+
+      ctx.fillStyle = "#000";
+      ctx.fillRect(0, 0, W, H);
+
+      r.particles.forEach((p) => p.draw(ctx));
+      r.asteroids.forEach((a) => a.draw(ctx));
+      r.bullets.forEach((b) => b.draw(ctx));
+      r.powerups.forEach((p) => p.draw(ctx));
+      drawShield(r);
+      r.ship.draw(ctx);
+
+      // Indicadores de power-ups activos (fila inferior, uno por línea)
+      if (r.timers.hyper > 0)
+        drawPowerBar("HYPER", r.timers.hyper / HYPER_DURATION, HYPER_COLOR, H - 68);
+      if (r.timers.slow > 0)
+        drawPowerBar("SLOW", r.timers.slow / SLOW_DURATION, SLOW_COLOR, H - 50);
+      if (r.timers.shield > 0)
+        drawPowerBar("SHIELD", r.timers.shield / SHIELD_DURATION, SHIELD_COLOR, H - 32);
+      if (r.timers.triple > 0)
+        drawPowerBar("TRIPLE", r.timers.triple / TRIPLE_DURATION, PU_COLOR, H - 14);
+    }
 
     // ── Bucle ────────────────────────────────────────────────────────────────
 
