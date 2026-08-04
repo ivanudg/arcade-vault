@@ -39,10 +39,108 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      games: {
+        Row: {
+          cat: string
+          id: string
+          playable: boolean
+          sort_order: number
+          title: string
+        }
+        Insert: {
+          cat: string
+          id: string
+          playable?: boolean
+          sort_order: number
+          title: string
+        }
+        Update: {
+          cat?: string
+          id?: string
+          playable?: boolean
+          sort_order?: number
+          title?: string
+        }
+        Relationships: []
+      }
+      scores: {
+        Row: {
+          created_at: string
+          device_id: string | null
+          game_id: string
+          id: string
+          player_name: string
+          score: number
+          seeded: boolean
+        }
+        Insert: {
+          created_at?: string
+          device_id?: string | null
+          game_id: string
+          id?: string
+          player_name: string
+          score: number
+          seeded?: boolean
+        }
+        Update: {
+          created_at?: string
+          device_id?: string | null
+          game_id?: string
+          id?: string
+          player_name?: string
+          score?: number
+          seeded?: boolean
+        }
+        Relationships: [
+          {
+            foreignKeyName: "scores_game_id_fkey"
+            columns: ["game_id"]
+            isOneToOne: false
+            referencedRelation: "games"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
-      [_ in never]: never
+      player_bests: {
+        Row: {
+          device_id: string | null
+          game_id: string | null
+          player_name: string | null
+          score: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "scores_game_id_fkey"
+            columns: ["game_id"]
+            isOneToOne: false
+            referencedRelation: "games"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      top_scores: {
+        Row: {
+          created_at: string | null
+          device_id: string | null
+          game_id: string | null
+          id: string | null
+          player_name: string | null
+          rank: number | null
+          score: number | null
+          seeded: boolean | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "scores_game_id_fkey"
+            columns: ["game_id"]
+            isOneToOne: false
+            referencedRelation: "games"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Functions: {
       [_ in never]: never
