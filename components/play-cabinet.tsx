@@ -130,7 +130,11 @@ export function PlayCabinet({ game }: { game: Game }) {
     setSaved(false);
     setSavedText("");
     setPaused(false);
-    startLoading(RELOAD_MS);
+    // Con motor la partida empieza de cero aquí mismo, sin recargar nada: la
+    // pausa de CARGANDO CARTUCHO sólo tiene sentido cuando no hay nada que
+    // reiniciar de verdad.
+    if (engine) handle.current?.restart();
+    else startLoading(RELOAD_MS);
   }
 
   return (
@@ -186,6 +190,9 @@ export function PlayCabinet({ game }: { game: Game }) {
                 game={engine}
                 label={`Partida de ${game.title}`}
                 onState={setLive}
+                // El motor avisa con la puntuación final; el HUD ya viene
+                // cuadrado del `onState` de ese mismo frame.
+                onGameOver={() => setOver(true)}
                 onReady={(h) => {
                   handle.current = h;
                 }}
