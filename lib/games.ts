@@ -15,15 +15,10 @@ export type GameId =
   | "duelo"
   | "corredor"
   | "caida"
-  | "laberinto";
+  | "laberinto"
+  | "asteroids";
 
-export type GameCategory =
-  | "ARCADE"
-  | "CLASICOS"
-  | "DISPAROS"
-  | "REFLEJOS"
-  | "PUZZLE"
-  | "LABERINTO";
+export type GameCategory = "ARCADE" | "CLASICOS" | "DISPAROS" | "REFLEJOS" | "PUZZLE" | "LABERINTO";
 
 /** Los tres neones de `globals.css`: cada máquina se pinta con uno de ellos. */
 export type GameGlow = "#00f5ff" | "#ff006e" | "#f5ff00";
@@ -125,6 +120,18 @@ export const GAMES: readonly Game[] = [
     desc: "Recoge cada punto y esquiva a los guardianes.",
     long: "Pasillos cerrados, cuatro perseguidores y un cronómetro implacable. Máquina en mantenimiento: los guardianes aún no tienen rutas asignadas.",
     controls: "Pendiente de calibración",
+  },
+  // La primera máquina con motor de verdad (SPEC 05). Entra al final para no
+  // reordenar ninguna tarjeta de la portada ni de la biblioteca.
+  {
+    id: "asteroids",
+    title: "ASTEROIDS",
+    cat: "DISPAROS",
+    glow: "#f5ff00",
+    playable: true,
+    desc: "Pulveriza el campo de asteroides y sobrevive.",
+    long: "El clásico de vectores, entero y jugable de verdad. Inercia real y espacio toroidal: sales por un borde y entras por el opuesto. Los asteroides grandes se parten en medianos y los medianos en pequeños, y cuanto más pequeños, más puntos. Cada nivel suelta dos de los cuatro potenciadores —disparo triple, escudo, cámara lenta e hiperpropulsión— y, con suerte, una bomba nova que limpia la pantalla.",
+    controls: "Flechas ← → giran · ↑ empuja · ESPACIO dispara",
   },
 ];
 

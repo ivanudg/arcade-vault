@@ -13,12 +13,7 @@
 
 import type { GameId } from "@/lib/games";
 
-export function drawPreview(
-  ctx: CanvasRenderingContext2D,
-  id: GameId,
-  W: number,
-  H: number,
-): void {
+export function drawPreview(ctx: CanvasRenderingContext2D, id: GameId, W: number, H: number): void {
   /** Rectángulo de neón: el pincel de casi todas las escenas. */
   const px = (c: string, x: number, y: number, w: number, h: number) => {
     ctx.save();
@@ -42,6 +37,40 @@ export function drawPreview(
     ctx.restore();
   };
 
+  /**
+   * Roca facetada: el trazo irregular que dibuja el motor de `asteroids`. Los
+   * radios vienen dados, no salen de `Math.random()`: la miniatura tiene que
+   * ser la misma en cada render.
+   */
+  const rock = (
+    c: string,
+    x: number,
+    y: number,
+    r: number,
+    radii: readonly number[],
+    rot: number,
+  ) => {
+    ctx.save();
+    ctx.translate(x, y);
+    ctx.rotate(rot);
+    ctx.shadowBlur = W / 24;
+    ctx.shadowColor = c;
+    ctx.strokeStyle = c;
+    ctx.lineWidth = Math.max(1.5, W / 130);
+    ctx.lineJoin = "round";
+    ctx.beginPath();
+    radii.forEach((k, i) => {
+      const a = (i / radii.length) * Math.PI * 2;
+      const vx = Math.cos(a) * r * k;
+      const vy = Math.sin(a) * r * k;
+      if (i === 0) ctx.moveTo(vx, vy);
+      else ctx.lineTo(vx, vy);
+    });
+    ctx.closePath();
+    ctx.stroke();
+    ctx.restore();
+  };
+
   const bg = ctx.createLinearGradient(0, 0, 0, H);
   bg.addColorStop(0, "#0a0c14");
   bg.addColorStop(1, "#05060a");
@@ -61,13 +90,7 @@ export function drawPreview(
         for (let c = 0; c < cols; c++) {
           // Los dos huecos de la fila de abajo: el muro ya está empezado.
           if (r === 2 && (c === 2 || c === 5)) continue;
-          px(
-            cs[r],
-            c * bw + u,
-            H * 0.12 + r * bh + u * 0.6,
-            bw - u * 2,
-            bh - u * 1.4,
-          );
+          px(cs[r], c * bw + u, H * 0.12 + r * bh + u * 0.6, bw - u * 2, bh - u * 1.4);
         }
       }
       px("#00f5ff", W * 0.36, H * 0.86, W * 0.28, H * 0.05); // pala
@@ -99,13 +122,7 @@ export function drawPreview(
         [5, 5],
       ];
       body.forEach((p, k) => {
-        px(
-          k === 0 ? "#f5ff00" : "#00f5ff",
-          ox + p[0] * C + 1.5,
-          oy + p[1] * C + 1.5,
-          C - 3,
-          C - 3,
-        );
+        px(k === 0 ? "#f5ff00" : "#00f5ff", ox + p[0] * C + 1.5, oy + p[1] * C + 1.5, C - 3, C - 3);
       });
       px("#ff006e", ox + 7 * C + C * 0.25, oy + 2 * C + C * 0.25, C * 0.5, C * 0.5); // fruta
       break;
@@ -146,6 +163,49 @@ export function drawPreview(
       ctx.lineTo(-u * 5, u * 4.5);
       ctx.lineTo(-u * 2.4, 0);
       ctx.lineTo(-u * 5, -u * 4.5);
+      ctx.closePath();
+      ctx.stroke();
+      ctx.restore();
+      break;
+    }
+
+    // La única máquina con motor: la escena es la que sale de su canvas, no la
+    // de neón del prototipo. Rocas facetadas en el amarillo de la máquina —
+    // `rocas` ya se quedó los anillos cian— y nave y balas en blanco de arcade.
+    // Los tres tamaños cuentan la fragmentación: grande, mediana y pequeña.
+    case "asteroids": {
+      // Radios contra el lado corto y todo dentro de la banda central: la ficha
+      // dibuja 560×360 y luego recorta con `object-cover`, así que lo que quede
+      // fuera de ~[0.2H, 0.8H] no se ve ahí.
+      const ar = Math.min(W, H);
+      rock(
+        "#f5ff00",
+        W * 0.26,
+        H * 0.38,
+        ar * 0.15,
+        [1, 0.72, 0.94, 0.66, 0.88, 0.75, 1, 0.8],
+        -0.4,
+      );
+      rock("#f5ff00", W * 0.76, H * 0.33, ar * 0.1, [0.8, 1, 0.7, 0.92, 0.68, 0.96, 0.78], 0.7);
+      rock("#f5ff00", W * 0.66, H * 0.68, ar * 0.07, [1, 0.66, 0.9, 0.72, 0.98, 0.7], -1.1);
+
+      px("#ffffff", W * 0.5, H * 0.53, u * 1.5, u * 1.5); // balas en vuelo
+      px("#ffffff", W * 0.58, H * 0.46, u * 1.3, u * 1.3);
+
+      // La nave, con la muesca trasera del motor. Único trazo rotado.
+      ctx.save();
+      ctx.translate(W * 0.36, H * 0.63);
+      ctx.rotate(-0.72);
+      ctx.shadowBlur = W / 22;
+      ctx.shadowColor = "#ffffff";
+      ctx.strokeStyle = "#ffffff";
+      ctx.lineWidth = Math.max(1.6, W / 120);
+      ctx.lineJoin = "round";
+      ctx.beginPath();
+      ctx.moveTo(u * 7.5, 0); // nariz
+      ctx.lineTo(-u * 4.5, -u * 3.4); // ala
+      ctx.lineTo(-u * 2.6, 0); // muesca
+      ctx.lineTo(-u * 4.5, u * 3.4); // ala
       ctx.closePath();
       ctx.stroke();
       ctx.restore();
