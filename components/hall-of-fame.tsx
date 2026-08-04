@@ -6,12 +6,18 @@
  *
  * La pestaña inicial llega por prop desde la ruta (`?juego=`); a partir de ahí
  * es estado de cliente y la URL no cambia, igual que en el prototipo.
+ *
+ * Las nueve tablas llegan resueltas del servidor, así que cambiar de pestaña no
+ * consulta nada. Lo único que este componente resuelve por su cuenta es de quién
+ * es cada marca: el servidor no puede leer `localStorage`.
  */
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { ScoreboardUnavailable } from "@/components/scoreboard-unavailable";
 import { GAMES, getGame, tint, type GameId } from "@/lib/games";
-import { board, formatScore, seedBoard } from "@/lib/scores";
+import { formatScore, type BoardRow } from "@/lib/scores";
+import { deviceId } from "@/lib/storage";
 
 /** Oro, plata y bronce. La plata no está en la paleta: es exclusiva del podio. */
 const MEDALS = ["#f5ff00", "#d8dee9", "#ff9d4d"];
@@ -19,13 +25,27 @@ const NO_MEDAL = "#4a5160";
 
 const COLUMNS = "grid-cols-[62px_minmax(0,1fr)_108px_96px]";
 
-export function HallOfFame({ initialTab }: { initialTab: GameId }) {
+export function HallOfFame({
+  initialTab,
+  tables,
+}: {
+  initialTab: GameId;
+  /** Las nueve tablas ya resueltas. Vacío si la base de datos no contestó. */
+  tables: Partial<Record<GameId, BoardRow[]>>;
+}) {
   const [tab, setTab] = useState<GameId>(initialTab);
-  const [rows, setRows] = useState(() => seedBoard(initialTab));
+  const [device, setDevice] = useState<string>();
 
-  // Semilla primero —lo que pinta el servidor— y tabla completa tras montar.
-  // eslint-disable-next-line react-hooks/set-state-in-effect -- lectura de localStorage tras hidratar y al cambiar de pestaña
-  useEffect(() => setRows(board(tab)), [tab]);
+  // El único efecto que queda: de quién es cada marca. Repinta un color, no
+  // vuelve a pedir los datos.
+  // eslint-disable-next-line react-hooks/set-state-in-effect -- lectura única de localStorage tras hidratar
+  useEffect(() => setDevice(deviceId()), []);
+
+  const unavailable = Object.keys(tables).length === 0;
+  const rows = (tables[tab] ?? []).map((r) => ({
+    ...r,
+    mine: device !== undefined && r.deviceId === device,
+  }));
 
   const game = getGame(tab);
   const playHref = game?.playable ? `/jugar/${tab}` : `/juego/${tab}`;
@@ -64,14 +84,15 @@ export function HallOfFame({ initialTab }: { initialTab: GameId }) {
           <span className="text-right">FECHA</span>
         </div>
 
+        {unavailable && <ScoreboardUnavailable />}
+
         {rows.map((r, i) => (
           <div
             key={`${r.name}-${r.score}-${i}`}
             style={
               {
                 "--av-accent": i < 3 ? MEDALS[i] : NO_MEDAL,
-                "--av-accent-halo":
-                  i < 3 ? tint(MEDALS[i], 0.6) : "rgba(0,0,0,0)",
+                "--av-accent-halo": i < 3 ? tint(MEDALS[i], 0.6) : "rgba(0,0,0,0)",
                 "--av-row": r.mine
                   ? "rgba(0,245,255,0.08)"
                   : i < 3
@@ -86,9 +107,7 @@ export function HallOfFame({ initialTab }: { initialTab: GameId }) {
               {String(i + 1).padStart(2, "0")}
             </span>
             <span className="flex min-w-0 items-center gap-2.5">
-              <span className="truncate text-[14px] tracking-av text-[#dbe1ee]">
-                {r.name}
-              </span>
+              <span className="truncate text-[14px] tracking-av text-[#dbe1ee]">{r.name}</span>
               {r.mine && (
                 <span className="flex-none bg-av-cyan px-1.75 py-1 font-display text-[7px] text-av-bg">
                   TU MEJOR MARCA
@@ -98,17 +117,15 @@ export function HallOfFame({ initialTab }: { initialTab: GameId }) {
             <span className="text-right font-display text-[10px] text-av-yellow">
               {formatScore(r.score)}
             </span>
-            <span className="text-right text-[12px] text-av-text-dim">
-              {r.date}
-            </span>
+            <span className="text-right text-[12px] text-av-text-dim">{r.date}</span>
           </div>
         ))}
       </div>
 
       <div className="mt-5.5 flex flex-wrap items-center justify-between gap-3.5">
         <p className="max-w-[62ch] text-[12px] tracking-av text-av-line-strong">
-          Puntuaciones locales (localStorage). Punto de conexión previsto: GET
-          /api/scores/:juego — REST o Supabase para usuarios autenticados.
+          Puntuaciones compartidas en Supabase. Sin sesión todavía: cualquiera puede firmar con el
+          nombre que quiera.
         </p>
         <Link
           href={playHref}
