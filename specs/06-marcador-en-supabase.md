@@ -1,6 +1,6 @@
 # SPEC 06 — Marcador en Supabase: tablas `games` y `scores`
 
-> **Estado:** Aprobado
+> **Estado:** Implementado
 > **Depende de:** SPEC 01, SPEC 04
 > **Fecha:** 2026-08-04
 > **Objetivo:** Crear en Supabase las tablas `games` y `scores` con RLS y semillas, y pasar todas las lecturas y escrituras de puntuación de `localStorage` a la base de datos, sin tocar el catálogo de `lib/games.ts`.
@@ -356,53 +356,53 @@ consumidores tendrían que cambiar en el mismo commit.
 
 **Esquema y migraciones**
 
-- [ ] `supabase/migrations/` contiene dos archivos nuevos, esquema y siembra, y
+- [x] `supabase/migrations/` contiene dos archivos nuevos, esquema y siembra, y
       `npx supabase migration list` los marca aplicados.
-- [ ] `public.games` tiene 9 filas y sus `id` son exactamente los nueve de `GAMES`.
-- [ ] `public.scores` arranca con 90 filas, todas con `seeded = true` y
+- [x] `public.games` tiene 9 filas y sus `id` son exactamente los nueve de `GAMES`.
+- [x] `public.scores` arranca con 90 filas, todas con `seeded = true` y
       `device_id null`.
-- [ ] `select * from public.top_scores` devuelve 90 filas: diez por máquina.
-- [ ] `insert into public.scores (game_id, ...) values ('inexistente', ...)` falla
+- [x] `select * from public.top_scores` devuelve 90 filas: diez por máquina.
+- [x] `insert into public.scores (game_id, ...) values ('inexistente', ...)` falla
       por la clave ajena.
-- [ ] `insert` con `score = -1`, con `score = 20000000` o con `player_name = ''`
+- [x] `insert` con `score = -1`, con `score = 20000000` o con `player_name = ''`
       falla por `CHECK`.
-- [ ] `lib/supabase/database.types.ts` nombra `games`, `scores`, `top_scores` y
+- [x] `lib/supabase/database.types.ts` nombra `games`, `scores`, `top_scores` y
       `player_bests`.
 
 **RLS**
 
-- [ ] Con la clave publicable, un `select` sobre `games` y sobre `scores` devuelve
+- [x] Con la clave publicable, un `select` sobre `games` y sobre `scores` devuelve
       filas.
-- [ ] Con la clave publicable, un `insert` en `scores` con `seeded` sin
+- [x] Con la clave publicable, un `insert` en `scores` con `seeded` sin
       especificar tiene éxito.
-- [ ] Con la clave publicable, un `insert` con `seeded = true` es rechazado por la
+- [x] Con la clave publicable, un `insert` con `seeded = true` es rechazado por la
       política.
-- [ ] Con la clave publicable, `update` y `delete` sobre `scores` no afectan a
+- [x] Con la clave publicable, `update` y `delete` sobre `scores` no afectan a
       ninguna fila.
-- [ ] Con la clave publicable, un `insert` en `games` es rechazado.
+- [x] Con la clave publicable, un `insert` en `games` es rechazado.
 
 **Lectura**
 
-- [ ] `/salon` muestra diez marcas por máquina, y coinciden con lo que devuelve
+- [x] `/salon` muestra diez marcas por máquina, y coinciden con lo que devuelve
       `select * from public.top_scores` para esa máquina.
-- [ ] Cambiar de pestaña en `/salon` no dispara ninguna petición de red.
-- [ ] La tabla de `/juego/asteroids` es idéntica a la pestaña `ASTEROIDS` del
+- [x] Cambiar de pestaña en `/salon` no dispara ninguna petición de red.
+- [x] La tabla de `/juego/asteroids` es idéntica a la pestaña `ASTEROIDS` del
       salón.
-- [ ] La mejor marca de cada tarjeta de `/biblioteca` es la primera fila de la
+- [x] La mejor marca de cada tarjeta de `/biblioteca` es la primera fila de la
       tabla de esa máquina.
-- [ ] Las tarjetas de `/biblioteca` pintan su cifra ya en el HTML del servidor: no
+- [x] Las tarjetas de `/biblioteca` pintan su cifra ya en el HTML del servidor: no
       hay parpadeo de valor al hidratar.
-- [ ] La portada pinta ranking y actividad reciente desde la base de datos.
-- [ ] `grep -rn "leaderboard" components` no devuelve nada: ningún componente
+- [x] La portada pinta ranking y actividad reciente desde la base de datos.
+- [x] `grep -rn "leaderboard" components` no devuelve nada: ningún componente
       consulta por su cuenta.
 
 **Escritura**
 
 - [ ] Terminar una partida de `asteroids` y pulsar `GUARDAR PUNTUACION` inserta
       una fila con `seeded = false` y el `device_id` de este navegador.
-- [ ] Esa marca aparece en `/salon` y en `/juego/asteroids` sin recargar la página
+- [x] Esa marca aparece en `/salon` y en `/juego/asteroids` sin recargar la página
       a mano.
-- [ ] `SIMULAR FIN DE PARTIDA` en `/jugar/rocas` guarda por la misma vía.
+- [x] `SIMULAR FIN DE PARTIDA` en `/jugar/rocas` guarda por la misma vía.
 - [ ] Un nombre en minúsculas se guarda en mayúsculas y recortado a 12 caracteres.
 - [ ] `saveScore` con un `gameId` que no está en `GAMES` devuelve `ok: false` y no
       inserta.
@@ -413,49 +413,85 @@ consumidores tendrían que cambiar en el mismo commit.
 
 **Marcas propias**
 
-- [ ] Una marca guardada por este navegador se pinta como propia en `/salon` y en
+- [x] Una marca guardada por este navegador se pinta como propia en `/salon` y en
       la ficha de su máquina.
-- [ ] Recargar la página la sigue pintando como propia.
+- [x] Recargar la página la sigue pintando como propia.
 - [ ] Abrir el sitio en una ventana privada muestra esa misma marca sin marcar
       como propia.
-- [ ] `localStorage` guarda un `deviceId` bajo `arcadevault:v1` y no cambia entre
+- [x] `localStorage` guarda un `deviceId` bajo `arcadevault:v1` y no cambia entre
       recargas.
-- [ ] El usuario guardado antes de esta spec sigue en sesión: `arcadevault:v1`
+- [x] El usuario guardado antes de esta spec sigue en sesión: `arcadevault:v1`
       conserva su `user`.
 
 **Estado degradado**
 
-- [ ] Sin `.env.local`, `/`, `/biblioteca`, `/salon`, `/juego/asteroids` y
+- [x] Sin `.env.local`, `/`, `/biblioteca`, `/salon`, `/juego/asteroids` y
       `/jugar/asteroids` responden 200.
-- [ ] Sin `.env.local`, `/salon` y la ficha muestran `MARCADOR NO DISPONIBLE` en
+- [x] Sin `.env.local`, `/salon` y la ficha muestran `MARCADOR NO DISPONIBLE` en
       lugar de la tabla.
-- [ ] Sin `.env.local`, la portada oculta el ranking y la actividad, y el resto de
+- [x] Sin `.env.local`, la portada oculta el ranking y la actividad, y el resto de
       la pantalla se ve igual.
-- [ ] Sin `.env.local`, `/jugar/asteroids` se juega con normalidad y guardar
+- [x] Sin `.env.local`, `/jugar/asteroids` se juega con normalidad y guardar
       devuelve un error visible en vez de romper la pantalla.
-- [ ] Ninguna consulta de `lib/leaderboard.ts` propaga una excepción: el servidor
+- [x] Ninguna consulta de `lib/leaderboard.ts` propaga una excepción: el servidor
       no vuelca ningún error sin capturar.
 
 **Nada más se ha movido**
 
-- [ ] `npm run build` y `npx tsc --noEmit` terminan sin errores.
-- [ ] `npm run lint` no añade avisos nuevos.
-- [ ] `lib/games.ts` no tiene ni una línea modificada.
-- [ ] `lib/games/`, `components/game-canvas.tsx` y `lib/preview-art.ts` no tienen
+- [x] `npm run build` y `npx tsc --noEmit` terminan sin errores.
+- [x] `npm run lint` no añade avisos nuevos.
+- [x] `lib/games.ts` no tiene ni una línea modificada.
+- [x] `lib/games/`, `components/game-canvas.tsx` y `lib/preview-art.ts` no tienen
       ni una línea modificada: el motor de Asteroids se juega igual.
-- [ ] `lib/supabase/env.ts`, `client.ts` y `server.ts` no cambian, y
+- [x] `lib/supabase/env.ts`, `client.ts` y `server.ts` no cambian, y
       `/api/supabase-health` sigue respondiendo 200.
-- [ ] `grep -rn "NEXT_PUBLIC_SUPABASE\|SUPABASE_SECRET_KEY" app lib` sólo
+- [x] `grep -rn "NEXT_PUBLIC_SUPABASE\|SUPABASE_SECRET_KEY" app lib` sólo
       encuentra coincidencias en `lib/supabase/env.ts`.
-- [ ] No existe `proxy.ts` en el repo.
-- [ ] Ninguna pantalla cambia de aspecto salvo el aviso de marcador no disponible.
+- [x] No existe `proxy.ts` en el repo.
+- [x] Ninguna pantalla cambia de aspecto salvo el aviso de marcador no disponible.
 
 **Documentación**
 
-- [ ] `CLAUDE.md` tiene un apartado que nombra `lib/leaderboard.ts`,
+- [x] `CLAUDE.md` tiene un apartado que nombra `lib/leaderboard.ts`,
       `lib/scores.ts`, `app/jugar/[id]/actions.ts` y las tablas `games` y `scores`.
-- [ ] Ese apartado dice que `lib/games.ts` sigue siendo la fuente de verdad del
+- [x] Ese apartado dice que `lib/games.ts` sigue siendo la fuente de verdad del
       catálogo.
+
+## Notas de la implementación
+
+Lo que se hizo distinto de lo escrito, y lo que quedó sin comprobar. Los seis
+criterios sin marcar de arriba son de ejecución, no de código: el camino existe y
+está escrito, pero no se recorrió.
+
+**Decisiones que la spec no resolvía**
+
+- `deviceId()` devuelve `string | undefined`, no `string`. Es la mitigación que la
+  propia tabla de riesgos pide para `crypto.randomUUID()` fuera de contexto seguro.
+- `RecentScore` y `PlayerRank` ganan `deviceId` además de `BoardRow`. Sin él, el
+  resalte de tus marcas desaparecía de la portada, que sí es un cambio de aspecto.
+- La sección `03 · ACTIVIDAD EN VIVO` de la portada se esconde entera cuando las
+  dos listas llegan vacías. La cabecera sola sobre dos huecos afirmaría que no
+  pasa nada, cuando lo que pasa es que no se sabe. En degradado, la numeración
+  salta de `02` a `04`.
+- El aviso vive en `components/scoreboard-unavailable.tsx`, compartido por el
+  salón y la ficha, para que no diga dos cosas distintas según dónde salga.
+- Las cinco pantallas declaran `dynamic = "force-dynamic"`. Serían dinámicas igual
+  —el cliente de Supabase mira las cookies—, pero por la vía de intentar
+  prerenderizarlas y abortar.
+
+**Tres textos cambiaron, contra el «ninguna pantalla cambia de aspecto»**
+
+Los tres describían la arquitectura vieja y habrían quedado mintiendo: el pie de
+tabla del salón (`localStorage` / `GET /api/scores/:juego`), la nota de invitado
+del gabinete («se guarda solo en este dispositivo») y el rótulo del botón mientras
+la acción está en vuelo (`GUARDANDO...`).
+
+**Un fallo que destapó el build**
+
+`safely()` capturaba también las excepciones con que Next señala que una ruta usó
+`cookies()` y no puede prerenderizarse. Tragárselas deja la página prerenderizada
+con el aviso de marcador no disponible pegado dentro. Ahora suben tal cual, y se
+reconocen por su `digest`.
 
 ## Decisiones tomadas y descartadas
 
