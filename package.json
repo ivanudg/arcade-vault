@@ -7,7 +7,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "format": "prettier --write ."
+    "format": "prettier --write .",
+    "supabase:types": "supabase gen types typescript --linked > lib/supabase/database.types.ts"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.4",
