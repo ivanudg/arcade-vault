@@ -38,6 +38,18 @@ function utcDate(iso: string): string {
 }
 
 /**
+ * No todo lo que se lanza aquí dentro es una avería.
+ *
+ * Next señala con excepciones cosas que no son errores —que la ruta ha usado
+ * `cookies()` y no puede prerenderizarse, un `redirect()`, un `notFound()`— y
+ * las reconoce por su `digest`. Tragárselas dejaría la página prerenderizada
+ * con el aviso de marcador no disponible pegado dentro. Suben tal cual.
+ */
+function isNextSignal(error: unknown): boolean {
+  return typeof (error as { digest?: unknown })?.digest === "string";
+}
+
+/**
  * Envuelve una consulta: devuelve el valor de reserva ante cualquier fallo, sea
  * de red, de credenciales o de la propia base de datos.
  */
@@ -45,6 +57,7 @@ async function safely<T>(what: string, fallback: T, run: () => Promise<T>): Prom
   try {
     return await run();
   } catch (error) {
+    if (isNextSignal(error)) throw error;
     console.error(`[marcador] ${what} falló:`, error);
     return fallback;
   }

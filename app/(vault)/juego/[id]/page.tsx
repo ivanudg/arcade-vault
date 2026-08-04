@@ -11,18 +11,27 @@ import { notFound } from "next/navigation";
 import { GamePreview } from "@/components/game-preview";
 import { ScorePanel } from "@/components/score-panel";
 import { GAMES, getGame, tint } from "@/lib/games";
-import { seedBest } from "@/lib/scores";
+import { board } from "@/lib/leaderboard";
+import { formatScore } from "@/lib/scores";
 
 /** Sólo existen estas ocho rutas: cualquier otra es 404 sin ejecutar código. */
 export const dynamicParams = false;
+
+/**
+ * La ficha lee el marcador, así que se renderiza en cada visita.
+ *
+ * Sin esto la ruta acabaría siendo dinámica igual —el cliente de Supabase mira
+ * las cookies—, pero por la vía de intentar prerenderizarla y abortar. Dicho a
+ * las claras se ahorra ese intento y queda escrito por qué. Caché, la que
+ * traiga su propia spec.
+ */
+export const dynamic = "force-dynamic";
 
 export function generateStaticParams() {
   return GAMES.map((g) => ({ id: g.id }));
 }
 
-export async function generateMetadata({
-  params,
-}: PageProps<"/juego/[id]">): Promise<Metadata> {
+export async function generateMetadata({ params }: PageProps<"/juego/[id]">): Promise<Metadata> {
   const { id } = await params;
   const game = getGame(id);
   if (!game) return {};
@@ -35,6 +44,11 @@ export default async function GamePage({ params }: PageProps<"/juego/[id]">) {
   // Un id inventado responde 404 en lugar de servir otra máquina, a diferencia
   // del `game()` del prototipo, que caía en la primera del catálogo.
   if (!game) notFound();
+
+  // Una sola consulta: el récord del rótulo es la primera fila de la tabla, así
+  // que no pueden discrepar.
+  const rows = await board(game.id);
+  const record = rows[0] ? formatScore(rows[0].score) : "—";
 
   return (
     <main className="flex-1 px-[clamp(14px,3vw,40px)] pt-[clamp(22px,4vw,44px)] pb-22.5">
@@ -72,14 +86,10 @@ export default async function GamePage({ params }: PageProps<"/juego/[id]">) {
             </h2>
 
             <div className="flex flex-wrap gap-2.5 font-display text-[8px] tracking-av text-av-text-dim">
-              <span className="border border-white/14 px-2.25 py-1.75">
-                {game.cat}
-              </span>
-              <span className="border border-white/14 px-2.25 py-1.75">
-                1 JUGADOR
-              </span>
+              <span className="border border-white/14 px-2.25 py-1.75">{game.cat}</span>
+              <span className="border border-white/14 px-2.25 py-1.75">1 JUGADOR</span>
               <span className="border border-av-yellow/30 px-2.25 py-1.75 text-av-yellow">
-                RECORD {seedBest(game.id)}
+                RECORD {record}
               </span>
             </div>
 
@@ -113,7 +123,7 @@ export default async function GamePage({ params }: PageProps<"/juego/[id]">) {
             </div>
           </div>
 
-          <ScorePanel id={game.id} />
+          <ScorePanel id={game.id} rows={rows} />
         </div>
       </section>
     </main>
