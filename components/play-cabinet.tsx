@@ -77,6 +77,33 @@ export function PlayCabinet({ game }: { game: Game }) {
     handle.current?.start();
   }, [engine, loading]);
 
+  // PAUSA / SEGUIR y las dos pausas automáticas acaban todas aquí: el botón
+  // sólo mueve `paused` y este efecto se encarga del motor.
+  useEffect(() => {
+    if (!engine || loading) return;
+    const h = handle.current;
+    if (!h) return;
+    if (paused) h.pause();
+    // Terminada la partida el bucle está parado a propósito: reanudarlo aquí
+    // resucitaría una nave muerta detrás del superpuesto.
+    else if (!over) h.resume();
+  }, [engine, loading, paused, over]);
+
+  // Volver a la pestaña con quince segundos de asteroides encima no es jugar.
+  useEffect(() => {
+    if (!engine) return;
+    const pause = () => setPaused(true);
+    const onVisibility = () => {
+      if (document.hidden) pause();
+    };
+    document.addEventListener("visibilitychange", onVisibility);
+    window.addEventListener("blur", pause);
+    return () => {
+      document.removeEventListener("visibilitychange", onVisibility);
+      window.removeEventListener("blur", pause);
+    };
+  }, [engine]);
+
   // Puede no haberla: las máquinas con motor no tienen partida de ejemplo.
   const demo = DEMO_RUN[game.id];
   /** Las tres cifras del HUD: de la partida real si hay motor, si no del demo. */
