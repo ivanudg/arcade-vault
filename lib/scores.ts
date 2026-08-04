@@ -15,7 +15,9 @@ export interface ScoreEntry {
 }
 
 export interface BoardRow extends ScoreEntry {
-  /** `true` si la marca la guardó este dispositivo. */
+  /** Del dispositivo que la guardó. `null` en las semillas. */
+  deviceId: string | null;
+  /** `true` si la marca la guardó este dispositivo. Lo resuelve el cliente. */
   mine: boolean;
 }
 
@@ -168,8 +170,8 @@ export function formatScore(n: number): string {
 
 /** Mezcla semilla y marcas propias: de mayor a menor y recortada a 10 filas. */
 function rows(id: GameId, stored: ScoreEntry[]): BoardRow[] {
-  const seed: BoardRow[] = (SEED[id] ?? []).map((r) => ({ ...r, mine: false }));
-  const mine: BoardRow[] = stored.map((r) => ({ ...r, mine: true }));
+  const seed: BoardRow[] = (SEED[id] ?? []).map((r) => ({ ...r, deviceId: null, mine: false }));
+  const mine: BoardRow[] = stored.map((r) => ({ ...r, deviceId: null, mine: true }));
   return seed
     .concat(mine)
     .sort((a, b) => b.score - a.score)
@@ -231,6 +233,8 @@ type StoredScores = Partial<Record<GameId, ScoreEntry[]>>;
 /** Una marca junto a la máquina donde se logró. */
 export interface RecentScore extends ScoreEntry {
   game: GameId;
+  /** Del dispositivo que la guardó. `null` en las semillas. */
+  deviceId: string | null;
   mine: boolean;
 }
 
@@ -242,6 +246,8 @@ export interface PlayerRank {
   score: number;
   /** Dónde logró esa marca. */
   game: GameId;
+  /** Del dispositivo que la guardó. `null` en las semillas. */
+  deviceId: string | null;
   mine: boolean;
 }
 
@@ -259,8 +265,8 @@ function dateKey(date: string): number {
 /** Semillas y marcas propias de las ocho máquinas, en el orden de `GAMES`. */
 function allScores(stored: StoredScores): RecentScore[] {
   return GAMES.flatMap((g) => [
-    ...(SEED[g.id] ?? []).map((r) => ({ ...r, game: g.id, mine: false })),
-    ...(stored[g.id] ?? []).map((r) => ({ ...r, game: g.id, mine: true })),
+    ...(SEED[g.id] ?? []).map((r) => ({ ...r, game: g.id, deviceId: null, mine: false })),
+    ...(stored[g.id] ?? []).map((r) => ({ ...r, game: g.id, deviceId: null, mine: true })),
   ]);
 }
 
@@ -301,6 +307,7 @@ function ranking(stored: StoredScores, limit: number): PlayerRank[] {
       name: r.name,
       score: r.score,
       game: r.game,
+      deviceId: r.deviceId,
       mine: r.mine,
     }));
 }
