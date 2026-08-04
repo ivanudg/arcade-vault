@@ -55,7 +55,7 @@ ocho siguen siendo escaparate: escena congelada de `drawPreview()` y HUD leído 
 
 ## Supabase
 
-El proyecto está conectado a Supabase (`nlfwqnmidfdohuyhklqp`) desde SPEC 04, pero **todavía no hay ni una tabla**: la persistencia sigue en `localStorage` a través de `lib/storage.ts`. No inventes esquema; eso llega en su propia spec.
+El proyecto está conectado a Supabase (`nlfwqnmidfdohuyhklqp`) desde SPEC 04, y desde SPEC 06 hay dos tablas: el marcador vive ahí. En `localStorage` solo quedan la sesión y el identificador del navegador.
 
 - **Qué cliente usar.** `@/lib/supabase/client` (`createBrowserClient`) en componentes con `"use client"`. `@/lib/supabase/server` (`createServerClient`) en Server Components, Server Actions y Route Handlers; su `createClient()` es **`async`** porque `cookies()` es una promesa en Next 16. El de servidor nunca se guarda en una variable de módulo: cada petición trae sus cookies.
 - **Nadie lee `process.env` de Supabase fuera de `lib/supabase/env.ts`.** Ahí están `supabaseUrl()`, `supabasePublishableKey()`, `supabaseSecretKey()` —sin consumidor aún— e `isSupabaseConfigured()`, la única que no lanza. Ojo: Next solo sustituye `process.env.NEXT_PUBLIC_*` si la lectura es **literal**, así que un `process.env[nombre]` dinámico llegaría `undefined` al navegador.
@@ -63,6 +63,45 @@ El proyecto está conectado a Supabase (`nlfwqnmidfdohuyhklqp`) desde SPEC 04, p
 - **`lib/supabase/database.types.ts` es generado; no se edita a mano.** Se regenera con `npm run supabase:types` contra el proyecto enlazado.
 - **`/api/supabase-health`** dice si hay conexión: `200 {ok:true}` o `503 {ok:false, reason}`. Nunca imprime claves.
 - **No existe `proxy.ts`** y no hay autenticación real. Entra en la spec que traiga el login.
+
+## El marcador
+
+Desde SPEC 06 las puntuaciones son **una sola tabla compartida**, no una copia por
+navegador. `addScore()` ya no existe.
+
+- **Qué vive en la base de datos y qué no.** `public.scores` son las marcas y
+  `public.games` existe para que `scores.game_id` tenga una clave ajena real. El
+  **catálogo sigue mandándolo `lib/games.ts`**: `games` se siembra desde él y
+  nunca al revés, y la app no lee sus columnas —el título de una máquina sale de
+  `getGame()`—. Añadir una máquina son dos sitios: el catálogo y una migración.
+- **Dos vistas acotan lo que viaja**: `top_scores` (top 10 por máquina, desempate
+  por `created_at` ascendente) y `player_bests` (la mejor marca de cada nombre).
+  Las dos con `security_invoker = true`, para que la RLS de `scores` siga
+  aplicando.
+- **`lib/leaderboard.ts` es sólo de servidor** (`import "server-only"`): ahí están
+  `board`, `boards`, `bests`, `recentScores` y `topPlayers`. **Ninguna lanza**: un
+  fallo devuelve vacío y el error se queda en la consola del servidor. Lo que sí
+  vuelve a subir son las excepciones de control de flujo de Next, que se
+  reconocen por su `digest`; tragárselas dejaría una página prerenderizada con el
+  aviso de marcador no disponible pegado dentro.
+- **`lib/scores.ts` es isomorfo**: sólo tipos y `formatScore()`. Lo importan tanto
+  el servidor como los componentes de cliente.
+- **Ningún componente consulta por su cuenta.** Las páginas resuelven las filas y
+  las bajan por props. El único efecto que queda en los componentes es el que
+  marca las marcas propias comparando `device_id` con el `deviceId()` de
+  `lib/storage.ts`, porque el servidor no puede leer `localStorage` y siempre
+  manda `mine: false`.
+- **Escribir es la Server Action `app/jugar/[id]/actions.ts`**, no un `insert`
+  desde el navegador: ahí se normaliza el nombre como en `lib/session.tsx`, se
+  comprueba el `gameId` contra `GAMES` y se llama a `revalidatePath` de `/`,
+  `/salon`, `/biblioteca` y la ruta concreta del juego.
+- **Las cinco pantallas que leen marcas son dinámicas** (`dynamic =
+"force-dynamic"`). Sin marcador, el salón y la ficha pintan
+  `ScoreboardUnavailable` y la portada esconde su sección de actividad. Vacío con
+  aviso; nunca marcas inventadas.
+- **Las migraciones se aplican con `npx supabase db push`** y quedan en
+  `supabase/migrations/`. Nada de `apply_migration` por MCP: iría al proyecto
+  remoto sin dejar rastro en el repo.
 
 # Skills
 
