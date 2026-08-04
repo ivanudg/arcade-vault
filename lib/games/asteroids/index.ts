@@ -14,12 +14,21 @@ import type { GameCallbacks, GameHandle, GameMount, GameState } from "@/lib/game
 import { createInput } from "@/lib/games/input";
 import {
   ALL_PU_TYPES,
+  DROP_CHANCE,
+  DROP_GUARANTEE,
   H,
+  HYPER_DURATION,
+  NOVA_CHANCE,
+  POINTS,
+  SHIELD_DURATION,
+  SLOW_DURATION,
+  SLOW_FACTOR,
+  TRIPLE_DURATION,
   TYPES_PER_LEVEL,
   W,
   type PowerUpType,
 } from "@/lib/games/asteroids/constants";
-import { rand, randInt } from "@/lib/games/asteroids/math";
+import { dist, rand, randInt } from "@/lib/games/asteroids/math";
 import { Asteroid, Bullet, Particle, PowerUp, Ship } from "@/lib/games/asteroids/entities";
 
 /** El estado de partida entero. Una instancia por `mount()`. */
@@ -65,6 +74,8 @@ export const asteroidsGame: GameMount = {
     let destroyed = false;
     /** Última terna emitida, para no avisar en frames donde nada cambió. */
     let emitted: GameState | null = null;
+    /** `onGameOver` se avisa una sola vez por partida. */
+    let overSent = false;
 
     // ── Construcción del estado ──────────────────────────────────────────────
 
@@ -127,10 +138,157 @@ export const asteroidsGame: GameMount = {
       cb.onState(emitted);
     }
 
+    // ── Sucesos de partida ───────────────────────────────────────────────────
+
+    function explode(r: Run, x: number, y: number, count = 8) {
+      for (let i = 0; i < count; i++) r.particles.push(new Particle(x, y));
+    }
+
+    function tryDropPowerup(r: Run, x: number, y: number) {
+      // Tipos garantizados del nivel (uno de cada)
+      if (r.drops.types.size < r.drops.levelTypes.length) {
+        r.drops.kills++;
+        for (const t of r.drops.levelTypes) {
+          if (r.drops.types.has(t)) continue;
+          if (Math.random() < DROP_CHANCE || r.drops.kills >= DROP_GUARANTEE) {
+            r.powerups.push(new PowerUp(x, y, t));
+            r.drops.types.add(t);
+            return; // máx. un item por destrucción, para espaciarlos
+          }
+        }
+      }
+      // Bomba Nova: escasa, máx 1 por nivel, sin garantía
+      if (!r.drops.nova && Math.random() < NOVA_CHANCE) {
+        r.powerups.push(new PowerUp(x, y, "nova"));
+        r.drops.nova = true;
+      }
+    }
+
+    function detonateNova(r: Run) {
+      for (const a of r.asteroids) {
+        r.score += POINTS[a.size];
+        explode(r, a.x, a.y, a.size * 5);
+      }
+      r.asteroids = [];
+    }
+
+    function nextLevel(r: Run) {
+      r.level++;
+      r.bullets = [];
+      r.particles = [];
+      // No arrastrar un item sin recoger; los temporizadores activos sí siguen.
+      r.powerups = [];
+      resetLevelDrop(r);
+      r.ship.reset();
+      spawnAsteroids(r, 3 + r.level);
+    }
+
+    function killShip(r: Run) {
+      explode(r, r.ship.x, r.ship.y, 14);
+      r.ship.dead = true;
+      r.lives--;
+      if (r.lives <= 0) {
+        r.phase = "gameover";
+        // El original esperaba a ESPACIO para reiniciar; aquí manda React, así
+        // que el bucle se detiene y el aviso sale al final de este frame.
+        halt();
+      } else {
+        r.phase = "dead";
+        r.deadTimer = 2;
+      }
+    }
+
     // ── Simulación y dibujo ──────────────────────────────────────────────────
 
     function update(dt: number) {
-      void dt;
+      const r = run;
+
+      if (r.phase === "gameover") return;
+
+      if (r.phase === "dead") {
+        r.deadTimer -= dt;
+        r.particles.forEach((p) => p.update(dt));
+        r.particles = r.particles.filter((p) => !p.dead);
+        r.asteroids.forEach((a) => a.update(dt));
+        if (r.deadTimer <= 0) {
+          r.phase = "playing";
+          r.ship.reset();
+        }
+        return;
+      }
+
+      if (r.timers.triple > 0) r.timers.triple -= dt;
+      if (r.timers.shield > 0) r.timers.shield -= dt;
+      if (r.timers.slow > 0) r.timers.slow -= dt;
+      if (r.timers.hyper > 0) r.timers.hyper -= dt;
+
+      // Disparar
+      if (input.pressed("Space")) {
+        r.bullets.push(...r.ship.tryShoot(r.timers.triple > 0));
+      }
+
+      r.ship.update(dt, input, r.timers.hyper > 0);
+      r.bullets.forEach((b) => b.update(dt));
+      // Slow motion: solo los asteroides van a mitad de velocidad; nave y balas normales
+      const astDt = r.timers.slow > 0 ? dt * SLOW_FACTOR : dt;
+      r.asteroids.forEach((a) => a.update(astDt));
+      r.particles.forEach((p) => p.update(dt));
+      r.powerups.forEach((p) => p.update(dt));
+
+      r.bullets = r.bullets.filter((b) => !b.dead);
+      r.particles = r.particles.filter((p) => !p.dead);
+
+      // Bala vs asteroide
+      const newAsteroids: Asteroid[] = [];
+      for (const b of r.bullets) {
+        for (const a of r.asteroids) {
+          if (!a.dead && !b.dead && dist(b, a) < a.radius) {
+            b.dead = true;
+            a.dead = true;
+            r.score += POINTS[a.size];
+            explode(r, a.x, a.y, a.size * 5);
+            newAsteroids.push(...a.split());
+            tryDropPowerup(r, a.x, a.y);
+          }
+        }
+      }
+      r.asteroids = r.asteroids.filter((a) => !a.dead).concat(newAsteroids);
+      r.bullets = r.bullets.filter((b) => !b.dead);
+
+      // Nave vs power-up
+      for (const p of r.powerups) {
+        if (!p.dead && dist(r.ship, p) < r.ship.radius + p.radius) {
+          p.dead = true;
+          if (p.type === "triple") r.timers.triple = TRIPLE_DURATION;
+          else if (p.type === "shield") r.timers.shield = SHIELD_DURATION;
+          else if (p.type === "slow") r.timers.slow = SLOW_DURATION;
+          else if (p.type === "hyper") r.timers.hyper = HYPER_DURATION;
+          else if (p.type === "nova") detonateNova(r);
+          explode(r, p.x, p.y, 12); // destello al recoger
+        }
+      }
+      r.powerups = r.powerups.filter((p) => !p.dead);
+
+      // Nave vs asteroide
+      if (r.ship.invincible <= 0) {
+        for (const a of r.asteroids) {
+          if (dist(r.ship, a) < r.ship.radius + a.radius * 0.82) {
+            if (r.timers.shield > 0) {
+              r.timers.shield = 0; // el escudo absorbe el impacto y se consume
+              a.dead = true;
+              r.score += POINTS[a.size];
+              explode(r, a.x, a.y, a.size * 5);
+              r.asteroids = r.asteroids.filter((x) => !x.dead).concat(a.split());
+            } else {
+              killShip(r);
+            }
+            break;
+          }
+        }
+      }
+
+      // Nivel completado
+      if (r.asteroids.length === 0) nextLevel(r);
     }
 
     function draw() {}
@@ -143,6 +301,12 @@ export const asteroidsGame: GameMount = {
       update(dt);
       draw();
       emitState();
+      // Después de `emitState()`: el superpuesto de fin de partida se abre con
+      // el HUD ya cuadrado, no una cifra por detrás.
+      if (run.phase === "gameover" && !overSent) {
+        overSent = true;
+        cb.onGameOver(run.score);
+      }
       // `running` puede haberse apagado dentro de `update()` al terminar la
       // partida: en ese caso no se pide otro frame.
       frame = running ? requestAnimationFrame(loop) : null;
@@ -183,6 +347,7 @@ export const asteroidsGame: GameMount = {
       restart() {
         halt();
         run = createRun();
+        overSent = false;
         emitState();
         draw();
         play();
