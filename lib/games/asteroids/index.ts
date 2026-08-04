@@ -420,6 +420,15 @@ export const asteroidsGame: GameMount = {
         destroyed = true;
         halt();
       },
+
+      // El mando táctil entra por la misma puerta que el teclado.
+      press(code) {
+        input.press(code);
+      },
+
+      release(code) {
+        input.release(code);
+      },
     };
   },
 };

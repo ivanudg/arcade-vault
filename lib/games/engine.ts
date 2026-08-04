@@ -35,6 +35,14 @@ export interface GameHandle {
   restart(): void;
   /** Suelta el bucle y los listeners. Llamarlo dos veces no rompe nada. */
   destroy(): void;
+  /**
+   * Mantiene una tecla desde el mando táctil, como si viniera del teclado.
+   * La entrada del motor vive en su closure, así que ésta es la vía por la que
+   * el gabinete inyecta los botones en pantalla.
+   */
+  press(code: string): void;
+  /** Suelta una tecla inyectada con `press()`. */
+  release(code: string): void;
 }
 
 /** Lo que implementa cada juego. `world` es estático, no depende del canvas. */

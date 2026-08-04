@@ -24,12 +24,27 @@ import { GamePreview } from "@/components/game-preview";
 import { DEMO_RUN, type DemoRun } from "@/lib/demo-run";
 import type { GameHandle, GameState } from "@/lib/games/engine";
 import { ENGINES } from "@/lib/games/engines";
-import type { Game } from "@/lib/games";
+import type { Game, GameId } from "@/lib/games";
 import { addScore, formatScore } from "@/lib/scores";
 import { useSession } from "@/lib/session";
 
 /** Las cinco teclas del mando, en el orden del prototipo. */
-const PAD = ["←", "↑", "↓", "→", "FUEGO"];
+const PAD = [
+  { label: "←", code: "ArrowLeft", aria: "Mover ←" },
+  { label: "↑", code: "ArrowUp", aria: "Mover ↑" },
+  { label: "↓", code: "ArrowDown", aria: "Mover ↓" },
+  { label: "→", code: "ArrowRight", aria: "Mover →" },
+  { label: "FUEGO", code: "Space", aria: "Fuego" },
+] as const;
+
+/**
+ * Qué botones del mando sirven en cada máquina con motor. Los que no están se
+ * pintan deshabilitados: Asteroids no usa `↓`, y esconderlo descuadraría la
+ * rejilla de cinco botones del gabinete.
+ */
+const ENGINE_KEYS: Partial<Record<GameId, readonly string[]>> = {
+  asteroids: ["ArrowLeft", "ArrowUp", "ArrowRight", "Space"],
+};
 
 const SAVED_MESSAGE = "PUNTUACION GUARDADA";
 /** HUD de una máquina sin partida de ejemplo ni motor: todo a cero. */
@@ -109,6 +124,8 @@ export function PlayCabinet({ game }: { game: Game }) {
   /** Las tres cifras del HUD: de la partida real si hay motor, si no del demo. */
   const run = engine ? (live ?? FRESH_RUN) : (demo ?? NO_RUN);
   const playerName = ready && user ? user.name : "INVITADO";
+  /** Teclas vivas del mando, o `undefined` si la máquina no tiene motor. */
+  const padKeys = engine ? ENGINE_KEYS[game.id] : undefined;
 
   function saveScore() {
     addScore(game.id, playerName, run.score);
@@ -216,16 +233,42 @@ export function PlayCabinet({ game }: { game: Game }) {
           </div>
 
           <div className="mt-4.5 grid grid-cols-[repeat(auto-fit,minmax(60px,1fr))] gap-2.5">
-            {PAD.map((label) => (
-              <button
-                key={label}
-                type="button"
-                aria-label={label === "FUEGO" ? "Fuego" : `Mover ${label}`}
-                className="cursor-pointer border border-av-cyan/30 bg-av-panel px-1.5 py-3.75 font-display text-[10px] text-av-cyan active:bg-av-cyan active:text-av-bg"
-              >
-                {label}
-              </button>
-            ))}
+            {PAD.map(({ label, code, aria }) => {
+              // Sin motor el mando es decorativo, como hasta ahora.
+              const usable = padKeys ? padKeys.includes(code) : true;
+              const inert = !!padKeys && !usable;
+              // `pointerup` fuera del botón nunca llega, así que soltar también
+              // al salir el puntero o al cancelarse el gesto: si no, la nave se
+              // queda girando sola.
+              const release = () => handle.current?.release(code);
+              return (
+                <button
+                  key={label}
+                  type="button"
+                  aria-label={aria}
+                  disabled={inert}
+                  onPointerDown={
+                    padKeys && usable
+                      ? (e) => {
+                          // Sin foco en el botón, `ESPACIO` no lo re-dispara.
+                          e.preventDefault();
+                          handle.current?.press(code);
+                        }
+                      : undefined
+                  }
+                  onPointerUp={padKeys && usable ? release : undefined}
+                  onPointerCancel={padKeys && usable ? release : undefined}
+                  onPointerLeave={padKeys && usable ? release : undefined}
+                  className={`touch-none border border-av-cyan/30 bg-av-panel px-1.5 py-3.75 font-display text-[10px] text-av-cyan ${
+                    inert
+                      ? "cursor-not-allowed opacity-35"
+                      : "cursor-pointer active:bg-av-cyan active:text-av-bg"
+                  }`}
+                >
+                  {label}
+                </button>
+              );
+            })}
           </div>
 
           <p className="mt-3.5 text-center text-[12px] tracking-av text-av-text-faint">
