@@ -1,6 +1,6 @@
 # SPEC 04 — Conexión con Supabase
 
-> **Estado:** Aprobado
+> **Estado:** Implementado
 > **Depende de:** ninguna
 > **Fecha:** 2026-08-03
 > **Objetivo:** Instalar las dependencias de Supabase y dejar el proyecto conectado —clientes de navegador y de servidor, variables de entorno, CLI enlazado y una ruta de diagnóstico— sin crear ni una sola tabla.
