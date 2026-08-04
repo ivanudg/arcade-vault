@@ -11,20 +11,30 @@
  * - El nombre se pinta con el acento de la máquina donde se logró la marca,
  *   así la columna de color dice algo en vez de alternar por alternar.
  *
- * Arranca con las semillas —lo único que puede pintar el servidor— y pasa a
- * las marcas reales tras montar, que es cuando existe `localStorage`.
+ * Las marcas llegan resueltas del servidor. Lo único que se resuelve aquí es
+ * cuáles son de este navegador, que es lo único que el servidor no puede saber.
  */
 
 import { useEffect, useState } from "react";
 import { getGame } from "@/lib/games";
-import { formatScore, recentScores, seedRecentScores } from "@/lib/scores";
+import { formatScore, type RecentScore } from "@/lib/scores";
+import { deviceId } from "@/lib/storage";
 
-const LIMIT = 7;
+export function ActivityFeed({
+  rows: served,
+}: {
+  /** Las últimas marcas del vault, de nueva a vieja. */
+  rows: RecentScore[];
+}) {
+  const [device, setDevice] = useState<string>();
 
-export function ActivityFeed() {
-  const [rows, setRows] = useState(() => seedRecentScores(LIMIT));
   // eslint-disable-next-line react-hooks/set-state-in-effect -- lectura única de localStorage tras hidratar
-  useEffect(() => setRows(recentScores(LIMIT)), []);
+  useEffect(() => setDevice(deviceId()), []);
+
+  const rows = served.map((r) => ({
+    ...r,
+    mine: device !== undefined && r.deviceId === device,
+  }));
 
   return (
     <section className="border border-av-line bg-av-panel">

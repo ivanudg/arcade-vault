@@ -14,19 +14,22 @@
  *   de la pantalla no puede quedar sin poder verse.
  *
  * PAUSA, el superpuesto de carga y el de fin de partida son interfaz de verdad
- * en ambos casos, y GUARDAR PUNTUACION escribe en `localStorage`.
+ * en ambos casos, y GUARDAR PUNTUACION manda la marca al marcador compartido
+ * por la Server Action de `app/jugar/[id]/actions.ts`.
  */
 
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { saveScore } from "@/app/jugar/[id]/actions";
 import { GameCanvas } from "@/components/game-canvas";
 import { GamePreview } from "@/components/game-preview";
 import { DEMO_RUN, type DemoRun } from "@/lib/demo-run";
 import type { GameHandle, GameState } from "@/lib/games/engine";
 import { ENGINES } from "@/lib/games/engines";
 import type { Game, GameId } from "@/lib/games";
-import { addScore, formatScore } from "@/lib/scores";
+import { formatScore } from "@/lib/scores";
 import { useSession } from "@/lib/session";
+import { deviceId } from "@/lib/storage";
 
 /** Las cinco teclas del mando, en el orden del prototipo. */
 const PAD = [
@@ -62,6 +65,10 @@ export function PlayCabinet({ game }: { game: Game }) {
   const [over, setOver] = useState(false);
   const [saved, setSaved] = useState(false);
   const [savedText, setSavedText] = useState("");
+  /** La marca está en vuelo: el botón se apaga para que no salgan dos filas. */
+  const [saving, setSaving] = useState(false);
+  /** Lo que devolvió la acción cuando no pudo guardar. */
+  const [saveError, setSaveError] = useState<string | null>(null);
   /** Las tres cifras de la partida real. `null` hasta el primer `onState`. */
   const [live, setLive] = useState<GameState | null>(null);
 
@@ -127,8 +134,22 @@ export function PlayCabinet({ game }: { game: Game }) {
   /** Teclas vivas del mando, o `undefined` si la máquina no tiene motor. */
   const padKeys = engine ? ENGINE_KEYS[game.id] : undefined;
 
-  function saveScore() {
-    addScore(game.id, playerName, run.score);
+  async function save() {
+    setSaving(true);
+    setSaveError(null);
+
+    // El `deviceId` viaja con la marca para poder resaltarla luego. Puede no
+    // haberlo —`crypto.randomUUID()` sólo existe en contexto seguro— y entonces
+    // la marca se guarda igual, sin dueño.
+    const result = await saveScore(game.id, playerName, run.score, deviceId());
+
+    setSaving(false);
+    if (!result.ok) {
+      // Una marca que se traga la red es peor que una que avisa.
+      setSaveError(result.error);
+      return;
+    }
+
     setSaved(true);
     setSavedText("");
     // El mensaje se teclea carácter a carácter, como en el prototipo.
@@ -146,6 +167,7 @@ export function PlayCabinet({ game }: { game: Game }) {
     setOver(false);
     setSaved(false);
     setSavedText("");
+    setSaveError(null);
     setPaused(false);
     // Con motor la partida empieza de cero aquí mismo, sin recargar nada: la
     // pausa de CARGANDO CARTUCHO sólo tiene sentido cuando no hay nada que
@@ -297,12 +319,14 @@ export function PlayCabinet({ game }: { game: Game }) {
           note={
             user
               ? `Sesión de ${user.name}: tu marca entra en el salón.`
-              : "Modo invitado: la marca se guarda solo en este dispositivo."
+              : "Modo invitado: la marca entra en el salón firmada como INVITADO."
           }
           canSave={!saved}
           saved={saved}
           savedText={savedText}
-          onSave={saveScore}
+          saving={saving}
+          error={saveError}
+          onSave={save}
           onReplay={replay}
         />
       )}
@@ -337,6 +361,8 @@ function GameOverOverlay({
   canSave,
   saved,
   savedText,
+  saving,
+  error,
   onSave,
   onReplay,
 }: {
@@ -345,6 +371,8 @@ function GameOverOverlay({
   canSave: boolean;
   saved: boolean;
   savedText: string;
+  saving: boolean;
+  error: string | null;
   onSave: () => void;
   onReplay: () => void;
 }) {
@@ -367,10 +395,26 @@ function GameOverOverlay({
             <button
               type="button"
               onClick={onSave}
-              className={`${OVER_BUTTON} cursor-pointer border-none bg-av-yellow text-av-bg shadow-[0_0_22px_rgba(245,255,0,0.45)] active:scale-96 hover:bg-av-cyan`}
+              // Sin esto, dos pulsaciones nerviosas son dos filas idénticas en
+              // un marcador compartido.
+              disabled={saving}
+              className={`${OVER_BUTTON} border-none bg-av-yellow text-av-bg shadow-[0_0_22px_rgba(245,255,0,0.45)] ${
+                saving
+                  ? "cursor-wait opacity-60"
+                  : "cursor-pointer active:scale-96 hover:bg-av-cyan"
+              }`}
             >
-              GUARDAR PUNTUACION
+              {saving ? "GUARDANDO..." : "GUARDAR PUNTUACION"}
             </button>
+          )}
+
+          {error && (
+            <p
+              role="alert"
+              className="font-display text-[9px] leading-[1.7] tracking-av text-av-magenta av-glow-magenta"
+            >
+              {error}
+            </p>
           )}
 
           {saved && (

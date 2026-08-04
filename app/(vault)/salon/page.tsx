@@ -12,6 +12,7 @@
 import type { Metadata } from "next";
 import { HallOfFame } from "@/components/hall-of-fame";
 import { getGame, type GameId } from "@/lib/games";
+import { boards } from "@/lib/leaderboard";
 
 export const metadata: Metadata = {
   title: "SALON DE LA FAMA",
@@ -24,6 +25,10 @@ export default async function HallPage({ searchParams }: PageProps<"/salon">) {
   const requested = typeof juego === "string" ? getGame(juego) : undefined;
   const initialTab: GameId = requested?.id ?? "muro";
 
+  // Las nueve tablas de una sola consulta: cambiar de pestaña no vuelve a
+  // preguntar. Si la base no contesta llega `{}` y la tabla avisa.
+  const tables = await boards();
+
   return (
     <main className="flex-1 px-[clamp(14px,3vw,40px)] pt-[clamp(22px,4vw,44px)] pb-22.5">
       <section className="mx-auto w-full max-w-275 animate-av-fade">
@@ -34,7 +39,7 @@ export default async function HallPage({ searchParams }: PageProps<"/salon">) {
           Las diez marcas más altas de cada máquina del vault.
         </p>
 
-        <HallOfFame initialTab={initialTab} />
+        <HallOfFame initialTab={initialTab} tables={tables} />
       </section>
     </main>
   );
