@@ -22,6 +22,37 @@ No hay framework de tests configurado. Si se añade uno, documenta aquí cómo c
 - Los efectos CRT del template son utilidades propias en `globals.css`: `av-glow-*`, `av-halo-*`, `av-grid-floor`, `av-scanlines`, `av-vignette`, y las animaciones `animate-av-*` (fade, slide, row, caret, spin, sweep, cabinet, pulse, flicker, grid).
 - `next.config.ts` está vacío: cualquier flag (p. ej. `cacheComponents`) es una decisión nueva, no algo ya asumido.
 
+## Motores de juego
+
+Desde SPEC 05 hay **una** máquina que se juega de verdad, `asteroids`. Las otras
+ocho siguen siendo escaparate: escena congelada de `drawPreview()` y HUD leído de
+`lib/demo-run.ts`, que por eso es un `Partial<Record<GameId, DemoRun>>`.
+
+- **El contrato vive en `lib/games/engine.ts`**: `GameMount` (un `world` estático
+  con el tamaño lógico y `mount(canvas, callbacks)`) y el `GameHandle` que
+  devuelve, con `start`, `pause`, `resume`, `restart`, `destroy` y el
+  `press`/`release` que usa el mando táctil. Los callbacks son `onState`, que
+  solo se emite cuando cambia alguna de las tres cifras del HUD, y `onGameOver`.
+- **`lib/games/engines.ts` es el registro**: `ENGINES[game.id]` es lo que consulta
+  `PlayCabinet` para decidir entre jugar y enseñar la escena congelada.
+- **El bucle no vive en React.** `requestAnimationFrame`, el estado de partida y
+  las entidades están dentro del closure de `mount()`; en el ámbito de módulo de
+  un motor no hay ni una variable mutable. Un motor no importa `react` ni `next`.
+  Un frame **nunca** provoca un render: lo único que sube es `onState`, unas
+  pocas veces por segundo.
+- **`components/game-canvas.tsx`** es la frontera: crea el `<canvas>`, lo escala
+  por `devicePixelRatio` (tope 2), monta el motor en un efecto que solo depende
+  del `GameMount` y llama a `destroy()` al limpiar. Los callbacks viven en una
+  `ref`, así que un re-render del padre no remonta el juego ni reinicia la
+  partida.
+- **Para añadir un motor**: implementar `GameMount` en `lib/games/<juego>/` y
+  añadir una línea a `ENGINES`. El teclado se coge de `lib/games/input.ts`
+  (`createInput()`), que engancha `window` solo mientras hay partida y limita el
+  `preventDefault` a las flechas y `Space`. Si la máquina estrena motor, quita su
+  entrada de `DEMO_RUN` y declara sus teclas vivas en `ENGINE_KEYS`, dentro de
+  `components/play-cabinet.tsx`.
+- `references/started-games/` es material de referencia: se lee, no se edita.
+
 ## Supabase
 
 El proyecto está conectado a Supabase (`nlfwqnmidfdohuyhklqp`) desde SPEC 04, pero **todavía no hay ni una tabla**: la persistencia sigue en `localStorage` a través de `lib/storage.ts`. No inventes esquema; eso llega en su propia spec.
