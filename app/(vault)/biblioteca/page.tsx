@@ -17,12 +17,11 @@
 
 import type { Metadata } from "next";
 import { LibraryBrowser } from "@/components/library-browser";
-import { GAMES } from "@/lib/games";
 import { bests } from "@/lib/leaderboard";
 
 export const metadata: Metadata = {
   title: "BIBLIOTECA",
-  description: `Las ${GAMES.length} máquinas del vault, listas para jugar.`,
+  description: "Todas las máquinas del vault, listas para jugar.",
 };
 
 /**
@@ -46,7 +45,7 @@ export default async function LibraryPage() {
             BIBLIOTECA
           </h1>
           <p className="mt-4.5 text-[14px] tracking-av text-av-text-dim">
-            Las {GAMES.length} máquinas del vault, listas para jugar.
+            Todas las máquinas del vault, listas para jugar.
           </p>
         </div>
 

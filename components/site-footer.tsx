@@ -7,13 +7,14 @@
  */
 
 import { usePathname } from "next/navigation";
-import { GAMES, getGame } from "@/lib/games";
+import { getGame } from "@/lib/games";
 
 /**
- * El remate del catálogo, que ya no vive en `/`. La cuenta sale de `GAMES`:
- * escrita a mano se quedó desfasada en cuanto entró la novena máquina.
+ * El remate del catálogo, que ya no vive en `/`. Contaba las máquinas desde
+ * `GAMES`, y desde SPEC 07 no cuenta ninguna: un pie que anuncia «1 MÁQUINAS»
+ * no lo arregla ni la cifra correcta.
  */
-const LIBRARY_TEXT = `ARCADE VAULT · ${GAMES.length} MÁQUINAS · INSERTA UNA MONEDA`;
+const LIBRARY_TEXT = "ARCADE VAULT · BIBLIOTECA · INSERTA UNA MONEDA";
 
 /**
  * Un remate por pantalla. Los cuatro últimos vienen literales de

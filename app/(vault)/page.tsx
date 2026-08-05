@@ -171,7 +171,7 @@ export default async function HomePage() {
       </section>
 
       {/* Franja de cifras: el único bloque a ancho completo de la portada, con
-          su velo amarillo. La primera cifra sale de `GAMES.length`. */}
+          su velo amarillo. Las tres cifras salen de `STATS`. */}
       <Reveal>
         <section className="relative overflow-hidden border-y border-av-line bg-linear-to-b from-av-void to-av-bg px-[clamp(14px,3vw,40px)] py-[clamp(40px,7vw,60px)]">
           <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(80%_60%_at_50%_50%,rgba(245,255,0,0.06),transparent_70%)]" />
