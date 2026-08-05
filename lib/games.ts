@@ -14,11 +14,12 @@
  */
 
 /** Una máquina nueva entra añadiendo un literal aquí y su entrada en `GAMES`. */
-export type GameId = "asteroids" | "tetris";
+export type GameId = "asteroids" | "tetris" | "arkanoid";
 
 /**
  * Vocabulario cerrado de categorías, no inventario de lo que hay hoy: conserva
- * los seis valores aunque de momento sólo se usen `DISPAROS` y `PUZZLE`.
+ * los seis valores aunque de momento sólo se usen `DISPAROS`, `PUZZLE` y
+ * `ARCADE`.
  */
 export type GameCategory = "ARCADE" | "CLASICOS" | "DISPAROS" | "REFLEJOS" | "PUZZLE" | "LABERINTO";
 
@@ -62,6 +63,16 @@ export const GAMES: readonly Game[] = [
     desc: "Encaja las piezas, limpia lineas y no llegues al techo.",
     long: "El clásico de las siete piezas, entero y jugable de verdad. Las piezas caen cada vez más rápido: cada diez líneas sube un nivel y el intervalo de caída baja noventa milisegundos, hasta un suelo de cien. Cuatro líneas de golpe valen ocho veces lo que una. La proyección marca dónde va a aterrizar la pieza y el retardo de bloqueo da medio segundo para encajarla. La partida acaba cuando la pieza siguiente ya no cabe.",
     controls: "Flechas ← → mueven · ↑ rota · ↓ baja rápido · ESPACIO suelta de golpe",
+  },
+  {
+    id: "arkanoid",
+    title: "ARKANOID",
+    cat: "ARCADE",
+    glow: "#ff006e",
+    playable: true,
+    desc: "Rompe todos los bloques sin dejar caer la bola.",
+    long: "El clásico de la pala y la bola, entero y jugable de verdad. Diez pantallas que van apretando: la bola sale más rápida en cada una y acelera mientras juegas. Los bloques de dos y tres golpes se desgastan a la vista antes de romperse, y los grises no se rompen nunca. El punto de la pala donde golpeas decide el ángulo de salida, hasta sesenta grados. Cada bloque roto vale cien puntos y despejar la decima pantalla acaba la partida.",
+    controls: "Flechas ← → mueven la pala · ESPACIO lanza la bola",
   },
 ];
 
