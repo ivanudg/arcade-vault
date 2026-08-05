@@ -19,9 +19,25 @@
 
 import type { GameCallbacks, GameHandle, GameMount, GameState } from "@/lib/games/engine";
 import { createInput } from "@/lib/games/input";
-import { QUEUE_MAX, WORLD } from "@/lib/games/tetris/constants";
-import { createBoard, type Board } from "@/lib/games/tetris/board";
-import { randomPiece, type Piece } from "@/lib/games/tetris/pieces";
+import {
+  ARR_MS,
+  DAS_MS,
+  KICKS,
+  LINE_SCORES,
+  LOCK_DELAY_MS,
+  LOCK_RESET_MAX,
+  QUEUE_MAX,
+  WORLD,
+} from "@/lib/games/tetris/constants";
+import {
+  clearLines,
+  collide,
+  createBoard,
+  ghostY,
+  merge,
+  type Board,
+} from "@/lib/games/tetris/board";
+import { randomPiece, rotateCW, type Piece } from "@/lib/games/tetris/pieces";
 
 /** El estado de partida entero. Una instancia por `mount()`. */
 interface Run {
@@ -118,11 +134,173 @@ export const tetrisGame: GameMount = {
       cb.onState(emitted);
     }
 
+    // ── Sucesos de partida ───────────────────────────────────────────────────
+
+    /**
+     * Rotar o mover una pieza ya apoyada le devuelve el medio segundo entero,
+     * con un tope por pieza: sin él, girar sin parar pospone el bloqueo para
+     * siempre.
+     */
+    function resetLockTimer() {
+      const r = run;
+      if (r.lockTimer <= 0) return;
+      if (r.lockResets >= LOCK_RESET_MAX) return;
+      r.lockResets++;
+      r.lockTimer = 0;
+    }
+
+    /** Rotación horaria, probando los cinco desplazamientos de `KICKS`. */
+    function tryRotate() {
+      const r = run;
+      const rotated = rotateCW(r.current.shape);
+      for (const kick of KICKS) {
+        if (!collide(r.board, rotated, r.current.x + kick, r.current.y)) {
+          r.current.shape = rotated;
+          r.current.x += kick;
+          resetLockTimer();
+          return;
+        }
+      }
+    }
+
+    /** Una columna a la izquierda o a la derecha, si cabe. */
+    function move(dx: number) {
+      const r = run;
+      if (collide(r.board, r.current.shape, r.current.x + dx, r.current.y)) return;
+      r.current.x += dx;
+      resetLockTimer();
+    }
+
+    /** `↓`: una fila y un punto. Contra el suelo, consolida en el acto. */
+    function softDrop() {
+      const r = run;
+      if (collide(r.board, r.current.shape, r.current.x, r.current.y + 1)) {
+        lockPiece();
+        return;
+      }
+      r.current.y++;
+      r.score += 1;
+    }
+
+    /** `ESPACIO`: hasta abajo, dos puntos por celda, y se consolida. */
+    function hardDrop() {
+      const r = run;
+      const gy = ghostY(r.board, r.current);
+      r.score += (gy - r.current.y) * 2;
+      r.current.y = gy;
+      lockPiece();
+    }
+
+    /**
+     * La pieza pasa a formar parte del tablero: se estampa, se limpian las
+     * filas completas, se cobra y sale la siguiente.
+     */
+    function lockPiece() {
+      const r = run;
+      merge(r.board, r.current);
+      const cleared = clearLines(r.board);
+      if (cleared > 0) {
+        r.score += LINE_SCORES[cleared] * r.level;
+        r.lines += cleared;
+        r.level = 1 + Math.floor(r.lines / 10);
+        r.dropInterval = levelToDropInterval(r.level);
+      }
+      spawn();
+    }
+
+    /**
+     * Saca la pieza siguiente de la cola. Si no cabe donde aparece, se acabó:
+     * es el topout, la única forma de morir del modo clásico. El aviso hacia
+     * arriba sale al final de este mismo frame, con el HUD ya cuadrado.
+     */
+    function spawn() {
+      const r = run;
+      // La cola se mantiene a `QUEUE_MAX`, así que el `??` no llega a usarse:
+      // está para no afirmar a mano que `shift()` devolvió algo.
+      r.current = r.queue.shift() ?? randomPiece();
+      fillQueue(r.queue);
+      r.lockTimer = 0;
+      r.lockResets = 0;
+      if (collide(r.board, r.current.shape, r.current.x, r.current.y)) {
+        r.phase = "gameover";
+        halt();
+      }
+    }
+
+    // ── Entrada ──────────────────────────────────────────────────────────────
+
+    /**
+     * Se lee como una función y no como `run.phase === "playing"` a pelo porque
+     * el análisis de flujo de TypeScript no ve que `lockPiece()` pueda acabar
+     * la partida a media función, y da la segunda comprobación por imposible.
+     */
+    function isPlaying(): boolean {
+      return run.phase === "playing";
+    }
+
+    /**
+     * Cuántas veces actúa en este frame una tecla de movimiento mantenida.
+     *
+     * El original no tiene nada de esto: se apoya en el auto-repeat del sistema
+     * operativo, que el mando táctil no produce. La primera pulsación cuenta
+     * siempre; a partir de `DAS_MS` abajo, una más cada `ARR_MS`.
+     */
+    function steps(code: keyof Run["held"], dt: number): number {
+      const held = run.held;
+      if (!input.keys[code]) {
+        held[code] = 0;
+        return 0;
+      }
+      const before = held[code];
+      if (before === 0) {
+        // El flanco. Nunca se guarda un 0, que es "tecla suelta": con un `dt`
+        // de 0 ms el frame siguiente lo leería como una pulsación nueva.
+        held[code] = Math.max(dt, 1);
+        return 1;
+      }
+      const after = before + dt;
+      held[code] = after;
+      if (after < DAS_MS) return 0;
+      const done = before < DAS_MS ? 0 : Math.floor((before - DAS_MS) / ARR_MS) + 1;
+      return Math.floor((after - DAS_MS) / ARR_MS) + 1 - done;
+    }
+
+    function handleInput(dt: number) {
+      // `↑` y `ESPACIO` son solo flanco: mantenerlas no repite.
+      if (input.pressed("ArrowUp")) tryRotate();
+
+      for (let i = steps("ArrowLeft", dt); i > 0; i--) move(-1);
+      for (let i = steps("ArrowRight", dt); i > 0; i--) move(1);
+      // Bajar puede consolidar la pieza contra el suelo, y con ella acabar la
+      // partida: a partir de ahí lo de este frame ya no es asunto suyo.
+      for (let i = steps("ArrowDown", dt); i > 0 && isPlaying(); i--) softDrop();
+
+      if (isPlaying() && input.pressed("Space")) hardDrop();
+    }
+
     // ── Simulación y dibujo ──────────────────────────────────────────────────
 
     function update(dt: number) {
-      // La entrada, la gravedad, el lock delay y el spawn llegan en el paso 4.
-      run.dropAccum += dt;
+      const r = run;
+      if (!isPlaying()) return;
+
+      handleInput(dt);
+      if (!isPlaying()) return;
+
+      if (!collide(r.board, r.current.shape, r.current.x, r.current.y + 1)) {
+        // En el aire: cae por gravedad y el lock delay no corre.
+        r.lockTimer = 0;
+        r.dropAccum += dt;
+        if (r.dropAccum >= r.dropInterval) {
+          r.dropAccum = 0;
+          r.current.y++;
+        }
+      } else {
+        // Apoyada: medio segundo para deslizarla antes de que se consolide.
+        r.dropAccum = 0;
+        r.lockTimer += dt;
+        if (r.lockTimer >= LOCK_DELAY_MS) lockPiece();
+      }
     }
 
     function draw() {
