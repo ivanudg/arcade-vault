@@ -21,18 +21,24 @@ import type { GameCallbacks, GameHandle, GameMount, GameState } from "@/lib/game
 import { createInput } from "@/lib/games/input";
 import {
   ARR_MS,
+  BLOCK,
+  COLS,
   DAS_MS,
+  GRID_COLOR,
   KICKS,
   LINE_SCORES,
   LOCK_DELAY_MS,
   LOCK_RESET_MAX,
   QUEUE_MAX,
+  ROWS,
   WORLD,
+  type Cell,
 } from "@/lib/games/tetris/constants";
 import {
   clearLines,
   collide,
   createBoard,
+  drawCell,
   ghostY,
   merge,
   type Board,
@@ -62,6 +68,15 @@ interface Run {
 
 /** Nunca más de 50 ms por frame, para que una pestaña oculta no vacíe el tablero. */
 const MAX_DT = 50;
+
+/** Ancho de la banda derecha: lo que queda del mundo a la derecha del tablero. */
+const BAND = WORLD.width - COLS * BLOCK;
+/** Alto al que empieza la caja de 4 × 4 de la pieza siguiente. */
+const NEXT_Y = 60;
+/** Gris del rótulo `SIG.`: ni compite con las piezas ni se pierde en el negro. */
+const LABEL_COLOR = "#8b8b99";
+/** La proyección de aterrizaje, translúcida como en el original. */
+const GHOST_ALPHA = 0.2;
 
 /** La curva del original: cada nivel resta 90 ms, con un suelo de 100. */
 function levelToDropInterval(level: number): number {
@@ -303,10 +318,92 @@ export const tetrisGame: GameMount = {
       }
     }
 
+    /** Las líneas interiores del tablero. Las de fuera son el borde del canvas. */
+    function drawGrid() {
+      ctx.strokeStyle = GRID_COLOR;
+      ctx.lineWidth = 0.5;
+      for (let c = 1; c < COLS; c++) {
+        ctx.beginPath();
+        ctx.moveTo(c * BLOCK, 0);
+        ctx.lineTo(c * BLOCK, ROWS * BLOCK);
+        ctx.stroke();
+      }
+      for (let r = 1; r < ROWS; r++) {
+        ctx.beginPath();
+        ctx.moveTo(0, r * BLOCK);
+        ctx.lineTo(COLS * BLOCK, r * BLOCK);
+        ctx.stroke();
+      }
+    }
+
+    /** Una matriz de celdas, con su esquina superior izquierda en `(px, py)`. */
+    function drawShape(shape: Cell[][], px: number, py: number, size: number, alpha = 1) {
+      for (let r = 0; r < shape.length; r++) {
+        for (let c = 0; c < shape[r].length; c++) {
+          drawCell(ctx, px + c * size, py + r * size, shape[r][c], size, alpha);
+        }
+      }
+    }
+
+    /**
+     * La banda derecha: el rótulo y la pieza siguiente, centrada en una caja de
+     * 4 × 4 celdas que ocupa el ancho entero de la banda.
+     *
+     * En el original esto vive en un `<canvas>` aparte, dentro del panel de la
+     * página. Aquí no hay más canvas que el del juego, y jugar a Tetris sin ver
+     * la pieza siguiente es otro juego.
+     */
+    function drawNext() {
+      const next = run.queue[0];
+      if (!next) return;
+      const bandX = COLS * BLOCK;
+
+      ctx.strokeStyle = GRID_COLOR;
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(bandX, 0);
+      ctx.lineTo(bandX, WORLD.height);
+      ctx.stroke();
+
+      ctx.fillStyle = LABEL_COLOR;
+      ctx.font = "12px monospace";
+      ctx.textAlign = "center";
+      ctx.fillText("SIG.", bandX + BAND / 2, NEXT_Y - 20);
+
+      // Centrado del original: el hueco que sobra de la caja de 4 × 4 se
+      // reparte, así la I y la O no salen pegadas a un lado.
+      const offX = Math.floor((4 - next.shape[0].length) / 2);
+      const offY = Math.floor((4 - next.shape.length) / 2);
+      drawShape(next.shape, bandX + offX * BLOCK, NEXT_Y + offY * BLOCK, BLOCK);
+    }
+
+    /**
+     * La puntuación, las líneas, el nivel y el `FIN DEL JUEGO` no se pintan
+     * aquí: los pinta React a veinte píxeles del canvas. Del dibujo del
+     * original también se quedan fuera los efectos, el panel de reserva y los
+     * iconos de celda, que son de piezas que no entran.
+     */
     function draw() {
-      // El tablero, la pieza y la banda derecha llegan en el paso 5.
+      const r = run;
+
       ctx.fillStyle = "#000";
       ctx.fillRect(0, 0, WORLD.width, WORLD.height);
+
+      drawGrid();
+
+      for (let row = 0; row < ROWS; row++) {
+        for (let col = 0; col < COLS; col++) {
+          drawCell(ctx, col * BLOCK, row * BLOCK, r.board[row][col]);
+        }
+      }
+
+      // La proyección va debajo de la pieza: se dibuja antes para que la activa
+      // la tape cuando ya está aterrizando.
+      const gy = ghostY(r.board, r.current);
+      drawShape(r.current.shape, r.current.x * BLOCK, gy * BLOCK, BLOCK, GHOST_ALPHA);
+      drawShape(r.current.shape, r.current.x * BLOCK, r.current.y * BLOCK, BLOCK);
+
+      drawNext();
     }
 
     // ── Bucle ────────────────────────────────────────────────────────────────

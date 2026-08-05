@@ -48,6 +48,9 @@ export const COLORS: readonly (string | null)[] = [
   "#ffb74d", // L - orange
 ];
 
+/** Líneas de la rejilla del tablero: el `GRID_COLORS.dark` del original. */
+export const GRID_COLOR = "#22222e";
+
 /**
  * Las siete matrices, con la I en 4×4 y la O en 2×2 para que roten sobre su
  * centro. Mismo índice que `COLORS`.
