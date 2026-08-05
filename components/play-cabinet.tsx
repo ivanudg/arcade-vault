@@ -45,6 +45,19 @@ const ENGINE_KEYS: Partial<Record<GameId, readonly string[]>> = {
   tetris: ["ArrowLeft", "ArrowUp", "ArrowRight", "ArrowDown", "Space"],
 };
 
+/**
+ * Alto que ocupa la pantalla de juego por encima y por debajo del canvas:
+ * cabecera del sitio, HUD, el marco del gabinete, el mando y la línea de
+ * controles. Es el presupuesto que se le resta a la ventana para saber cuánto
+ * alto le queda a la pantalla.
+ *
+ * Está calibrado por lo bajo a propósito: con un presupuesto mayor cabría
+ * también el mando sin desplazar la página, pero un mundo apaisado como el de
+ * Asteroids —que hoy entra de sobra— empezaría a encogerse en pantallas
+ * normales. Lo que no puede quedar fuera de la ventana es el tablero.
+ */
+const CABINET_CHROME = "16rem";
+
 const SAVED_MESSAGE = "PUNTUACION GUARDADA";
 /** Lo que enseña el HUD antes del primer `onState`. */
 const FRESH_RUN: GameState = { score: 0, lives: 3, level: 1 };
@@ -162,6 +175,9 @@ export function PlayCabinet({ game }: { game: Game }) {
   // parcial— y no la vieja bifurcación.
   if (!engine) return null;
 
+  /** Proporción del mundo del motor: 1,33 en Asteroids y 0,70 en Tetris. */
+  const aspectRatio = engine.world.width / engine.world.height;
+
   return (
     <>
       {/* La sección envuelve sólo el gabinete, y los superpuestos quedan fuera,
@@ -212,7 +228,17 @@ export function PlayCabinet({ game }: { game: Game }) {
         </div>
 
         <div className="mx-auto mt-6.5 rounded-[34px] border border-av-cyan/22 bg-[linear-gradient(#15171f,#0b0c12)] p-5.5 shadow-[0_0_46px_rgba(0,245,255,0.12),inset_0_0_0_1px_rgba(255,255,255,0.04)]">
-          <div className="relative overflow-hidden rounded-[22px] bg-av-void shadow-[inset_0_0_60px_rgba(0,0,0,0.9),inset_0_0_12px_rgba(0,245,255,0.16)]">
+          {/* La pantalla llena el ancho del gabinete, salvo que su alto no
+              quepa: entonces manda la altura y el ancho la sigue, para que el
+              mundo del motor nunca se deforme. Sin esto, un mundo apaisado como
+              el de Asteroids cabe, y uno vertical como el de Tetris se estira
+              hasta obligar a hacer scroll para ver los dos extremos del
+              tablero. `CABINET_CHROME` es lo que ocupa todo lo demás de la
+              pantalla de juego: cabecera, HUD, marco, mando y controles. */}
+          <div
+            style={{ maxWidth: `calc((100svh - ${CABINET_CHROME}) * ${aspectRatio})` }}
+            className="relative mx-auto overflow-hidden rounded-[22px] bg-av-void shadow-[inset_0_0_60px_rgba(0,0,0,0.9),inset_0_0_12px_rgba(0,245,255,0.16)]"
+          >
             <GameCanvas
               game={engine}
               label={`Partida de ${game.title}`}
