@@ -48,5 +48,14 @@ export interface GameHandle {
 /** Lo que implementa cada juego. `world` es estático, no depende del canvas. */
 export interface GameMount {
   world: GameWorld;
+  /**
+   * Rótulos del HUD, en el orden score/lives/level. MAYÚSCULAS y sin tildes.
+   *
+   * Requerido, sin valor por defecto: las tres cifras son las mismas para todos
+   * los motores, pero no significan lo mismo —la del medio son vidas en
+   * Asteroids y líneas en Tetris—, así que `tsc` obliga a cada uno a decidir en
+   * vez de heredar en silencio unos rótulos que podrían mentir en pantalla.
+   */
+  hud: readonly [string, string, string];
   mount(canvas: HTMLCanvasElement, cb: GameCallbacks): GameHandle;
 }

@@ -171,20 +171,23 @@ export function PlayCabinet({ game }: { game: Game }) {
       <section className="mx-auto w-full max-w-195 animate-av-fade">
         <div className="flex flex-wrap items-center justify-between gap-3 border border-av-cyan/30 bg-[rgba(13,15,22,0.9)] px-4 py-3.5">
           <div className="flex flex-wrap gap-5.5 font-display text-[9px] tracking-av">
+            {/* Los rótulos los pone el motor: las tres cifras son siempre las
+                mismas, pero la del medio son vidas en Asteroids y líneas en
+                Tetris. */}
             <span className="text-av-text-dim">
-              PUNTUACION{" "}
+              {engine.hud[0]}{" "}
               <span className="text-av-cyan [text-shadow:0_0_10px_rgba(0,245,255,0.6)]">
                 {formatScore(run.score)}
               </span>
             </span>
             <span className="text-av-text-dim">
-              VIDAS{" "}
+              {engine.hud[1]}{" "}
               <span className="text-av-magenta [text-shadow:0_0_10px_rgba(255,0,110,0.6)]">
                 {run.lives}
               </span>
             </span>
             <span className="text-av-text-dim">
-              NIVEL{" "}
+              {engine.hud[2]}{" "}
               <span className="text-av-yellow [text-shadow:0_0_10px_rgba(245,255,0,0.6)]">
                 {run.level}
               </span>

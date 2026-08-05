@@ -64,6 +64,7 @@ const MAX_DT = 0.05;
 
 export const asteroidsGame: GameMount = {
   world: { width: W, height: H },
+  hud: ["PUNTUACION", "VIDAS", "NIVEL"],
 
   mount(canvas: HTMLCanvasElement, cb: GameCallbacks): GameHandle {
     const context2d = canvas.getContext("2d");
@@ -390,6 +391,12 @@ export const asteroidsGame: GameMount = {
       frame = null;
       input.detach();
     }
+
+    // El HUD estrena las cifras de verdad en cuanto existe el canvas, sin
+    // esperar a `start()`: hasta entonces React pinta la constante `FRESH_RUN`
+    // de `PlayCabinet`, que está escrita para Asteroids y a otro motor le
+    // mentiría durante toda la pantalla de carga.
+    emitState();
 
     return {
       start() {
