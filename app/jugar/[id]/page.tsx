@@ -10,16 +10,14 @@ import { notFound } from "next/navigation";
 import { PlayCabinet } from "@/components/play-cabinet";
 import { GAMES, getGame } from "@/lib/games";
 
-/** Sólo existen estas ocho rutas: cualquier otra es 404 sin ejecutar código. */
+/** Sólo existe una ruta por máquina: cualquier otra es 404 sin ejecutar código. */
 export const dynamicParams = false;
 
 export function generateStaticParams() {
   return GAMES.map((g) => ({ id: g.id }));
 }
 
-export async function generateMetadata({
-  params,
-}: PageProps<"/jugar/[id]">): Promise<Metadata> {
+export async function generateMetadata({ params }: PageProps<"/jugar/[id]">): Promise<Metadata> {
   const { id } = await params;
   const game = getGame(id);
   if (!game) return {};
