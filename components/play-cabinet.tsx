@@ -4,26 +4,21 @@
  * Gabinete y superpuestos de la pantalla de juego. Puerto de
  * references/templates/jugar.dc.html.
  *
- * Bifurca según la máquina tenga motor en `ENGINES` o no:
+ * El canvas es el juego: se monta el motor de `ENGINES`, el HUD lee la partida
+ * por `onState` y el fin de partida lo dispara el motor. Hasta SPEC 07 esto era
+ * una de dos ramas, y la otra enseñaba la escena congelada de `drawPreview()`
+ * con un HUD de cifras fijas y un botón que simulaba morir. Ese camino no
+ * vuelve: toda máquina que entre al catálogo entra con motor.
  *
- * - **Con motor** (hoy sólo `asteroids`): el canvas es el juego, el HUD lee la
- *   partida por `onState` y el fin de partida lo dispara el motor.
- * - **Sin motor**: el canvas muestra la escena de `drawPreview()` congelada y
- *   el HUD lee las cifras fijas de `DEMO_RUN`. Como no hay forma de morir, el
- *   fin de partida se dispara con un botón de demo — la pieza con más interfaz
- *   de la pantalla no puede quedar sin poder verse.
- *
- * PAUSA, el superpuesto de carga y el de fin de partida son interfaz de verdad
- * en ambos casos, y GUARDAR PUNTUACION manda la marca al marcador compartido
- * por la Server Action de `app/jugar/[id]/actions.ts`.
+ * PAUSA, el superpuesto de carga y el de fin de partida son interfaz de verdad,
+ * y GUARDAR PUNTUACION manda la marca al marcador compartido por la Server
+ * Action de `app/jugar/[id]/actions.ts`.
  */
 
 import Link from "next/link";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { saveScore } from "@/app/jugar/[id]/actions";
 import { GameCanvas } from "@/components/game-canvas";
-import { GamePreview } from "@/components/game-preview";
-import { DEMO_RUN, type DemoRun } from "@/lib/demo-run";
 import type { GameHandle, GameState } from "@/lib/games/engine";
 import { ENGINES } from "@/lib/games/engines";
 import type { Game, GameId } from "@/lib/games";
@@ -50,13 +45,9 @@ const ENGINE_KEYS: Partial<Record<GameId, readonly string[]>> = {
 };
 
 const SAVED_MESSAGE = "PUNTUACION GUARDADA";
-/** HUD de una máquina sin partida de ejemplo ni motor: todo a cero. */
-const NO_RUN: DemoRun = { score: 0, lives: 0, level: 0 };
-/** Lo que enseña el HUD de una máquina con motor antes del primer `onState`. */
+/** Lo que enseña el HUD antes del primer `onState`. */
 const FRESH_RUN: GameState = { score: 0, lives: 3, level: 1 };
-/** 750 ms al entrar, 450 ms al reintentar: el cartucho ya está en la máquina. */
 const LOAD_MS = 750;
-const RELOAD_MS = 450;
 
 export function PlayCabinet({ game }: { game: Game }) {
   const { user, ready } = useSession();
@@ -77,12 +68,6 @@ export function PlayCabinet({ game }: { game: Game }) {
   const typer = useRef<ReturnType<typeof setInterval>>(undefined);
   const handle = useRef<GameHandle | null>(null);
 
-  const startLoading = useCallback((ms: number) => {
-    setLoading(true);
-    clearTimeout(loadTimer.current);
-    loadTimer.current = setTimeout(() => setLoading(false), ms);
-  }, []);
-
   useEffect(() => {
     // `loading` ya arranca en `true`, así que aquí sólo se programa su final.
     loadTimer.current = setTimeout(() => setLoading(false), LOAD_MS);
@@ -95,25 +80,24 @@ export function PlayCabinet({ game }: { game: Game }) {
   // La partida arranca cuando el cartucho termina de cargar, no al montar: el
   // superpuesto tapa la pantalla y el juego correría a ciegas debajo.
   useEffect(() => {
-    if (!engine || loading) return;
+    if (loading) return;
     handle.current?.start();
-  }, [engine, loading]);
+  }, [loading]);
 
   // PAUSA / SEGUIR y las dos pausas automáticas acaban todas aquí: el botón
   // sólo mueve `paused` y este efecto se encarga del motor.
   useEffect(() => {
-    if (!engine || loading) return;
+    if (loading) return;
     const h = handle.current;
     if (!h) return;
     if (paused) h.pause();
     // Terminada la partida el bucle está parado a propósito: reanudarlo aquí
     // resucitaría una nave muerta detrás del superpuesto.
     else if (!over) h.resume();
-  }, [engine, loading, paused, over]);
+  }, [loading, paused, over]);
 
   // Volver a la pestaña con quince segundos de asteroides encima no es jugar.
   useEffect(() => {
-    if (!engine) return;
     const pause = () => setPaused(true);
     const onVisibility = () => {
       if (document.hidden) pause();
@@ -124,15 +108,13 @@ export function PlayCabinet({ game }: { game: Game }) {
       document.removeEventListener("visibilitychange", onVisibility);
       window.removeEventListener("blur", pause);
     };
-  }, [engine]);
+  }, []);
 
-  // Puede no haberla: las máquinas con motor no tienen partida de ejemplo.
-  const demo = DEMO_RUN[game.id];
-  /** Las tres cifras del HUD: de la partida real si hay motor, si no del demo. */
-  const run = engine ? (live ?? FRESH_RUN) : (demo ?? NO_RUN);
+  /** Las tres cifras del HUD, de la partida en curso. */
+  const run = live ?? FRESH_RUN;
   const playerName = ready && user ? user.name : "INVITADO";
-  /** Teclas vivas del mando, o `undefined` si la máquina no tiene motor. */
-  const padKeys = engine ? ENGINE_KEYS[game.id] : undefined;
+  /** Teclas vivas del mando: las que no están se pintan deshabilitadas. */
+  const padKeys = ENGINE_KEYS[game.id];
 
   async function save() {
     setSaving(true);
@@ -169,12 +151,15 @@ export function PlayCabinet({ game }: { game: Game }) {
     setSavedText("");
     setSaveError(null);
     setPaused(false);
-    // Con motor la partida empieza de cero aquí mismo, sin recargar nada: la
-    // pausa de CARGANDO CARTUCHO sólo tiene sentido cuando no hay nada que
-    // reiniciar de verdad.
-    if (engine) handle.current?.restart();
-    else startLoading(RELOAD_MS);
+    // La partida empieza de cero aquí mismo, sin recargar nada: CARGANDO
+    // CARTUCHO sólo tenía sentido cuando no había nada que reiniciar de verdad.
+    handle.current?.restart();
   }
+
+  // Sin motor no hay pantalla que enseñar. Desde SPEC 07 toda máquina del
+  // catálogo tiene el suyo, así que esto es una guarda de tipos —`ENGINES` es
+  // parcial— y no la vieja bifurcación.
+  if (!engine) return null;
 
   return (
     <>
@@ -224,22 +209,18 @@ export function PlayCabinet({ game }: { game: Game }) {
 
         <div className="mx-auto mt-6.5 rounded-[34px] border border-av-cyan/22 bg-[linear-gradient(#15171f,#0b0c12)] p-5.5 shadow-[0_0_46px_rgba(0,245,255,0.12),inset_0_0_0_1px_rgba(255,255,255,0.04)]">
           <div className="relative overflow-hidden rounded-[22px] bg-av-void shadow-[inset_0_0_60px_rgba(0,0,0,0.9),inset_0_0_12px_rgba(0,245,255,0.16)]">
-            {engine ? (
-              <GameCanvas
-                game={engine}
-                label={`Partida de ${game.title}`}
-                onState={setLive}
-                // El motor avisa con la puntuación final; el HUD ya viene
-                // cuadrado del `onState` de ese mismo frame.
-                onGameOver={() => setOver(true)}
-                onReady={(h) => {
-                  handle.current = h;
-                }}
-                className="block h-auto w-full"
-              />
-            ) : (
-              <GamePreview id={game.id} width={480} height={480} className="h-auto w-full" />
-            )}
+            <GameCanvas
+              game={engine}
+              label={`Partida de ${game.title}`}
+              onState={setLive}
+              // El motor avisa con la puntuación final; el HUD ya viene
+              // cuadrado del `onState` de ese mismo frame.
+              onGameOver={() => setOver(true)}
+              onReady={(h) => {
+                handle.current = h;
+              }}
+              className="block h-auto w-full"
+            />
 
             {/* Viñeta del tubo y barrido de brillo que recorre la pantalla. */}
             <div className="pointer-events-none absolute inset-0 rounded-[22px] bg-[radial-gradient(115%_115%_at_50%_50%,rgba(0,0,0,0)_55%,rgba(0,0,0,0.72)_100%)]" />
@@ -256,7 +237,6 @@ export function PlayCabinet({ game }: { game: Game }) {
 
           <div className="mt-4.5 grid grid-cols-[repeat(auto-fit,minmax(60px,1fr))] gap-2.5">
             {PAD.map(({ label, code, aria }) => {
-              // Sin motor el mando es decorativo, como hasta ahora.
               const usable = padKeys ? padKeys.includes(code) : true;
               const inert = !!padKeys && !usable;
               // `pointerup` fuera del botón nunca llega, así que soltar también
@@ -296,18 +276,6 @@ export function PlayCabinet({ game }: { game: Game }) {
           <p className="mt-3.5 text-center text-[12px] tracking-av text-av-text-faint">
             {game.controls}
           </p>
-
-          {/* Andamio: sin motor, es la única forma de llegar al fin de partida.
-              Cada máquina que estrene motor deja de pintarlo. */}
-          {demo && (
-            <button
-              type="button"
-              onClick={() => setOver(true)}
-              className="mx-auto mt-4.5 block cursor-pointer border border-dashed border-av-line-strong px-3.5 py-2.5 font-display text-[8px] tracking-av text-av-text-faint hover:border-av-magenta/50 hover:text-av-magenta"
-            >
-              SIMULAR FIN DE PARTIDA
-            </button>
-          )}
         </div>
       </section>
 
