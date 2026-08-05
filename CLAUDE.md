@@ -24,16 +24,30 @@ No hay framework de tests configurado. Si se añade uno, documenta aquí cómo c
 
 ## Motores de juego
 
-El vault tiene **dos** máquinas, `asteroids` y `tetris`, y **toda la que entre a
-partir de aquí entra con motor**. Hasta SPEC 07 el catálogo enseñaba nueve y
-dejaba jugar una: las otras ocho eran escaparate —escena congelada de
+El vault tiene **tres** máquinas, `asteroids`, `tetris` y `arkanoid`, y **toda la
+que entre a partir de aquí entra con motor**. Hasta SPEC 07 el catálogo enseñaba
+nueve y dejaba jugar una: las otras ocho eran escaparate —escena congelada de
 `drawPreview()`, HUD de cifras fijas y un botón que simulaba morir—. Ese camino
 se borró entero (`lib/demo-run.ts` y la bifurcación «sin motor» de
 `PlayCabinet`), así que `GAMES` sin entrada correspondiente en `ENGINES` no es un
-estado que se soporte. `tetris` entró en SPEC 08 y es la primera que ejerce la
-regla; su motor vive en `lib/games/tetris/` y es el Tetris clásico de
-`references/started-games/03-tetris/`, sin la capa moderna de puntuación, los
-power-ups, las habilidades ni los modos, que esperan a su propia spec.
+estado que se soporte.
+
+- `tetris` entró en SPEC 08 y es la primera que ejerce la regla; su motor vive en
+  `lib/games/tetris/` y es el Tetris clásico de
+  `references/started-games/03-tetris/`, sin la capa moderna de puntuación, los
+  power-ups, las habilidades ni los modos, que esperan a su propia spec.
+- `arkanoid` entró en SPEC 09 y es la primera que **no toca el contrato**: tiene
+  puntuación, vidas y niveles de verdad, así que declara los mismos tres rótulos
+  que Asteroids y no pide nada más. Su motor vive en `lib/games/arkanoid/`
+  —`constants.ts`, `levels.ts`, `entities.ts` e `index.ts`— y es el Arkanoid de
+  `references/started-games/04-arkanoid/` **redibujado sin su spritesheet**:
+  paddle y bloques son `fillRect`, la bola es un `arc`, y los siete nombres de
+  `COLOR_MAP` resultaron ser nombres de color CSS válidos, así que la tabla se
+  copió literal. Con el PNG se cayó la explosión de cuatro frames, que eran
+  recortes suyos. También quedan fuera el audio, el control con ratón —el paddle
+  se mueve con `←`/`→`— y el menú de pausa con su selector de nivel. Y gana algo
+  que el original no tiene en juego: `ESPACIO` lanza la bola, que empieza cada
+  vida apoyada sobre el paddle en vez de auto-relanzarse.
 
 - **El contrato vive en `lib/games/engine.ts`**: `GameMount` (un `world` estático
   con el tamaño lógico, los rótulos `hud` y `mount(canvas, callbacks)`) y el
@@ -43,8 +57,8 @@ power-ups, las habilidades ni los modos, que esperan a su propia spec.
   `onGameOver`.
 - **Las tres cifras del HUD son fijas; sus rótulos no.** `GameState` es siempre
   `score`/`lives`/`level`, pero cada motor declara cómo se llaman en su
-  `hud: readonly [string, string, string]` —`VIDAS` en Asteroids, `LINEAS` en
-  Tetris, que no tiene vidas—, y `PlayCabinet` los lee de ahí en vez de
+  `hud: readonly [string, string, string]` —`VIDAS` en Asteroids y en Arkanoid,
+  `LINEAS` en Tetris, que no tiene vidas—, y `PlayCabinet` los lee de ahí en vez de
   escribirlos a mano. El campo es **requerido y sin valor por defecto**: un
   motor nuevo no hereda en silencio unos rótulos que podrían mentir en pantalla,
   `tsc` le obliga a decidir. Y `mount()` **emite el estado inicial antes de
@@ -68,20 +82,21 @@ power-ups, las habilidades ni los modos, que esperan a su propia spec.
   `lib/games/<juego>/`, añadir una línea a `ENGINES`, un literal a `GameId` con
   su entrada en `GAMES`, y una migración que la meta en `public.games`. Son
   **cinco** si hay escena archivada que mover en `lib/preview-art.ts`, que es
-  como entró `tetris`. El teclado se coge de `lib/games/input.ts`
+  como entraron `tetris` y `arkanoid` —y ya no queda ninguna por mover—. El
+  teclado se coge de `lib/games/input.ts`
   (`createInput()`), que engancha `window` solo mientras hay partida y limita el
   `preventDefault` a las flechas y `Space`. Declara sus teclas vivas en
   `ENGINE_KEYS`, dentro de `components/play-cabinet.tsx`.
 - **`lib/preview-art.ts` guarda arte sin máquina.** Su `PreviewId` es
   `GameId | ArchivedPreviewId`, y `ArchivedPreviewId` son las escenas de las
-  máquinas que salieron del catálogo en SPEC 07: eran ocho y hoy son **siete**,
-  porque la que era una pantalla de Tetris **se movió** al llegar SPEC 08 —salió
-  de `ArchivedPreviewId` y entró por `GameId`, no se copió— y ahora es la de
-  `tetris`. `muro` sigue entre las archivadas: es una pantalla de Arkanoid, que
-  espera en `references/started-games/` a entrar con su motor, y hará el mismo
-  viaje. El `switch` de `drawPreview()` acaba en `id satisfies never`, así que
-  una máquina nueva sin escena rompe `npx tsc --noEmit` en vez de dibujar otra
-  cosa.
+  máquinas que salieron del catálogo en SPEC 07: eran ocho y hoy son **seis**,
+  porque dos **se movieron** —salieron de `ArchivedPreviewId` y entraron por
+  `GameId`, no se copiaron—: la que era una pantalla de Tetris al llegar
+  SPEC 08, y `muro` al llegar SPEC 09, que era una pantalla de Arkanoid y hoy es
+  el `case "arkanoid"`. De las seis que quedan **ninguna espera ya máquina**:
+  eran las dos únicas con material en `references/started-games/`. El `switch` de
+  `drawPreview()` acaba en `id satisfies never`, así que una máquina nueva sin
+  escena rompe `npx tsc --noEmit` en vez de dibujar otra cosa.
 - **La pantalla nunca se sale de la ventana.** El marco de `PlayCabinet` limita
   su ancho a `calc((100svh - CABINET_CHROME) * ratio)`, con el ratio del `world`
   del motor: normalmente manda el ancho del gabinete, y cuando el alto no cabe
@@ -106,8 +121,9 @@ El proyecto está conectado a Supabase (`nlfwqnmidfdohuyhklqp`) desde SPEC 04, y
 Desde SPEC 06 las puntuaciones son **una sola tabla compartida**, no una copia por
 navegador. `addScore()` ya no existe. Desde SPEC 07 **arranca vacío**: las noventa
 marcas sembradas se borraron y se llena jugando. Ninguna máquina nueva se siembra:
-SPEC 08 metió la fila de `tetris` en `public.games` —que ya tiene dos, con
-`sort_order` 0 y 1— y ni una marca en `public.scores`.
+SPEC 08 metió la fila de `tetris` en `public.games` y SPEC 09 la de `arkanoid`
+—la tabla tiene **tres**, con `sort_order` 0, 1 y 2—, y ni una marca en
+`public.scores`.
 
 - **Qué vive en la base de datos y qué no.** `public.scores` son las marcas y
   `public.games` existe para que `scores.game_id` tenga una clave ajena real. El
