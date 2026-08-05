@@ -2,25 +2,23 @@
  * Catálogo de máquinas del vault.
  *
  * Nació como puerto literal de `GAMES` en references/templates/arcade-core.js,
- * con las ocho máquinas del prototipo. Desde SPEC 07 queda una, `asteroids`,
- * porque es la única que se juega de verdad: las otras ocho eran escena
+ * con las ocho máquinas del prototipo. SPEC 07 lo dejó en una, `asteroids`,
+ * porque era la única que se jugaba de verdad: las otras ocho eran escena
  * congelada y HUD de mentira, y un vault que enseña nueve y deja jugar una
- * promete ocho veces más de lo que da. **Toda máquina que entre a partir de
- * aquí entra con motor.**
+ * promete ocho veces más de lo que da. De ahí la regla que sigue vigente:
+ * **toda máquina que entre a partir de aquí entra con motor.** `tetris` es la
+ * primera que la cumple.
  *
  * `getGame()` devuelve `undefined` en vez de la primera máquina cuando el id no
  * existe, para que las rutas dinámicas puedan responder 404.
  */
 
-/**
- * Unión de un miembro, no un alias de `"asteroids"`: sigue siendo unión, así
- * que la próxima máquina entra añadiendo un literal y no reescribiendo el tipo.
- */
-export type GameId = "asteroids";
+/** Una máquina nueva entra añadiendo un literal aquí y su entrada en `GAMES`. */
+export type GameId = "asteroids" | "tetris";
 
 /**
  * Vocabulario cerrado de categorías, no inventario de lo que hay hoy: conserva
- * los seis valores aunque desde SPEC 07 sólo se use `DISPAROS`.
+ * los seis valores aunque de momento sólo se usen `DISPAROS` y `PUZZLE`.
  */
 export type GameCategory = "ARCADE" | "CLASICOS" | "DISPAROS" | "REFLEJOS" | "PUZZLE" | "LABERINTO";
 
@@ -54,6 +52,16 @@ export const GAMES: readonly Game[] = [
     desc: "Pulveriza el campo de asteroides y sobrevive.",
     long: "El clásico de vectores, entero y jugable de verdad. Inercia real y espacio toroidal: sales por un borde y entras por el opuesto. Los asteroides grandes se parten en medianos y los medianos en pequeños, y cuanto más pequeños, más puntos. Cada nivel suelta dos de los cuatro potenciadores —disparo triple, escudo, cámara lenta e hiperpropulsión— y, con suerte, una bomba nova que limpia la pantalla.",
     controls: "Flechas ← → giran · ↑ empuja · ESPACIO dispara",
+  },
+  {
+    id: "tetris",
+    title: "TETRIS",
+    cat: "PUZZLE",
+    glow: "#00f5ff",
+    playable: true,
+    desc: "Encaja las piezas, limpia lineas y no llegues al techo.",
+    long: "El clásico de las siete piezas, entero y jugable de verdad. Las piezas caen cada vez más rápido: cada diez líneas sube un nivel y el intervalo de caída baja noventa milisegundos, hasta un suelo de cien. Cuatro líneas de golpe valen ocho veces lo que una. La proyección marca dónde va a aterrizar la pieza y el retardo de bloqueo da medio segundo para encajarla. La partida acaba cuando la pieza siguiente ya no cabe.",
+    controls: "Flechas ← → mueven · ↑ rota · ↓ baja rápido · ESPACIO suelta de golpe",
   },
 ];
 

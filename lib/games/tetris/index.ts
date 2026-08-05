@@ -262,9 +262,13 @@ export const tetrisGame: GameMount = {
      */
     function steps(code: keyof Run["held"], dt: number): number {
       const held = run.held;
+      // El flanco se consume siempre: un toque del mando más corto que un frame
+      // se pulsa y se suelta entre dos vueltas del bucle, así que en `keys` no
+      // queda ni rastro y sin esto ese toque no movería la pieza.
+      const edge = input.pressed(code);
       if (!input.keys[code]) {
         held[code] = 0;
-        return 0;
+        return edge ? 1 : 0;
       }
       const before = held[code];
       if (before === 0) {
