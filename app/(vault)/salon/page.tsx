@@ -23,10 +23,12 @@ export default async function HallPage({ searchParams }: PageProps<"/salon">) {
   const { juego } = await searchParams;
   // Un `?juego=` inventado no es un 404: abre en la primera máquina.
   const requested = typeof juego === "string" ? getGame(juego) : undefined;
-  const initialTab: GameId = requested?.id ?? "muro";
+  const initialTab: GameId = requested?.id ?? "asteroids";
 
-  // Las nueve tablas de una sola consulta: cambiar de pestaña no vuelve a
+  // Todas las tablas de una sola consulta: cambiar de pestaña no vuelve a
   // preguntar. Si la base no contesta llega `{}` y la tabla avisa.
+  // Baja tal cual, con su `null`: la diferencia entre no poder preguntar y no
+  // tener marcas la pinta `HallOfFame`, que es quien sabe qué pestaña se ve.
   const tables = await boards();
 
   return (

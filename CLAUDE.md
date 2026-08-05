@@ -24,17 +24,22 @@ No hay framework de tests configurado. Si se añade uno, documenta aquí cómo c
 
 ## Motores de juego
 
-Desde SPEC 05 hay **una** máquina que se juega de verdad, `asteroids`. Las otras
-ocho siguen siendo escaparate: escena congelada de `drawPreview()` y HUD leído de
-`lib/demo-run.ts`, que por eso es un `Partial<Record<GameId, DemoRun>>`.
+El vault tiene **una** máquina, `asteroids`, y **toda la que entre a partir de
+aquí entra con motor**. Hasta SPEC 07 el catálogo enseñaba nueve y dejaba jugar
+una: las otras ocho eran escaparate —escena congelada de `drawPreview()`, HUD de
+cifras fijas y un botón que simulaba morir—. Ese camino se borró entero
+(`lib/demo-run.ts` y la bifurcación «sin motor» de `PlayCabinet`), así que
+`GAMES` sin entrada correspondiente en `ENGINES` no es un estado que se soporte.
 
 - **El contrato vive en `lib/games/engine.ts`**: `GameMount` (un `world` estático
   con el tamaño lógico y `mount(canvas, callbacks)`) y el `GameHandle` que
   devuelve, con `start`, `pause`, `resume`, `restart`, `destroy` y el
   `press`/`release` que usa el mando táctil. Los callbacks son `onState`, que
   solo se emite cuando cambia alguna de las tres cifras del HUD, y `onGameOver`.
-- **`lib/games/engines.ts` es el registro**: `ENGINES[game.id]` es lo que consulta
-  `PlayCabinet` para decidir entre jugar y enseñar la escena congelada.
+- **`lib/games/engines.ts` es el registro**: `ENGINES[game.id]` es de donde
+  `PlayCabinet` saca el motor que monta. Sigue siendo `Partial` por tipo, y por
+  eso el gabinete conserva una guarda que devuelve `null` si faltara: es una
+  guarda de tipos, no la vieja bifurcación.
 - **El bucle no vive en React.** `requestAnimationFrame`, el estado de partida y
   las entidades están dentro del closure de `mount()`; en el ámbito de módulo de
   un motor no hay ni una variable mutable. Un motor no importa `react` ni `next`.
@@ -45,12 +50,21 @@ ocho siguen siendo escaparate: escena congelada de `drawPreview()` y HUD leído 
   del `GameMount` y llama a `destroy()` al limpiar. Los callbacks viven en una
   `ref`, así que un re-render del padre no remonta el juego ni reinicia la
   partida.
-- **Para añadir un motor**: implementar `GameMount` en `lib/games/<juego>/` y
-  añadir una línea a `ENGINES`. El teclado se coge de `lib/games/input.ts`
-  (`createInput()`), que engancha `window` solo mientras hay partida y limita el
-  `preventDefault` a las flechas y `Space`. Si la máquina estrena motor, quita su
-  entrada de `DEMO_RUN` y declara sus teclas vivas en `ENGINE_KEYS`, dentro de
+- **Para añadir una máquina** son cuatro sitios: implementar `GameMount` en
+  `lib/games/<juego>/`, añadir una línea a `ENGINES`, un literal a `GameId` con
+  su entrada en `GAMES`, y una migración que la meta en `public.games`. El
+  teclado se coge de `lib/games/input.ts` (`createInput()`), que engancha
+  `window` solo mientras hay partida y limita el `preventDefault` a las flechas y
+  `Space`. Declara sus teclas vivas en `ENGINE_KEYS`, dentro de
   `components/play-cabinet.tsx`.
+- **`lib/preview-art.ts` guarda arte sin máquina.** Su `PreviewId` es
+  `GameId | ArchivedPreviewId`, y `ArchivedPreviewId` son las ocho escenas de las
+  máquinas que salieron del catálogo en SPEC 07. Se conservan porque las de
+  `caida` y `muro` son una pantalla de Tetris y otra de Arkanoid, y esos dos
+  juegos esperan en `references/started-games/`. Cuando uno entre, su escena **se
+  mueve**: sale de `ArchivedPreviewId` y entra por `GameId`, no se copia. El
+  `switch` de `drawPreview()` acaba en `id satisfies never`, así que una máquina
+  nueva sin escena rompe `npx tsc --noEmit` en vez de dibujar otra cosa.
 - `references/started-games/` es material de referencia: se lee, no se edita.
 
 ## Supabase
@@ -67,23 +81,42 @@ El proyecto está conectado a Supabase (`nlfwqnmidfdohuyhklqp`) desde SPEC 04, y
 ## El marcador
 
 Desde SPEC 06 las puntuaciones son **una sola tabla compartida**, no una copia por
-navegador. `addScore()` ya no existe.
+navegador. `addScore()` ya no existe. Desde SPEC 07 **arranca vacío**: las noventa
+marcas sembradas se borraron y `public.games` tiene una fila. Se llena jugando.
 
 - **Qué vive en la base de datos y qué no.** `public.scores` son las marcas y
   `public.games` existe para que `scores.game_id` tenga una clave ajena real. El
   **catálogo sigue mandándolo `lib/games.ts`**: `games` se siembra desde él y
   nunca al revés, y la app no lee sus columnas —el título de una máquina sale de
-  `getGame()`—. Añadir una máquina son dos sitios: el catálogo y una migración.
+  `getGame()`—. De los cuatro sitios que toca una máquina nueva, dos son éstos:
+  el catálogo y una migración que la meta en `games` (ver «Motores de juego»).
 - **Dos vistas acotan lo que viaja**: `top_scores` (top 10 por máquina, desempate
   por `created_at` ascendente) y `player_bests` (la mejor marca de cada nombre).
   Las dos con `security_invoker = true`, para que la RLS de `scores` siga
   aplicando.
 - **`lib/leaderboard.ts` es sólo de servidor** (`import "server-only"`): ahí están
   `board`, `boards`, `bests`, `recentScores` y `topPlayers`. **Ninguna lanza**: un
-  fallo devuelve vacío y el error se queda en la consola del servidor. Lo que sí
-  vuelve a subir son las excepciones de control de flujo de Next, que se
+  fallo devuelve **`null`** y el error se queda en la consola del servidor. Lo que
+  sí vuelve a subir son las excepciones de control de flujo de Next, que se
   reconocen por su `digest`; tragárselas dejaría una página prerenderizada con el
   aviso de marcador no disponible pegado dentro.
+- **`null` no es vacío.** `null` es «no se pudo preguntar»; la lista o el mapa
+  vacíos son «se preguntó y no hay marcas». Con el marcador arrancando de cero, el
+  vacío es el estado del día uno y enseñar ahí un aviso de avería sería mentir.
+  Las pantallas que pintan tablas tienen **tres** estados:
+
+  | Lo que llega | Qué se ve                                          |
+  | ------------ | -------------------------------------------------- |
+  | `null`       | `ScoreboardUnavailable` — `MARCADOR NO DISPONIBLE` |
+  | `[]` o `{}`  | `ScoreboardEmpty` — `SE EL PRIMERO`                |
+  | Filas        | La tabla                                           |
+
+  Los dos avisos viven en `components/scoreboard-unavailable.tsx` y
+  `components/scoreboard-empty.tsx`, y no comparten color ni movimiento a
+  propósito: el magenta que pulsa es alarma, y el vacío no lo es. La portada y la
+  biblioteca sí colapsan los dos casos, porque esconder la sección de actividad o
+  pintar `—` vale igual en ambos.
+
 - **`lib/scores.ts` es isomorfo**: sólo tipos y `formatScore()`. Lo importan tanto
   el servidor como los componentes de cliente.
 - **Ningún componente consulta por su cuenta.** Las páginas resuelven las filas y
@@ -96,12 +129,11 @@ navegador. `addScore()` ya no existe.
   comprueba el `gameId` contra `GAMES` y se llama a `revalidatePath` de `/`,
   `/salon`, `/biblioteca` y la ruta concreta del juego.
 - **Las cinco pantallas que leen marcas son dinámicas** (`dynamic =
-"force-dynamic"`). Sin marcador, el salón y la ficha pintan
-  `ScoreboardUnavailable` y la portada esconde su sección de actividad. Vacío con
-  aviso; nunca marcas inventadas.
+"force-dynamic"`). Vacío con aviso; nunca marcas inventadas.
 - **Las migraciones se aplican con `npx supabase db push`** y quedan en
   `supabase/migrations/`. Nada de `apply_migration` por MCP: iría al proyecto
-  remoto sin dejar rastro en el repo.
+  remoto sin dejar rastro en el repo. Se corrige hacia delante: SPEC 07 no
+  revirtió la siembra de SPEC 06, añadió una migración que la borra.
 
 # Skills
 

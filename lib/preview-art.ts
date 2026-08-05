@@ -1,5 +1,5 @@
 /**
- * Las ocho escenas de las previews, portadas de `drawPreview()` en
+ * Las escenas de las previews, portadas de `drawPreview()` en
  * references/templates/arcade-core.js.
  *
  * Es dibujo, no juego: ni bucle de animación ni entrada de teclado. Función
@@ -9,11 +9,30 @@
  * La aritmética se copia literal, incluidos los números mágicos: cualquier
  * "limpieza" cambiaría la escena. Todo se mide en fracciones de `W`/`H` y en
  * `u = W / 100`, así que las escenas escalan con el canvas.
+ *
+ * **Aquí hay arte sin máquina.** Desde SPEC 07 el catálogo es sólo `asteroids`,
+ * pero las ocho escenas de las máquinas que salieron se quedan archivadas: las
+ * de `caida` y `muro` son una pantalla de Tetris y otra de Arkanoid, y esos dos
+ * juegos esperan en `references/started-games/` a entrar con su motor. Cuando
+ * una de ellas llegue al catálogo, su escena **se mueve**: sale de
+ * `ArchivedPreviewId` y entra por `GameId`, no se copia.
  */
 
 import type { GameId } from "@/lib/games";
 
-export function drawPreview(ctx: CanvasRenderingContext2D, id: GameId, W: number, H: number): void {
+/** Escenas de las ocho máquinas que salieron del catálogo en SPEC 07. */
+type ArchivedPreviewId =
+  "muro" | "serpiente" | "invasores" | "rocas" | "duelo" | "corredor" | "caida" | "laberinto";
+
+/** Toda máquina del catálogo tiene escena, y además hay escena sin máquina. */
+export type PreviewId = GameId | ArchivedPreviewId;
+
+export function drawPreview(
+  ctx: CanvasRenderingContext2D,
+  id: PreviewId,
+  W: number,
+  H: number,
+): void {
   /** Rectángulo de neón: el pincel de casi todas las escenas. */
   const px = (c: string, x: number, y: number, w: number, h: number) => {
     ctx.save();
@@ -282,8 +301,9 @@ export function drawPreview(ctx: CanvasRenderingContext2D, id: GameId, W: number
       break;
     }
 
-    // 'laberinto' es el `else` final del prototipo.
-    default: {
+    // 'laberinto' era el `else` final del prototipo; aquí es un caso más para
+    // que el `default` pueda comprobar que no falta ninguna escena.
+    case "laberinto": {
       const LC = Math.min(W, H) / 8;
       const lx = (W - LC * 8) / 2;
       const ly = (H - LC * 6) / 2;
@@ -303,6 +323,11 @@ export function drawPreview(ctx: CanvasRenderingContext2D, id: GameId, W: number
       px("#ff006e", lx + LC * 5.6, ly + LC * 4.1, LC * 0.85, LC * 0.9); // guardián
       break;
     }
+
+    // Una máquina nueva en `GAMES` sin escena aquí deja de estrechar `id` a
+    // `never` y rompe la compilación, que es lo que este tipo estaba comprando.
+    default:
+      id satisfies never;
   }
 
   // Barrido del monitor sobre la escena, no sobre el canvas entero: cada

@@ -55,7 +55,11 @@ export const dynamic = "force-dynamic";
 export default async function HomePage() {
   // Las dos consultas en paralelo: no dependen una de otra y la portada no
   // tiene por qué esperar dos viajes seguidos.
-  const [recent, ranking] = await Promise.all([recentScores(), topPlayers()]);
+  const [recentResult, rankingResult] = await Promise.all([recentScores(), topPlayers()]);
+  // `null` es que no se pudo preguntar. La portada no distingue: sin actividad
+  // que enseñar esconde su sección, y da igual por qué no la haya.
+  const recent = recentResult ?? [];
+  const ranking = rankingResult ?? [];
   const hasActivity = recent.length > 0 || ranking.length > 0;
 
   return (
@@ -167,7 +171,7 @@ export default async function HomePage() {
       </section>
 
       {/* Franja de cifras: el único bloque a ancho completo de la portada, con
-          su velo amarillo. La primera cifra sale de `GAMES.length`. */}
+          su velo amarillo. Las tres cifras salen de `STATS`. */}
       <Reveal>
         <section className="relative overflow-hidden border-y border-av-line bg-linear-to-b from-av-void to-av-bg px-[clamp(14px,3vw,40px)] py-[clamp(40px,7vw,60px)]">
           <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(80%_60%_at_50%_50%,rgba(245,255,0,0.06),transparent_70%)]" />

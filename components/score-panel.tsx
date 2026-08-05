@@ -10,10 +10,14 @@
  *
  * La tabla llega resuelta del servidor. Lo único que se resuelve aquí es de
  * quién es cada marca, que es lo único que el servidor no puede saber.
+ *
+ * Tres estados, no dos: `null` es que no se pudo preguntar, y una lista vacía es
+ * una máquina cuyo marcador está por estrenar.
  */
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { ScoreboardEmpty } from "@/components/scoreboard-empty";
 import { ScoreboardUnavailable } from "@/components/scoreboard-unavailable";
 import type { GameId } from "@/lib/games";
 import { formatScore, type BoardRow } from "@/lib/scores";
@@ -28,15 +32,15 @@ export function ScorePanel({
   rows: served,
 }: {
   id: GameId;
-  /** La tabla de esta máquina. Vacía si la base de datos no contestó. */
-  rows: BoardRow[];
+  /** La tabla de esta máquina, o `null` si la base de datos no contestó. */
+  rows: BoardRow[] | null;
 }) {
   const [device, setDevice] = useState<string>();
 
   // eslint-disable-next-line react-hooks/set-state-in-effect -- lectura única de localStorage tras hidratar
   useEffect(() => setDevice(deviceId()), []);
 
-  const rows = served.map((r) => ({
+  const rows = (served ?? []).map((r) => ({
     ...r,
     mine: device !== undefined && r.deviceId === device,
   }));
@@ -48,7 +52,7 @@ export function ScorePanel({
       </h3>
 
       <div className="flex flex-col gap-0.5">
-        {rows.length === 0 && <ScoreboardUnavailable />}
+        {served === null ? <ScoreboardUnavailable /> : rows.length === 0 && <ScoreboardEmpty />}
 
         {rows.map((r, i) => (
           <div

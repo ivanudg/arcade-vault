@@ -10,8 +10,6 @@
  * - Los cuerpos de texto van en Courier Prime y sí llevan su acentuación.
  */
 
-import { GAMES } from "@/lib/games";
-
 /**
  * Los cuatro acentos permitidos en la portada: los tres neones del vault más
  * `--av-amber`. No hay verde ni morado; los cinco colores del template ajenos
@@ -50,7 +48,9 @@ export const FEATURES: readonly Feature[] = [
   {
     icon: "GAMEPAD",
     title: "JUEGOS CLASICOS",
-    desc: "Arkanoid, Tetris, Snake y muchos más. Los mejores arcades de todos los tiempos en un solo lugar.",
+    // Nombraba Arkanoid y Tetris, que es justo lo que SPEC 07 deja de haber.
+    // Ninguna promesa de máquina que no esté en el catálogo.
+    desc: "Asteroids, el clásico de vectores, entero y jugable en el navegador. Sin descargas ni emuladores.",
     accent: "cyan",
   },
   {
@@ -74,11 +74,13 @@ export const FEATURES: readonly Feature[] = [
 ];
 
 /**
- * Las tres cifras de la franja. La primera sale del catálogo real: el `12+`
- * del template no se corresponde con las máquinas que existen.
+ * Las tres cifras de la franja. La primera decía `9 JUEGOS Y CONTANDO` desde
+ * `GAMES.length`, que con el catálogo de SPEC 07 habría quedado en un absurdo
+ * `1 JUEGOS`. Va escrita a mano y en singular: presumir de una máquina que se
+ * juega de verdad es más honesto que presumir de nueve que no.
  */
 export const STATS: readonly Stat[] = [
-  { value: String(GAMES.length), unit: "JUEGOS", note: "Y CONTANDO" },
+  { value: "1", unit: "MAQUINA", note: "JUGABLE DE VERDAD" },
   { value: "MILES", unit: "DE PARTIDAS", note: "JUGADAS CADA DÍA" },
   { value: "GLOBAL", unit: "RANKING", note: "COMPITE CON EL MUNDO" },
 ];

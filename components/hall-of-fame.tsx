@@ -7,13 +7,17 @@
  * La pestaña inicial llega por prop desde la ruta (`?juego=`); a partir de ahí
  * es estado de cliente y la URL no cambia, igual que en el prototipo.
  *
- * Las nueve tablas llegan resueltas del servidor, así que cambiar de pestaña no
+ * Las tablas llegan resueltas del servidor, así que cambiar de pestaña no
  * consulta nada. Lo único que este componente resuelve por su cuenta es de quién
  * es cada marca: el servidor no puede leer `localStorage`.
+ *
+ * Tres estados, no dos: `tables` a `null` es que no se pudo preguntar, y una
+ * pestaña sin filas dentro de un mapa que sí llegó es una máquina sin estrenar.
  */
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { ScoreboardEmpty } from "@/components/scoreboard-empty";
 import { ScoreboardUnavailable } from "@/components/scoreboard-unavailable";
 import { GAMES, getGame, tint, type GameId } from "@/lib/games";
 import { formatScore, type BoardRow } from "@/lib/scores";
@@ -30,8 +34,8 @@ export function HallOfFame({
   tables,
 }: {
   initialTab: GameId;
-  /** Las nueve tablas ya resueltas. Vacío si la base de datos no contestó. */
-  tables: Partial<Record<GameId, BoardRow[]>>;
+  /** Las tablas ya resueltas, o `null` si la base de datos no contestó. */
+  tables: Partial<Record<GameId, BoardRow[]>> | null;
 }) {
   const [tab, setTab] = useState<GameId>(initialTab);
   const [device, setDevice] = useState<string>();
@@ -41,8 +45,8 @@ export function HallOfFame({
   // eslint-disable-next-line react-hooks/set-state-in-effect -- lectura única de localStorage tras hidratar
   useEffect(() => setDevice(deviceId()), []);
 
-  const unavailable = Object.keys(tables).length === 0;
-  const rows = (tables[tab] ?? []).map((r) => ({
+  const unavailable = tables === null;
+  const rows = (tables?.[tab] ?? []).map((r) => ({
     ...r,
     mine: device !== undefined && r.deviceId === device,
   }));
@@ -84,7 +88,7 @@ export function HallOfFame({
           <span className="text-right">FECHA</span>
         </div>
 
-        {unavailable && <ScoreboardUnavailable />}
+        {unavailable ? <ScoreboardUnavailable /> : rows.length === 0 && <ScoreboardEmpty />}
 
         {rows.map((r, i) => (
           <div

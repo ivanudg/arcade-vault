@@ -15,7 +15,6 @@
 import Link from "next/link";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
-import { GAMES } from "@/lib/games";
 
 export default function NotFound() {
   return (
@@ -32,9 +31,8 @@ export default function NotFound() {
           </h1>
 
           <p className="text-[15px] leading-[1.75] text-pretty text-av-text-soft">
-            Esa dirección no corresponde a ninguna de las {GAMES.length}{" "}
-            máquinas del vault. Vuelve a la biblioteca para ver el catálogo
-            completo.
+            Esa dirección no corresponde a ninguna máquina del vault. Vuelve a la biblioteca para
+            ver el catálogo completo.
           </p>
 
           <Link

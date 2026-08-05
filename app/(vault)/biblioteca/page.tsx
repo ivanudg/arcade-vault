@@ -17,12 +17,11 @@
 
 import type { Metadata } from "next";
 import { LibraryBrowser } from "@/components/library-browser";
-import { GAMES } from "@/lib/games";
 import { bests } from "@/lib/leaderboard";
 
 export const metadata: Metadata = {
   title: "BIBLIOTECA",
-  description: `Las ${GAMES.length} máquinas del vault, listas para jugar.`,
+  description: "Todas las máquinas del vault, listas para jugar.",
 };
 
 /**
@@ -32,9 +31,11 @@ export const metadata: Metadata = {
 export const dynamic = "force-dynamic";
 
 export default async function LibraryPage() {
-  // Una sola consulta para las nueve tarjetas: la cifra viaja ya en el HTML del
-  // servidor, así que no hay parpadeo de valor al hidratar.
-  const records = await bests();
+  // Una sola consulta para todas las tarjetas: la cifra viaja ya en el HTML del
+  // servidor, así que no hay parpadeo de valor al hidratar. Una máquina sin
+  // récord pinta `—`, y la tarjeta no distingue si es que no hay marcas o que
+  // no se pudo preguntar: en las dos, el récord está por escribir.
+  const records = (await bests()) ?? {};
 
   return (
     <main className="flex-1 px-[clamp(14px,3vw,40px)] pt-[clamp(22px,4vw,44px)] pb-22.5">
@@ -44,7 +45,7 @@ export default async function LibraryPage() {
             BIBLIOTECA
           </h1>
           <p className="mt-4.5 text-[14px] tracking-av text-av-text-dim">
-            Las {GAMES.length} máquinas del vault, listas para jugar.
+            Todas las máquinas del vault, listas para jugar.
           </p>
         </div>
 

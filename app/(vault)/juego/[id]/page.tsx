@@ -46,9 +46,11 @@ export default async function GamePage({ params }: PageProps<"/juego/[id]">) {
   if (!game) notFound();
 
   // Una sola consulta: el récord del rótulo es la primera fila de la tabla, así
-  // que no pueden discrepar.
+  // que no pueden discrepar. `rows` conserva el `null` —el panel distingue no
+  // poder preguntar de no haber marcas—; el rótulo no, porque en los dos casos
+  // el récord está por escribir y pinta `—`.
   const rows = await board(game.id);
-  const record = rows[0] ? formatScore(rows[0].score) : "—";
+  const record = rows?.[0] ? formatScore(rows[0].score) : "—";
 
   return (
     <main className="flex-1 px-[clamp(14px,3vw,40px)] pt-[clamp(22px,4vw,44px)] pb-22.5">
