@@ -26,16 +26,21 @@
 
 import type { GameCallbacks, GameHandle, GameMount, GameState } from "@/lib/games/engine";
 import { createInput } from "@/lib/games/input";
-import { INITIAL_LIVES, LEVELS, WORLD } from "./constants";
+import { INITIAL_LIVES, LEVELS, LEVEL_CLEAR_TIME, SCORE_PER_BLOCK, WORLD } from "./constants";
 import {
+  ballVsBlocks,
+  ballVsPaddle,
   centerPaddle,
   createBall,
   createPaddle,
+  launchBall,
   restBallOnPaddle,
+  updateBall,
+  updatePaddle,
   type Ball,
   type Paddle,
 } from "./entities";
-import { buildLevel, type Block } from "./levels";
+import { buildLevel, remainingBlocks, type Block } from "./levels";
 
 /**
  * Estado de una partida.
@@ -122,10 +127,102 @@ export const arkanoidGame: GameMount = {
       cb.onState(emitted);
     }
 
+    // ── Sucesos de partida ───────────────────────────────────────────────────
+
+    /**
+     * La bola cayó bajo el paddle. Si quedan vidas, la siguiente sale apoyada y
+     * esperando `ESPACIO`; el original la auto-relanzaba.
+     *
+     * `ball.speed` no se reinicia, como en el original: la velocidad acumulada
+     * durante el nivel se conserva al perder una vida.
+     */
+    function loseLife(r: Run) {
+      r.lives -= 1;
+      if (r.lives <= 0) {
+        r.lives = 0;
+        r.phase = "gameover";
+        r.ball.vx = 0;
+        r.ball.vy = 0;
+        // El original volvía a su pantalla de inicio; aquí manda React, así que
+        // el bucle se detiene y el aviso sale al final de este frame.
+        halt();
+        return;
+      }
+      centerPaddle(r.paddle);
+      restBallOnPaddle(r.ball, r.paddle);
+      r.phase = "serve";
+    }
+
+    /**
+     * Monta la pantalla siguiente, o acaba la partida si la despejada era la
+     * décima. El contrato no distingue ganar de perder: el jugador que despeje
+     * la última ve el mismo fin de partida, con su puntuación.
+     */
+    function advanceLevel(r: Run) {
+      if (r.levelIndex >= LEVELS.length - 1) {
+        r.phase = "gameover";
+        halt();
+        return;
+      }
+      r.levelIndex += 1;
+      r.blocks = buildLevel(r.levelIndex);
+      r.ball.speed = LEVELS[r.levelIndex].baseSpeed;
+      centerPaddle(r.paddle);
+      restBallOnPaddle(r.ball, r.paddle);
+      r.phase = "serve";
+    }
+
     // ── Simulación ───────────────────────────────────────────────────────────
 
-    function update(_dt: number) {
-      // Las cuatro fases entran en el paso siguiente.
+    function update(dt: number) {
+      const r = run;
+
+      if (r.phase === "gameover") return;
+
+      // La bola descansa sobre el paddle y le sigue hasta que `ESPACIO` la
+      // lanza. Es la fase que se lleva la pantalla de inicio del original y el
+      // auto-relanzamiento de `loseLife()`.
+      if (r.phase === "serve") {
+        updatePaddle(r.paddle, input, dt);
+        restBallOnPaddle(r.ball, r.paddle);
+        if (input.pressed("Space")) {
+          launchBall(r.ball);
+          r.phase = "playing";
+        }
+        return;
+      }
+
+      // Transición entre pantallas: la bola está parada y el tablero despejado
+      // sigue a la vista.
+      if (r.phase === "levelclear") {
+        r.clearTimer -= dt;
+        if (r.clearTimer <= 0) advanceLevel(r);
+        return;
+      }
+
+      updatePaddle(r.paddle, input, dt);
+      updateBall(r.ball, dt, r.levelIndex);
+      ballVsPaddle(r.ball, r.paddle);
+      if (ballVsBlocks(r.ball, r.blocks).broke) r.score += SCORE_PER_BLOCK;
+
+      // Caída bajo el paddle. El `return` es la única desviación de la lógica
+      // del original, que seguía comprobando el despeje después de perder la
+      // vida: con el último bloque roto y la última vida perdida en el mismo
+      // frame, la transición de nivel pisaba el fin de partida y `onGameOver`
+      // no llegaba a emitirse nunca.
+      if (r.ball.y - r.ball.r > WORLD.height) {
+        loseLife(r);
+        return;
+      }
+
+      // Pantalla despejada. Los grises no cuentan, así que un nivel con
+      // irrompibles se despeja con ellos todavía en pantalla.
+      if (remainingBlocks(r.blocks) === 0) {
+        r.phase = "levelclear";
+        r.ball.vx = 0;
+        r.ball.vy = 0;
+        r.clearTimer = LEVEL_CLEAR_TIME;
+      }
     }
 
     // ── Dibujo ───────────────────────────────────────────────────────────────
