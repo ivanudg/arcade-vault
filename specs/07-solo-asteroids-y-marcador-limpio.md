@@ -1,6 +1,6 @@
 # SPEC 07 — Solo asteroids: catálogo de una máquina y marcador limpio
 
-> **Estado:** Aprobado
+> **Estado:** Implementado
 > **Depende de:** SPEC 01, SPEC 05, SPEC 06
 > **Fecha:** 2026-08-04
 > **Objetivo:** Dejar en el catálogo únicamente la máquina que se juega de verdad, `asteroids`, y vaciar el marcador de marcas inventadas para que se llene jugando.
@@ -241,77 +241,77 @@ public.top_scores` devuelve 0 filas.
 
 **Catálogo**
 
-- [ ] `GAMES` tiene exactamente una entrada y su `id` es `asteroids`.
-- [ ] `/biblioteca` muestra una tarjeta.
-- [ ] `/salon` muestra una pestaña, `ASTEROIDS`, y abre en ella sin `?juego=`.
-- [ ] La sección `02` de la portada muestra una mini-tarjeta.
-- [ ] `/juego/rocas` y las otras siete fichas responden 404.
-- [ ] `/jugar/muro` y las otras siete pantallas de juego responden 404.
-- [ ] `grep -rn "DEMO_RUN\|SIMULAR FIN DE PARTIDA" app components lib` no devuelve
+- [x] `GAMES` tiene exactamente una entrada y su `id` es `asteroids`.
+- [x] `/biblioteca` muestra una tarjeta.
+- [x] `/salon` muestra una pestaña, `ASTEROIDS`, y abre en ella sin `?juego=`.
+- [x] La sección `02` de la portada muestra una mini-tarjeta.
+- [x] `/juego/rocas` y las otras siete fichas responden 404.
+- [x] `/jugar/muro` y las otras siete pantallas de juego responden 404.
+- [x] `grep -rn "DEMO_RUN\|SIMULAR FIN DE PARTIDA" app components lib` no devuelve
       nada, y `lib/demo-run.ts` no existe.
 
 **El motor se juega igual**
 
-- [ ] `/jugar/asteroids` carga el canvas, el HUD arranca en `0 / 3 / 1` y el mando
+- [x] `/jugar/asteroids` carga el canvas, el HUD arranca en `0 / 3 / 1` y el mando
       responde.
-- [ ] Terminar una partida abre el superpuesto de fin de partida.
-- [ ] `lib/games/`, `components/game-canvas.tsx` y `lib/games/engines.ts` no tienen
+- [x] Terminar una partida abre el superpuesto de fin de partida.
+- [x] `lib/games/`, `components/game-canvas.tsx` y `lib/games/engines.ts` no tienen
       ni una línea modificada.
 
 **El arte archivado**
 
-- [ ] `lib/preview-art.ts` conserva las ocho escenas y exporta `PreviewId`.
-- [ ] Añadir a `GAMES` una máquina sin escena es un error de `npx tsc --noEmit`.
-- [ ] La miniatura de `asteroids` se dibuja en `/biblioteca` y en
+- [x] `lib/preview-art.ts` conserva las ocho escenas y exporta `PreviewId`.
+- [x] Añadir a `GAMES` una máquina sin escena es un error de `npx tsc --noEmit`.
+- [x] La miniatura de `asteroids` se dibuja en `/biblioteca` y en
       `/juego/asteroids`.
 
 **El marcador arranca limpio**
 
-- [ ] `public.games` tiene 1 fila y su `id` es `asteroids`.
-- [ ] `public.scores` tiene 0 filas.
-- [ ] `select * from public.top_scores` y `select * from public.player_bests`
+- [x] `public.games` tiene 1 fila y su `id` es `asteroids`.
+- [x] `public.scores` tiene 0 filas.
+- [x] `select * from public.top_scores` y `select * from public.player_bests`
       devuelven 0 filas.
-- [ ] `npx supabase migration list` marca aplicada la migración nueva.
+- [x] `npx supabase migration list` marca aplicada la migración nueva.
 
 **Los tres estados**
 
-- [ ] Con la base viva y `scores` vacía, `/salon` y `/juego/asteroids` muestran
+- [x] Con la base viva y `scores` vacía, `/salon` y `/juego/asteroids` muestran
       `SE EL PRIMERO`, no `MARCADOR NO DISPONIBLE`.
-- [ ] Sin `.env.local`, esas dos pantallas muestran `MARCADOR NO DISPONIBLE`.
-- [ ] Con `scores` vacía, la portada no pinta la sección `03 · ACTIVIDAD EN VIVO`.
-- [ ] Con `scores` vacía, la tarjeta de `/biblioteca` muestra `—` y el rótulo de la
+- [x] Sin `.env.local`, esas dos pantallas muestran `MARCADOR NO DISPONIBLE`.
+- [x] Con `scores` vacía, la portada no pinta la sección `03 · ACTIVIDAD EN VIVO`.
+- [x] Con `scores` vacía, la tarjeta de `/biblioteca` muestra `—` y el rótulo de la
       ficha muestra `RECORD —`.
-- [ ] Guardar una partida hace que las cuatro pantallas pasen de vacío a tabla sin
+- [x] Guardar una partida hace que las cuatro pantallas pasen de vacío a tabla sin
       recargar a mano.
-- [ ] Las cinco funciones de `lib/leaderboard.ts` devuelven `null` con la base
+- [x] Las cinco funciones de `lib/leaderboard.ts` devuelven `null` con la base
       caída y lista o mapa vacío con la base viva y sin marcas.
-- [ ] Ninguna consulta de `lib/leaderboard.ts` propaga una excepción.
+- [x] Ninguna consulta de `lib/leaderboard.ts` propaga una excepción.
 
 **Los textos**
 
-- [ ] Ninguna pantalla escribe «Las 1 máquinas» ni «1 MÁQUINAS».
-- [ ] `FEATURES` no promete Arkanoid ni Tetris.
-- [ ] La franja de cifras de la portada no dice `9 JUEGOS`.
-- [ ] El pie y `app/not-found.tsx` no cuentan mal las máquinas.
+- [x] Ninguna pantalla escribe «Las 1 máquinas» ni «1 MÁQUINAS».
+- [x] `FEATURES` no promete Arkanoid ni Tetris.
+- [x] La franja de cifras de la portada no dice `9 JUEGOS`.
+- [x] El pie y `app/not-found.tsx` no cuentan mal las máquinas.
 
 **Nada más se ha movido**
 
-- [ ] `npm run build`, `npx tsc --noEmit` y `npm run lint` terminan sin errores.
-- [ ] La biblioteca conserva buscador y filtros por categoría, y filtrar por
+- [x] `npm run build`, `npx tsc --noEmit` y `npm run lint` terminan sin errores.
+- [x] La biblioteca conserva buscador y filtros por categoría, y filtrar por
       `DISPAROS` sigue mostrando la tarjeta.
-- [ ] `app/jugar/[id]/actions.ts`, `lib/scores.ts` y `lib/storage.ts` no cambian.
-- [ ] `lib/supabase/` no cambia y `/api/supabase-health` sigue respondiendo 200.
-- [ ] El esquema de SPEC 06 no cambia: mismas tablas, mismos índices, mismas tres
+- [x] `app/jugar/[id]/actions.ts`, `lib/scores.ts` y `lib/storage.ts` no cambian.
+- [x] `lib/supabase/` no cambia y `/api/supabase-health` sigue respondiendo 200.
+- [x] El esquema de SPEC 06 no cambia: mismas tablas, mismos índices, mismas tres
       políticas, mismas dos vistas.
-- [ ] `references/started-games/` no cambia.
+- [x] `references/started-games/` no cambia.
 
 **Documentación**
 
-- [ ] `CLAUDE.md` dice que el vault tiene una máquina y que toda la que entre
+- [x] `CLAUDE.md` dice que el vault tiene una máquina y que toda la que entre
       entra con motor.
-- [ ] `CLAUDE.md` nombra `lib/preview-art.ts` como arte sin máquina y explica el
+- [x] `CLAUDE.md` nombra `lib/preview-art.ts` como arte sin máquina y explica el
       `null` de `lib/leaderboard.ts`.
-- [ ] `CLAUDE.md` ya no describe ocho máquinas de escaparate ni `lib/demo-run.ts`.
+- [x] `CLAUDE.md` ya no describe ocho máquinas de escaparate ni `lib/demo-run.ts`.
 
 ## Decisiones tomadas y descartadas
 
