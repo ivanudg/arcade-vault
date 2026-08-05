@@ -10,19 +10,20 @@
  * "limpieza" cambiaría la escena. Todo se mide en fracciones de `W`/`H` y en
  * `u = W / 100`, así que las escenas escalan con el canvas.
  *
- * **Aquí hay arte sin máquina.** Desde SPEC 07 el catálogo es sólo `asteroids`,
- * pero las ocho escenas de las máquinas que salieron se quedan archivadas: las
- * de `caida` y `muro` son una pantalla de Tetris y otra de Arkanoid, y esos dos
- * juegos esperan en `references/started-games/` a entrar con su motor. Cuando
- * una de ellas llegue al catálogo, su escena **se mueve**: sale de
- * `ArchivedPreviewId` y entra por `GameId`, no se copia.
+ * **Aquí hay arte sin máquina.** SPEC 07 vació el catálogo y dejó archivadas
+ * las ocho escenas de las máquinas que salieron. Una de ellas era una pantalla
+ * de Tetris esperando a su juego: en SPEC 08 llegó, y esa escena **se movió**
+ * —no se copió— al `case "tetris"` de abajo. Quedan siete, y `muro` es la
+ * siguiente con dueño a la vista: es una pantalla de Arkanoid, que espera en
+ * `references/started-games/` a entrar con su motor. Cuando entre, su escena
+ * hace el mismo viaje: sale de `ArchivedPreviewId` y entra por `GameId`.
  */
 
 import type { GameId } from "@/lib/games";
 
-/** Escenas de las ocho máquinas que salieron del catálogo en SPEC 07. */
+/** Escenas que quedaron sin máquina cuando SPEC 07 vació el catálogo. */
 type ArchivedPreviewId =
-  "muro" | "serpiente" | "invasores" | "rocas" | "duelo" | "corredor" | "caida" | "laberinto";
+  "muro" | "serpiente" | "invasores" | "rocas" | "duelo" | "corredor" | "laberinto";
 
 /** Toda máquina del catálogo tiene escena, y además hay escena sin máquina. */
 export type PreviewId = GameId | ArchivedPreviewId;
@@ -261,7 +262,7 @@ export function drawPreview(
       break;
     }
 
-    case "caida": {
+    case "tetris": {
       const CC = W / 10;
       ctx.strokeStyle = "rgba(255,0,110,0.1)";
       for (let ci = 1; ci < 10; ci++) {

@@ -42,7 +42,21 @@ const PAD = [
  */
 const ENGINE_KEYS: Partial<Record<GameId, readonly string[]>> = {
   asteroids: ["ArrowLeft", "ArrowUp", "ArrowRight", "Space"],
+  tetris: ["ArrowLeft", "ArrowUp", "ArrowRight", "ArrowDown", "Space"],
 };
+
+/**
+ * Alto que ocupa la pantalla de juego por encima y por debajo del canvas:
+ * cabecera del sitio, HUD, el marco del gabinete, el mando y la línea de
+ * controles. Es el presupuesto que se le resta a la ventana para saber cuánto
+ * alto le queda a la pantalla.
+ *
+ * Está calibrado por lo bajo a propósito: con un presupuesto mayor cabría
+ * también el mando sin desplazar la página, pero un mundo apaisado como el de
+ * Asteroids —que hoy entra de sobra— empezaría a encogerse en pantallas
+ * normales. Lo que no puede quedar fuera de la ventana es el tablero.
+ */
+const CABINET_CHROME = "16rem";
 
 const SAVED_MESSAGE = "PUNTUACION GUARDADA";
 /** Lo que enseña el HUD antes del primer `onState`. */
@@ -161,6 +175,9 @@ export function PlayCabinet({ game }: { game: Game }) {
   // parcial— y no la vieja bifurcación.
   if (!engine) return null;
 
+  /** Proporción del mundo del motor: 1,33 en Asteroids y 0,70 en Tetris. */
+  const aspectRatio = engine.world.width / engine.world.height;
+
   return (
     <>
       {/* La sección envuelve sólo el gabinete, y los superpuestos quedan fuera,
@@ -171,20 +188,23 @@ export function PlayCabinet({ game }: { game: Game }) {
       <section className="mx-auto w-full max-w-195 animate-av-fade">
         <div className="flex flex-wrap items-center justify-between gap-3 border border-av-cyan/30 bg-[rgba(13,15,22,0.9)] px-4 py-3.5">
           <div className="flex flex-wrap gap-5.5 font-display text-[9px] tracking-av">
+            {/* Los rótulos los pone el motor: las tres cifras son siempre las
+                mismas, pero la del medio son vidas en Asteroids y líneas en
+                Tetris. */}
             <span className="text-av-text-dim">
-              PUNTUACION{" "}
+              {engine.hud[0]}{" "}
               <span className="text-av-cyan [text-shadow:0_0_10px_rgba(0,245,255,0.6)]">
                 {formatScore(run.score)}
               </span>
             </span>
             <span className="text-av-text-dim">
-              VIDAS{" "}
+              {engine.hud[1]}{" "}
               <span className="text-av-magenta [text-shadow:0_0_10px_rgba(255,0,110,0.6)]">
                 {run.lives}
               </span>
             </span>
             <span className="text-av-text-dim">
-              NIVEL{" "}
+              {engine.hud[2]}{" "}
               <span className="text-av-yellow [text-shadow:0_0_10px_rgba(245,255,0,0.6)]">
                 {run.level}
               </span>
@@ -208,7 +228,17 @@ export function PlayCabinet({ game }: { game: Game }) {
         </div>
 
         <div className="mx-auto mt-6.5 rounded-[34px] border border-av-cyan/22 bg-[linear-gradient(#15171f,#0b0c12)] p-5.5 shadow-[0_0_46px_rgba(0,245,255,0.12),inset_0_0_0_1px_rgba(255,255,255,0.04)]">
-          <div className="relative overflow-hidden rounded-[22px] bg-av-void shadow-[inset_0_0_60px_rgba(0,0,0,0.9),inset_0_0_12px_rgba(0,245,255,0.16)]">
+          {/* La pantalla llena el ancho del gabinete, salvo que su alto no
+              quepa: entonces manda la altura y el ancho la sigue, para que el
+              mundo del motor nunca se deforme. Sin esto, un mundo apaisado como
+              el de Asteroids cabe, y uno vertical como el de Tetris se estira
+              hasta obligar a hacer scroll para ver los dos extremos del
+              tablero. `CABINET_CHROME` es lo que ocupa todo lo demás de la
+              pantalla de juego: cabecera, HUD, marco, mando y controles. */}
+          <div
+            style={{ maxWidth: `calc((100svh - ${CABINET_CHROME}) * ${aspectRatio})` }}
+            className="relative mx-auto overflow-hidden rounded-[22px] bg-av-void shadow-[inset_0_0_60px_rgba(0,0,0,0.9),inset_0_0_12px_rgba(0,245,255,0.16)]"
+          >
             <GameCanvas
               game={engine}
               label={`Partida de ${game.title}`}
