@@ -55,7 +55,11 @@ export const dynamic = "force-dynamic";
 export default async function HomePage() {
   // Las dos consultas en paralelo: no dependen una de otra y la portada no
   // tiene por qué esperar dos viajes seguidos.
-  const [recent, ranking] = await Promise.all([recentScores(), topPlayers()]);
+  const [recentResult, rankingResult] = await Promise.all([recentScores(), topPlayers()]);
+  // `null` es que no se pudo preguntar. La portada no distingue: sin actividad
+  // que enseñar esconde su sección, y da igual por qué no la haya.
+  const recent = recentResult ?? [];
+  const ranking = rankingResult ?? [];
   const hasActivity = recent.length > 0 || ranking.length > 0;
 
   return (

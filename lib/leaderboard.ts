@@ -7,9 +7,14 @@
  * rompe al construir en vez de arrastrar el cliente de servidor al navegador.
  *
  * Regla de la casa: **ninguna función lanza**. Si la base de datos no contesta
- * —o si no hay credenciales— la consulta devuelve vacío y deja el error en la
+ * —o si no hay credenciales— la consulta devuelve `null` y deja el error en la
  * consola del servidor. Las pantallas avisan de que el marcador no está; no
  * inventan marcas.
+ *
+ * Y desde SPEC 07 **`null` no es lo mismo que vacío**: `null` es «no se pudo
+ * preguntar», y la lista o el mapa vacíos son «se preguntó y no hay marcas».
+ * Con el marcador arrancando de cero, el vacío es el estado del día uno, y
+ * decirle a quien llega que el marcador no está disponible sería mentirle.
  */
 
 import "server-only";
@@ -50,16 +55,17 @@ function isNextSignal(error: unknown): boolean {
 }
 
 /**
- * Envuelve una consulta: devuelve el valor de reserva ante cualquier fallo, sea
- * de red, de credenciales o de la propia base de datos.
+ * Envuelve una consulta: devuelve `null` ante cualquier fallo, sea de red, de
+ * credenciales o de la propia base de datos. Lo que la consulta devuelva —aun
+ * vacío— es una respuesta y sale tal cual.
  */
-async function safely<T>(what: string, fallback: T, run: () => Promise<T>): Promise<T> {
+async function safely<T>(what: string, run: () => Promise<T>): Promise<T | null> {
   try {
     return await run();
   } catch (error) {
     if (isNextSignal(error)) throw error;
     console.error(`[marcador] ${what} falló:`, error);
-    return fallback;
+    return null;
   }
 }
 
@@ -89,8 +95,8 @@ function toBoardRow(r: RawScore): BoardRow {
 }
 
 /** Tabla de una máquina: las diez primeras marcas, de mayor a menor. */
-export async function board(id: GameId): Promise<BoardRow[]> {
-  return safely(`board(${id})`, [], async () => {
+export async function board(id: GameId): Promise<BoardRow[] | null> {
+  return safely(`board(${id})`, async () => {
     const supabase = await createClient();
     const { data, error } = await supabase
       .from("top_scores")
@@ -104,14 +110,15 @@ export async function board(id: GameId): Promise<BoardRow[]> {
 }
 
 /**
- * Las nueve tablas de una sola consulta.
+ * Todas las tablas de una sola consulta.
  *
- * El salón las necesita todas a la vez para que cambiar de pestaña no sea otro
- * viaje: son noventa filas, una consulta por pestaña serían nueve viajes para
- * enseñar lo mismo. Una máquina sin marcas no aparece en el `Record`.
+ * El salón las necesita a la vez para que cambiar de pestaña no sea otro viaje:
+ * una consulta por pestaña serían tantos viajes como máquinas para enseñar lo
+ * mismo. Una máquina sin marcas no aparece en el `Record`, así que un mapa
+ * vacío es un marcador sin una sola marca.
  */
-export async function boards(): Promise<Partial<Record<GameId, BoardRow[]>>> {
-  return safely("boards()", {}, async () => {
+export async function boards(): Promise<Partial<Record<GameId, BoardRow[]>> | null> {
+  return safely("boards()", async () => {
     const supabase = await createClient();
     const { data, error } = await supabase
       .from("top_scores")
@@ -131,8 +138,8 @@ export async function boards(): Promise<Partial<Record<GameId, BoardRow[]>>> {
 }
 
 /** La mejor marca de cada máquina, sin formatear. Una sin marcas no aparece. */
-export async function bests(): Promise<Partial<Record<GameId, number>>> {
-  return safely("bests()", {}, async () => {
+export async function bests(): Promise<Partial<Record<GameId, number>> | null> {
+  return safely("bests()", async () => {
     const supabase = await createClient();
     const { data, error } = await supabase
       .from("top_scores")
@@ -150,8 +157,8 @@ export async function bests(): Promise<Partial<Record<GameId, number>>> {
 }
 
 /** Las marcas más recientes de todas las máquinas, de nueva a vieja. */
-export async function recentScores(limit = 7): Promise<RecentScore[]> {
-  return safely("recentScores()", [], async () => {
+export async function recentScores(limit = 7): Promise<RecentScore[] | null> {
+  return safely("recentScores()", async () => {
     const supabase = await createClient();
     const { data, error } = await supabase
       .from("scores")
@@ -176,8 +183,8 @@ export async function recentScores(limit = 7): Promise<RecentScore[]> {
  * El agrupado por nombre lo hace la vista `player_bests`; aquí sólo se recorta y
  * se numera.
  */
-export async function topPlayers(limit = 5): Promise<PlayerRank[]> {
-  return safely("topPlayers()", [], async () => {
+export async function topPlayers(limit = 5): Promise<PlayerRank[] | null> {
+  return safely("topPlayers()", async () => {
     const supabase = await createClient();
     const { data, error } = await supabase
       .from("player_bests")

@@ -47,7 +47,8 @@ export default async function GamePage({ params }: PageProps<"/juego/[id]">) {
 
   // Una sola consulta: el récord del rótulo es la primera fila de la tabla, así
   // que no pueden discrepar.
-  const rows = await board(game.id);
+  const result = await board(game.id);
+  const rows = result ?? [];
   const record = rows[0] ? formatScore(rows[0].score) : "—";
 
   return (

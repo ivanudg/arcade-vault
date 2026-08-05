@@ -32,9 +32,11 @@ export const metadata: Metadata = {
 export const dynamic = "force-dynamic";
 
 export default async function LibraryPage() {
-  // Una sola consulta para las nueve tarjetas: la cifra viaja ya en el HTML del
-  // servidor, así que no hay parpadeo de valor al hidratar.
-  const records = await bests();
+  // Una sola consulta para todas las tarjetas: la cifra viaja ya en el HTML del
+  // servidor, así que no hay parpadeo de valor al hidratar. Una máquina sin
+  // récord pinta `—`, y la tarjeta no distingue si es que no hay marcas o que
+  // no se pudo preguntar: en las dos, el récord está por escribir.
+  const records = (await bests()) ?? {};
 
   return (
     <main className="flex-1 px-[clamp(14px,3vw,40px)] pt-[clamp(22px,4vw,44px)] pb-22.5">

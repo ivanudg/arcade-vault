@@ -27,7 +27,7 @@ export default async function HallPage({ searchParams }: PageProps<"/salon">) {
 
   // Todas las tablas de una sola consulta: cambiar de pestaña no vuelve a
   // preguntar. Si la base no contesta llega `{}` y la tabla avisa.
-  const tables = await boards();
+  const tables = (await boards()) ?? {};
 
   return (
     <main className="flex-1 px-[clamp(14px,3vw,40px)] pt-[clamp(22px,4vw,44px)] pb-22.5">
