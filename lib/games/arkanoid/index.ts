@@ -26,13 +26,23 @@
 
 import type { GameCallbacks, GameHandle, GameMount, GameState } from "@/lib/games/engine";
 import { createInput } from "@/lib/games/input";
-import { INITIAL_LIVES, LEVELS, LEVEL_CLEAR_TIME, SCORE_PER_BLOCK, WORLD } from "./constants";
+import {
+  BACKGROUND,
+  INITIAL_LIVES,
+  LEVELS,
+  LEVEL_CLEAR_TIME,
+  SCORE_PER_BLOCK,
+  WORLD,
+} from "./constants";
 import {
   ballVsBlocks,
   ballVsPaddle,
   centerPaddle,
   createBall,
   createPaddle,
+  drawBall,
+  drawBlocks,
+  drawPaddle,
   launchBall,
   restBallOnPaddle,
   updateBall,
@@ -227,8 +237,27 @@ export const arkanoidGame: GameMount = {
 
     // ── Dibujo ───────────────────────────────────────────────────────────────
 
+    /**
+     * El tablero entero, y nada más.
+     *
+     * Del `draw()` del original no cruzan ni `drawHud()`, ni `drawScreens()`, ni
+     * `drawPauseMenu()`: la puntuación, las vidas, el nivel, el fin de partida y
+     * la pausa los pinta React a veinte píxeles del canvas. Durante `levelclear`
+     * esto sigue dibujando el tablero despejado, sin ningún rótulo encima.
+     *
+     * El fondo va opaco y cubre el mundo entero, así que hace de borrado del
+     * frame anterior. Las bandas `#0d0d1a` del letterbox del original no entran:
+     * `GameCanvas` no deja bandas.
+     */
     function draw() {
-      // El tablero entra en el paso siguiente.
+      const r = run;
+
+      ctx.fillStyle = BACKGROUND;
+      ctx.fillRect(0, 0, WORLD.width, WORLD.height);
+
+      drawBlocks(ctx, r.blocks);
+      drawPaddle(ctx, r.paddle);
+      drawBall(ctx, r.ball);
     }
 
     // ── Bucle ────────────────────────────────────────────────────────────────
