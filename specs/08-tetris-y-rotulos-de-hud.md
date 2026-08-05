@@ -1,6 +1,6 @@
 # SPEC 08 — Tetris: segunda máquina y rótulos de HUD por motor
 
-> **Estado:** Aprobado
+> **Estado:** Implementado
 > **Depende de:** SPEC 05, SPEC 07
 > **Fecha:** 2026-08-04
 > **Objetivo:** Portar el Tetris clásico de `references/started-games/03-tetris/` a un motor que cumpla el contrato y añadirlo como segunda máquina del vault, extendiendo el contrato con los rótulos del HUD para que la cifra del medio pueda llamarse `LINEAS` y no `VIDAS`.
