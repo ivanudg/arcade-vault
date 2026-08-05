@@ -48,9 +48,10 @@ export const FEATURES: readonly Feature[] = [
   {
     icon: "GAMEPAD",
     title: "JUEGOS CLASICOS",
-    // Nombraba Arkanoid y Tetris, que es justo lo que SPEC 07 deja de haber.
-    // Ninguna promesa de máquina que no esté en el catálogo.
-    desc: "Asteroids, el clásico de vectores, entero y jugable en el navegador. Sin descargas ni emuladores.",
+    // Sólo se nombra lo que está en `GAMES`: SPEC 07 quitó de aquí a Arkanoid,
+    // que sigue sin entrar, y a Tetris, que en SPEC 08 vuelve porque ya se
+    // juega. Ninguna promesa de máquina que no esté en el catálogo.
+    desc: "Asteroids y Tetris, dos clásicos enteros y jugables en el navegador. Sin descargas ni emuladores.",
     accent: "cyan",
   },
   {
@@ -76,11 +77,12 @@ export const FEATURES: readonly Feature[] = [
 /**
  * Las tres cifras de la franja. La primera decía `9 JUEGOS Y CONTANDO` desde
  * `GAMES.length`, que con el catálogo de SPEC 07 habría quedado en un absurdo
- * `1 JUEGOS`. Va escrita a mano y en singular: presumir de una máquina que se
- * juega de verdad es más honesto que presumir de nueve que no.
+ * `1 JUEGOS`. Sigue escrita a mano, y se actualiza con cada máquina que entra:
+ * presumir de las que se juegan de verdad es más honesto que presumir de nueve
+ * que no.
  */
 export const STATS: readonly Stat[] = [
-  { value: "1", unit: "MAQUINA", note: "JUGABLE DE VERDAD" },
+  { value: "2", unit: "MAQUINAS", note: "JUGABLES DE VERDAD" },
   { value: "MILES", unit: "DE PARTIDAS", note: "JUGADAS CADA DÍA" },
   { value: "GLOBAL", unit: "RANKING", note: "COMPITE CON EL MUNDO" },
 ];
