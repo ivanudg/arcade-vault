@@ -49,6 +49,13 @@ export const POINTS_PER_FRUIT = 10;
 
 // ── Colores ──────────────────────────────────────────────────────────────────
 
+/**
+ * El fondo del vault, no un color propio del tablero: la escena archivada que
+ * hace de miniatura se dibuja sobre él, así que la partida y la miniatura se ven
+ * iguales. Va opaco y cubre el mundo entero, o sea que borra el frame anterior.
+ */
+export const COLOR_BG = "#0a0a0f";
+
 export const COLOR_BODY = "#00f5ff";
 export const COLOR_HEAD = "#f5ff00";
 

@@ -19,7 +19,21 @@
 
 import type { GameCallbacks, GameHandle, GameMount, GameState } from "@/lib/games/engine";
 import { createInput } from "@/lib/games/input";
-import { COLS, H, LIVES, ROWS, START_LEN, W } from "./constants";
+import {
+  CELL,
+  COLOR_BG,
+  COLOR_GRID,
+  COLS,
+  FRUITS_PER_LEVEL,
+  H,
+  LIVES,
+  MAX_LEVEL,
+  POINTS_PER_FRUIT,
+  ROWS,
+  START_LEN,
+  W,
+  tickFor,
+} from "./constants";
 import { Fruit, Snake } from "./entities";
 import { pickFreeCell } from "./math";
 import { loadFruitAtlas } from "./sprites";
@@ -120,15 +134,138 @@ export const snakeGame: GameMount = {
       cb.onState(emitted);
     }
 
+    // ── Sucesos de partida ───────────────────────────────────────────────────
+
+    /**
+     * La serpiente se estrelló contra la pared o contra sí misma.
+     *
+     * Se conservan la puntuación y el nivel —o sea la velocidad ganada— y se
+     * pierde la longitud: reaparecer largo es morir otra vez en dos ticks, y
+     * reiniciar el nivel convertiría tres vidas en tres partidas cortas pegadas.
+     */
+    function loseLife(r: Run) {
+      r.lives -= 1;
+      if (r.lives <= 0) {
+        r.lives = 0;
+        r.phase = "gameover";
+        // El bucle se detiene aquí; el aviso sale al final de este frame, con el
+        // HUD ya cuadrado.
+        halt();
+        return;
+      }
+      r.snake = new Snake(SPAWN, "right", START_LEN);
+      r.fruit.place(freeCell(r.snake));
+      r.acc = 0;
+      r.phase = "ready";
+    }
+
+    /** Fruta comida: puntos, un segmento más y otra fruta en una celda libre. */
+    function eat(r: Run) {
+      r.score += POINTS_PER_FRUIT * r.level;
+      r.snake.grow();
+
+      r.eaten += 1;
+      if (r.eaten >= FRUITS_PER_LEVEL) {
+        r.eaten = 0;
+        // El nivel 10 es el último que acelera; a partir de ahí se sigue jugando
+        // al mismo ritmo hasta perder.
+        if (r.level < MAX_LEVEL) r.level += 1;
+      }
+
+      // Después de `grow()`, y a propósito: el segmento que falta por aparecer
+      // sale sobre la cola actual, que sigue en `cells`, así que la fruta nueva
+      // no puede caer debajo de él.
+      r.fruit.place(freeCell(r.snake));
+    }
+
+    /** Un paso de rejilla: avanzar y ver contra qué se ha chocado. */
+    function stepOnce(r: Run) {
+      r.snake.step();
+
+      if (r.snake.hitsWall() || r.snake.hitsSelf()) {
+        loseLife(r);
+        return;
+      }
+
+      const head = r.snake.head;
+      if (head.x === r.fruit.x && head.y === r.fruit.y) eat(r);
+    }
+
     // ── Simulación ───────────────────────────────────────────────────────────
 
     function update(dt: number) {
-      void dt;
+      const r = run;
+
+      if (r.phase === "gameover") return;
+
+      if (r.phase === "ready") {
+        if (input.pressed("Space")) {
+          r.phase = "playing";
+          // El primer paso llega un tick entero después, no en este frame.
+          r.acc = 0;
+        }
+        return;
+      }
+
+      // Los cuatro flancos se consumen siempre, aunque el giro se descarte: uno
+      // sin leer se aplicaría solo en el frame siguiente, como un giro fantasma.
+      // Cabe un giro por tick y gana el primero de este orden.
+      const up = input.pressed("ArrowUp");
+      const down = input.pressed("ArrowDown");
+      const left = input.pressed("ArrowLeft");
+      const right = input.pressed("ArrowRight");
+      if (up) r.snake.queue("up");
+      if (down) r.snake.queue("down");
+      if (left) r.snake.queue("left");
+      if (right) r.snake.queue("right");
+
+      // El acumulador va en milisegundos, como el tick. El `while` no llega a
+      // dar dos pasos —`MAX_DT` son 50 ms y el tick más corto son 60—, pero la
+      // condición se relee en cada vuelta porque comer puede subir el nivel, y
+      // perder una vida cambia la fase y sale.
+      r.acc += dt * 1000;
+      while (r.phase === "playing" && r.acc >= tickFor(r.level)) {
+        r.acc -= tickFor(r.level);
+        stepOnce(r);
+      }
     }
 
     // ── Dibujo ───────────────────────────────────────────────────────────────
 
-    function draw() {}
+    /**
+     * El tablero entero, y nada más.
+     *
+     * Ni puntuación, ni vidas, ni nivel, ni `GAME OVER`: eso lo pinta React a
+     * veinte píxeles del canvas, como en las otras tres máquinas. El motor solo
+     * sube las tres cifras por `onState`.
+     *
+     * La misma rejilla tenue de la escena archivada que hace de miniatura, con
+     * su mismo `rgba(0,245,255,0.1)`.
+     */
+    function draw() {
+      const r = run;
+
+      ctx.fillStyle = COLOR_BG;
+      ctx.fillRect(0, 0, W, H);
+
+      // El medio píxel es lo que separa una línea de 1 px nítida de una franja
+      // gris de 2 px: el canvas va escalado por `devicePixelRatio`.
+      ctx.strokeStyle = COLOR_GRID;
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      for (let col = 1; col < COLS; col++) {
+        ctx.moveTo(col * CELL + 0.5, 0);
+        ctx.lineTo(col * CELL + 0.5, H);
+      }
+      for (let row = 1; row < ROWS; row++) {
+        ctx.moveTo(0, row * CELL + 0.5);
+        ctx.lineTo(W, row * CELL + 0.5);
+      }
+      ctx.stroke();
+
+      r.fruit.draw(ctx, atlas.ready() ? atlas.image : null);
+      r.snake.draw(ctx);
+    }
 
     // ── Bucle ────────────────────────────────────────────────────────────────
 
