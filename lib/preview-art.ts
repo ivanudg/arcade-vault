@@ -11,19 +11,20 @@
  * `u = W / 100`, así que las escenas escalan con el canvas.
  *
  * **Aquí hay arte sin máquina.** SPEC 07 vació el catálogo y dejó archivadas
- * las ocho escenas de las máquinas que salieron. Dos han hecho ya el viaje de
+ * las ocho escenas de las máquinas que salieron. Tres han hecho ya el viaje de
  * vuelta —salir de `ArchivedPreviewId` y entrar por `GameId`, **moviéndose** y
- * no copiándose—: la pantalla de Tetris en SPEC 08, y `muro` en SPEC 09, que
- * era una pantalla de Arkanoid y hoy es el `case "arkanoid"` de abajo.
+ * no copiándose—: la pantalla de Tetris en SPEC 08; `muro` en SPEC 09, que era
+ * una pantalla de Arkanoid y hoy es el `case "arkanoid"`; y la rejilla con la
+ * culebra en SPEC 10, hoy el `case "snake"` de abajo, con su aritmética intacta.
  *
- * Quedan seis, y **ninguna espera ya máquina**: eran las dos únicas con material
- * en `references/started-games/`. Las seis que quedan son escena y nada más.
+ * Quedan cinco, y **ninguna espera ya máquina**: no tienen material del que
+ * salir. Las cinco que quedan son escena y nada más.
  */
 
 import type { GameId } from "@/lib/games";
 
 /** Escenas que quedaron sin máquina cuando SPEC 07 vació el catálogo. */
-type ArchivedPreviewId = "serpiente" | "invasores" | "rocas" | "duelo" | "corredor" | "laberinto";
+type ArchivedPreviewId = "invasores" | "rocas" | "duelo" | "corredor" | "laberinto";
 
 /** Toda máquina del catálogo tiene escena, y además hay escena sin máquina. */
 export type PreviewId = GameId | ArchivedPreviewId;
@@ -118,7 +119,7 @@ export function drawPreview(
       break;
     }
 
-    case "serpiente": {
+    case "snake": {
       const N = 10;
       const C = Math.min(W, H) / N;
       const ox = (W - C * N) / 2;

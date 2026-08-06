@@ -44,6 +44,9 @@ const ENGINE_KEYS: Partial<Record<GameId, readonly string[]>> = {
   asteroids: ["ArrowLeft", "ArrowUp", "ArrowRight", "Space"],
   tetris: ["ArrowLeft", "ArrowUp", "ArrowRight", "ArrowDown", "Space"],
   arkanoid: ["ArrowLeft", "ArrowRight", "Space"],
+  // La primera del vault que usa el mando entero: las cuatro flechas giran y
+  // `ESPACIO` arranca la serpiente.
+  snake: ["ArrowLeft", "ArrowUp", "ArrowRight", "ArrowDown", "Space"],
 };
 
 /**
