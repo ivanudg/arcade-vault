@@ -1,6 +1,6 @@
 # SPEC 10 — Snake con sprites de fruta
 
-> **Estado:** Aprobado
+> **Estado:** Implementada y validada — los 53 criterios de aceptación pasan (ver «Validación»)
 > **Depende de:** SPEC 05, SPEC 07
 > **Fecha:** 2026-08-06
 > **Objetivo:** Añadir `snake` como cuarta máquina del vault, con motor escrito desde cero contra el contrato y frutas dibujadas desde `fruits.png`, el primer asset binario que sirve el repo.
@@ -362,107 +362,156 @@ verifican con `npm run build` y `npx tsc --noEmit`.
 
 **El motor**
 
-- [ ] Existen `lib/games/snake/constants.ts`, `math.ts`, `sprites.ts`,
+- [x] Existen `lib/games/snake/constants.ts`, `math.ts`, `sprites.ts`,
       `entities.ts` e `index.ts`.
-- [ ] `lib/games/snake/` no importa nada de `react`, `next` ni `@/components`.
-- [ ] En el ámbito de módulo de `lib/games/snake/index.ts` no hay ni una variable
+- [x] `lib/games/snake/` no importa nada de `react`, `next` ni `@/components`.
+- [x] En el ámbito de módulo de `lib/games/snake/index.ts` no hay ni una variable
       mutable: todo el estado vive en `mount()`.
-- [ ] Montar y destruir dos veces no deja ningún `requestAnimationFrame` vivo ni
+- [x] Montar y destruir dos veces no deja ningún `requestAnimationFrame` vivo ni
       ningún listener en `window`.
-- [ ] Las 22 entradas de `FRUITS` coinciden número a número con
+- [x] Las 22 entradas de `FRUITS` coinciden número a número con
       `references/source-assets/snake-assets/sprites.js`.
-- [ ] `public/snake/fruits.png` es byte a byte el archivo de
+- [x] `public/snake/fruits.png` es byte a byte el archivo de
       `references/source-assets/snake-assets/`.
-- [ ] Con la red cortada, `/jugar/snake` se juega igual y la fruta se ve como un
+- [x] Con la red cortada, `/jugar/snake` se juega igual y la fruta se ve como un
       círculo magenta.
-- [ ] Las frutas se dibujan sin deformarse: un sprite vertical no sale estirado a
+- [x] Las frutas se dibujan sin deformarse: un sprite vertical no sale estirado a
       cuadrado.
-- [ ] La serpiente avanza una celda por tick y las cuatro flechas la giran.
-- [ ] Pulsar `↑` y `↓` entre dos ticks no da media vuelta: el giro opuesto se
+- [x] La serpiente avanza una celda por tick y las cuatro flechas la giran.
+- [x] Pulsar `↑` y `↓` entre dos ticks no da media vuelta: el giro opuesto se
       rechaza.
-- [ ] Comer una fruta alarga la serpiente un segmento y coloca otra fruta en una
+- [x] Comer una fruta alarga la serpiente un segmento y coloca otra fruta en una
       celda libre.
-- [ ] La fruta nunca aparece bajo el cuerpo de la serpiente.
-- [ ] Una fruta suma `10 × nivel`: 10 puntos en el nivel 1 y 100 en el 10.
-- [ ] Cada 5 frutas sube el nivel y el juego acelera; el nivel 10 corre a 60 ms y
+- [x] La fruta nunca aparece bajo el cuerpo de la serpiente.
+- [x] Una fruta suma `10 × nivel`: 10 puntos en el nivel 1 y 100 en el 10.
+- [x] Cada 5 frutas sube el nivel y el juego acelera; el nivel 10 corre a 60 ms y
       ya no acelera más.
-- [ ] Chocar con la pared o con el propio cuerpo resta una vida.
-- [ ] Al perder una vida la serpiente vuelve al centro con 3 segmentos, y la
+- [x] Chocar con la pared o con el propio cuerpo resta una vida.
+- [x] Al perder una vida la serpiente vuelve al centro con 3 segmentos, y la
       puntuación y el nivel se conservan.
-- [ ] Perder la tercera vida dispara `onGameOver` exactamente una vez y detiene el
+- [x] Perder la tercera vida dispara `onGameOver` exactamente una vez y detiene el
       bucle.
-- [ ] El canvas **no** pinta `PUNTUACION`, `VIDAS`, `NIVEL` ni `GAME OVER`.
+- [x] El canvas **no** pinta `PUNTUACION`, `VIDAS`, `NIVEL` ni `GAME OVER`.
 
 **El catálogo y las rutas**
 
-- [ ] `GAMES` tiene cuatro entradas y la cuarta es `snake`, la última.
-- [ ] `/biblioteca` muestra cuatro tarjetas y filtrar por `CLASICOS` deja solo la
+- [x] `GAMES` tiene cuatro entradas y la cuarta es `snake`, la última.
+- [x] `/biblioteca` muestra cuatro tarjetas y filtrar por `CLASICOS` deja solo la
       de Snake.
-- [ ] `/juego/snake` y `/jugar/snake` responden 200.
-- [ ] Las rutas de `asteroids`, `tetris` y `arkanoid` siguen respondiendo 200.
-- [ ] `ENGINES` tiene cuatro entradas.
-- [ ] La portada dice `4 MAQUINAS` y `FEATURES` nombra los cuatro juegos.
+- [x] `/juego/snake` y `/jugar/snake` responden 200.
+- [x] Las rutas de `asteroids`, `tetris` y `arkanoid` siguen respondiendo 200.
+- [x] `ENGINES` tiene cuatro entradas.
+- [x] La portada dice `4 MAQUINAS` y `FEATURES` nombra los cuatro juegos.
 
 **El mando y el HUD**
 
-- [ ] Los **cinco** botones del mando están vivos en `/jugar/snake`: ninguno se ve
+- [x] Los **cinco** botones del mando están vivos en `/jugar/snake`: ninguno se ve
       atenuado.
-- [ ] Con el ratón o el dedo se gira en las cuatro direcciones y se arranca, sin
+- [x] Con el ratón o el dedo se gira en las cuatro direcciones y se arranca, sin
       tocar el teclado.
-- [ ] Soltar el botón o sacar el puntero de él suelta la tecla.
-- [ ] La serpiente empieza quieta y no se mueve hasta que se pulsa `ESPACIO`,
+- [x] Soltar el botón o sacar el puntero de él suelta la tecla.
+- [x] La serpiente empieza quieta y no se mueve hasta que se pulsa `ESPACIO`,
       tanto al empezar la partida como después de perder una vida.
-- [ ] El HUD rotula `PUNTUACION`, `VIDAS` y `NIVEL`, y las tres cifras coinciden
+- [x] El HUD rotula `PUNTUACION`, `VIDAS` y `NIVEL`, y las tres cifras coinciden
       con la partida.
-- [ ] Al terminar `CARGANDO CARTUCHO` el HUD ya muestra `0 / 3 / 1`, sin
+- [x] Al terminar `CARGANDO CARTUCHO` el HUD ya muestra `0 / 3 / 1`, sin
       parpadeo.
-- [ ] El HUD no se actualiza en frames donde ninguna de las tres cifras cambia.
-- [ ] PAUSA congela el canvas y SEGUIR reanuda en el mismo punto.
-- [ ] La línea de controles bajo el mando dice lo mismo que `ENGINE_KEYS.snake`.
+- [x] El HUD no se actualiza en frames donde ninguna de las tres cifras cambia.
+- [x] PAUSA congela el canvas y SEGUIR reanuda en el mismo punto.
+- [x] La línea de controles bajo el mando dice lo mismo que `ENGINE_KEYS.snake`.
 
 **La miniatura**
 
-- [ ] `/biblioteca` y `/juego/snake` muestran la escena de la serpiente, no la del
+- [x] `/biblioteca` y `/juego/snake` muestran la escena de la serpiente, no la del
       `default`.
-- [ ] `grep -n "serpiente" lib/preview-art.ts` no devuelve nada: el id se movió,
+- [x] `grep -n "serpiente" lib/preview-art.ts` no devuelve nada: el id se movió,
       no se copió.
-- [ ] `ArchivedPreviewId` tiene cinco miembros.
-- [ ] La aritmética de la escena no cambió: el `case` solo se renombró.
+- [x] `ArchivedPreviewId` tiene cinco miembros.
+- [x] La aritmética de la escena no cambió: el `case` solo se renombró.
 
 **El marcador**
 
-- [ ] `public.games` tiene cuatro filas y la de `snake` tiene `sort_order = 3`.
-- [ ] Las filas de `asteroids`, `tetris` y `arkanoid` no cambiaron.
-- [ ] `public.scores` no gana ninguna fila con la migración.
-- [ ] Terminar una partida y pulsar GUARDAR PUNTUACION mete la marca y la enseñan
+- [x] `public.games` tiene cuatro filas y la de `snake` tiene `sort_order = 3`.
+- [x] Las filas de `asteroids`, `tetris` y `arkanoid` no cambiaron.
+- [x] `public.scores` no gana ninguna fila con la migración.
+- [x] Terminar una partida y pulsar GUARDAR PUNTUACION mete la marca y la enseñan
       `/salon`, `/juego/snake`, `/biblioteca` y la portada.
-- [ ] `/salon` muestra cuatro pestañas y sigue abriendo en `ASTEROIDS` sin
+- [x] `/salon` muestra cuatro pestañas y sigue abriendo en `ASTEROIDS` sin
       `?juego=`.
-- [ ] Con `scores` vacía, `/juego/snake` muestra `SE EL PRIMERO` y no
+- [x] Con `scores` vacía, `/juego/snake` muestra `SE EL PRIMERO` y no
       `MARCADOR NO DISPONIBLE`.
 
 **Nada más se ha movido**
 
-- [ ] `npm run build`, `npx tsc --noEmit` y `npm run lint` terminan sin errores.
-- [ ] `lib/games/engine.ts` no tiene ni una línea modificada.
-- [ ] `lib/games/input.ts` y `components/game-canvas.tsx` no tienen ni una línea
+- [x] `npm run build`, `npx tsc --noEmit` y `npm run lint` terminan sin errores.
+- [x] `lib/games/engine.ts` no tiene ni una línea modificada.
+- [x] `lib/games/input.ts` y `components/game-canvas.tsx` no tienen ni una línea
       modificada.
-- [ ] `lib/games/asteroids/`, `lib/games/tetris/` y `lib/games/arkanoid/` no
+- [x] `lib/games/asteroids/`, `lib/games/tetris/` y `lib/games/arkanoid/` no
       cambian.
-- [ ] `lib/leaderboard.ts`, `lib/scores.ts`, `lib/storage.ts` y
+- [x] `lib/leaderboard.ts`, `lib/scores.ts`, `lib/storage.ts` y
       `app/jugar/[id]/actions.ts` no cambian.
-- [ ] `references/source-assets/` y `references/started-games/` no tienen ningún
+- [x] `references/source-assets/` y `references/started-games/` no tienen ningún
       cambio.
-- [ ] `public/` contiene únicamente `snake/fruits.png`.
+- [x] `public/` contiene únicamente `snake/fruits.png`.
 
 **Documentación**
 
-- [ ] `CLAUDE.md` dice que el vault tiene cuatro máquinas y que `snake` es la
+- [x] `CLAUDE.md` dice que el vault tiene cuatro máquinas y que `snake` es la
       primera escrita desde cero.
-- [ ] `CLAUDE.md` nombra `public/snake/fruits.png` y explica que el contrato no
+- [x] `CLAUDE.md` nombra `public/snake/fruits.png` y explica que el contrato no
       cambió para cargarlo.
-- [ ] `CLAUDE.md` dice que quedan cinco escenas archivadas en
+- [x] `CLAUDE.md` dice que quedan cinco escenas archivadas en
       `lib/preview-art.ts`.
+
+## Validación
+
+Los 53 criterios se comprobaron el 2026-08-06, con la implementación en
+`spec-10-snake-con-sprites` y `npm run dev` en el 3000. Tres herramientas, según
+lo que había que mirar:
+
+- **Estático.** `npm run build`, `npx tsc --noEmit` y `npm run lint` terminan sin
+  errores. `git diff main...HEAD` confirma que no se tocó ninguno de los
+  archivos que la spec declara intactos. Las 22 entradas de `FRUITS` se
+  compararon **número a número** contra `sprites.js`: 22/22 idénticas. `cmp` da
+  el PNG byte a byte igual al de `references/source-assets/`, y `public/` no
+  contiene nada más. `grep` confirma cero apariciones de `serpiente` en
+  `lib/preview-art.ts` y cinco miembros en `ArchivedPreviewId`.
+- **El motor, en Node.** Se montó `snakeGame` con un canvas y un
+  `requestAnimationFrame` falsos, deduciendo del `ctx` dónde estaban serpiente y
+  fruta, y pilotando con `press`/`release`. Una partida de **60 frutas** hasta
+  perder las tres vidas: la 1ª suma 10 y la 50ª suma 100, el nivel sube al comer
+  las frutas nº 5, 10, 15 … 45 y se queda en 10, el ritmo medido baja de 150 ms
+  a 60 ms nivel a nivel, la fruta no cayó bajo el cuerpo ni un frame, y el total
+  cuadra con la tabla: 5 × (10+20+…+100) + 10 × 100 = **3750**. `onGameOver` se
+  avisó **una vez** y el bucle se paró; montar y destruir tres veces dejó cero
+  listeners en `window` y ningún frame pendiente. El HUD se emitió 64 veces en
+  toda la partida, no una por frame. El rechazo del giro opuesto se comprobó
+  contra `Snake` directamente, incluidas las dos pulsaciones entre ticks.
+- **Lo demás, en el navegador.** Rutas 200, cuatro tarjetas en `/biblioteca` y
+  filtro `CLASICOS` dejando sólo Snake, cuatro pestañas en `/salon` abriendo en
+  `ASTEROIDS`, `4 MAQUINAS` en la portada, la miniatura de la serpiente en la
+  ficha, y `SE EL PRIMERO` en `/juego/snake` mientras la máquina no tenía marcas.
+  Se jugó **sólo con el mando**, sin tocar el teclado: `FUEGO` arranca y las
+  cuatro flechas giran, con los cinco botones vivos —`asteroids` enseña uno
+  atenuado y `arkanoid` dos; `snake`, ninguno—. `PAUSA` congeló el canvas dos
+  segundos sin mover un píxel y `SEGUIR` reanudó en el mismo punto. Una partida
+  terminada con 10 puntos se guardó con `GUARDAR PUNTUACION` y apareció en
+  `/salon`, `/juego/snake`, `/biblioteca` y la actividad de la portada, con una
+  única fila nueva en `public.scores`.
+- **El respaldo de la fruta** se probó de verdad: con el atlas devolviendo 404,
+  la fruta se dibuja como el círculo magenta y la partida se juega igual. El PNG
+  se restauró después, y `cmp` lo confirma intacto.
+
+Dos matices que la lista de criterios no captura tal cual:
+
+- `references/source-assets/snake-assets/` no existía antes de esta rama: entró
+  con la spec, en el mismo commit que trajo el atlas. El criterio se lee como
+  «la implementación no lo edita», y eso se cumple —nada posterior lo tocó—.
+- Una flecha pulsada **durante la fase `"ready"`** no se consume hasta que la
+  partida arranca, así que se aplica como primer giro al pulsar `ESPACIO`. No
+  contradice ningún criterio y se parece a un _pre-input_ de arcade, pero
+  conviene saberlo: el flanco sobrevive aunque pasen segundos.
 
 ## Decisiones tomadas y descartadas
 
