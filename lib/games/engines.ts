@@ -11,6 +11,7 @@
 
 import { arkanoidGame } from "@/lib/games/arkanoid";
 import { asteroidsGame } from "@/lib/games/asteroids";
+import { snakeGame } from "@/lib/games/snake";
 import { tetrisGame } from "@/lib/games/tetris";
 import type { GameMount } from "@/lib/games/engine";
 import type { GameId } from "@/lib/games";
@@ -19,4 +20,5 @@ export const ENGINES: Partial<Record<GameId, GameMount>> = {
   asteroids: asteroidsGame,
   tetris: tetrisGame,
   arkanoid: arkanoidGame,
+  snake: snakeGame,
 };

@@ -24,8 +24,8 @@ No hay framework de tests configurado. Si se añade uno, documenta aquí cómo c
 
 ## Motores de juego
 
-El vault tiene **tres** máquinas, `asteroids`, `tetris` y `arkanoid`, y **toda la
-que entre a partir de aquí entra con motor**. Hasta SPEC 07 el catálogo enseñaba
+El vault tiene **cuatro** máquinas, `asteroids`, `tetris`, `arkanoid` y `snake`,
+y **toda la que entre a partir de aquí entra con motor**. Hasta SPEC 07 el catálogo enseñaba
 nueve y dejaba jugar una: las otras ocho eran escaparate —escena congelada de
 `drawPreview()`, HUD de cifras fijas y un botón que simulaba morir—. Ese camino
 se borró entero (`lib/demo-run.ts` y la bifurcación «sin motor» de
@@ -48,7 +48,34 @@ estado que se soporte.
   se mueve con `←`/`→`— y el menú de pausa con su selector de nivel. Y gana algo
   que el original no tiene en juego: `ESPACIO` lanza la bola, que empieza cada
   vida apoyada sobre el paddle en vez de auto-relanzarse.
+- `snake` entró en SPEC 10 y es la primera **escrita desde cero**: las otras tres
+  son puertos, pero de Snake el material era `fruits.png` y un `sprites.js` de 46
+  líneas con las coordenadas de sus recortes y ni una de lógica. Como no había
+  original del que copiar el equilibrio, lo fija la spec y vive junto en
+  `lib/games/snake/constants.ts` —150 ms por celda que bajan a 60, cinco frutas
+  por nivel, `10 × nivel` por fruta, tres vidas, celda de 32 en una rejilla de
+  25 × 20—: se ajusta ahí sin tocar el motor. Su directorio son cinco archivos,
+  `constants.ts`, `sprites.ts`, `math.ts`, `entities.ts` e `index.ts`, y declara
+  los mismos tres rótulos que Asteroids y Arkanoid, así que es la **tercera
+  seguida que no toca el contrato**. La pared mata y la cola también; al perder
+  una vida se vuelve al centro conservando puntuación y nivel, y se arranca con
+  `ESPACIO`, que la deja como la primera máquina que usa los **cinco** botones
+  del mando. Fuera quedaron los obstáculos por nivel, las frutas especiales, el
+  modo toroidal y el sonido.
 
+- **El vault sirve un binario, y el contrato no se enteró.** `snake` es el único
+  motor que carga un archivo: `public/snake/fruits.png`, el atlas del que salen
+  sus 22 frutas, copiado sin tocar un píxel desde `references/source-assets/` y
+  servido entero —recortarlo invalidaría las 22 coordenadas de
+  `lib/games/snake/sprites.ts`, que son copia literal—. **`public/` nació con él
+  y no contiene nada más.** Lo que ese pipeline **no** hizo es cambiar nada:
+  `lib/games/engine.ts` y `components/game-canvas.tsx` siguen igual y `mount()`
+  sigue siendo síncrono. `loadFruitAtlas()` devuelve un cargador nuevo por
+  montaje —una caché de módulo sería estado mutable fuera del closure— y el motor
+  solo le pregunta `ready()`, que es `false` hasta que la imagen carga y se queda
+  en `false` para siempre si salta `error`: mientras diga que no, la fruta es un
+  círculo magenta y la partida ni se entera. Una máquina que necesitara **esperar
+  de verdad** a sus assets pediría otro contrato, y eso es otra spec.
 - **El contrato vive en `lib/games/engine.ts`**: `GameMount` (un `world` estático
   con el tamaño lógico, los rótulos `hud` y `mount(canvas, callbacks)`) y el
   `GameHandle` que devuelve, con `start`, `pause`, `resume`, `restart`, `destroy`
@@ -57,8 +84,8 @@ estado que se soporte.
   `onGameOver`.
 - **Las tres cifras del HUD son fijas; sus rótulos no.** `GameState` es siempre
   `score`/`lives`/`level`, pero cada motor declara cómo se llaman en su
-  `hud: readonly [string, string, string]` —`VIDAS` en Asteroids y en Arkanoid,
-  `LINEAS` en Tetris, que no tiene vidas—, y `PlayCabinet` los lee de ahí en vez de
+  `hud: readonly [string, string, string]` —`VIDAS` en Asteroids, Arkanoid y
+  Snake, `LINEAS` en Tetris, que no tiene vidas—, y `PlayCabinet` los lee de ahí en vez de
   escribirlos a mano. El campo es **requerido y sin valor por defecto**: un
   motor nuevo no hereda en silencio unos rótulos que podrían mentir en pantalla,
   `tsc` le obliga a decidir. Y `mount()` **emite el estado inicial antes de
@@ -82,19 +109,21 @@ estado que se soporte.
   `lib/games/<juego>/`, añadir una línea a `ENGINES`, un literal a `GameId` con
   su entrada en `GAMES`, y una migración que la meta en `public.games`. Son
   **cinco** si hay escena archivada que mover en `lib/preview-art.ts`, que es
-  como entraron `tetris` y `arkanoid` —y ya no queda ninguna por mover—. El
+  como entraron `tetris`, `arkanoid` y `snake`. El
   teclado se coge de `lib/games/input.ts`
   (`createInput()`), que engancha `window` solo mientras hay partida y limita el
   `preventDefault` a las flechas y `Space`. Declara sus teclas vivas en
   `ENGINE_KEYS`, dentro de `components/play-cabinet.tsx`.
 - **`lib/preview-art.ts` guarda arte sin máquina.** Su `PreviewId` es
   `GameId | ArchivedPreviewId`, y `ArchivedPreviewId` son las escenas de las
-  máquinas que salieron del catálogo en SPEC 07: eran ocho y hoy son **seis**,
-  porque dos **se movieron** —salieron de `ArchivedPreviewId` y entraron por
+  máquinas que salieron del catálogo en SPEC 07: eran ocho y hoy son **cinco**,
+  porque tres **se movieron** —salieron de `ArchivedPreviewId` y entraron por
   `GameId`, no se copiaron—: la que era una pantalla de Tetris al llegar
-  SPEC 08, y `muro` al llegar SPEC 09, que era una pantalla de Arkanoid y hoy es
-  el `case "arkanoid"`. De las seis que quedan **ninguna espera ya máquina**:
-  eran las dos únicas con material en `references/started-games/`. El `switch` de
+  SPEC 08; `muro` al llegar SPEC 09, que era una pantalla de Arkanoid y hoy es
+  el `case "arkanoid"`; y `serpiente` al llegar SPEC 10, hoy el `case "snake"`,
+  con su aritmética intacta —el `case` sólo se renombró—. Ninguna de las cinco
+  que quedan tiene material en `references/started-games/`, pero eso ya no las
+  descarta: Snake tampoco lo tenía y su motor se escribió entero. El `switch` de
   `drawPreview()` acaba en `id satisfies never`, así que una máquina nueva sin
   escena rompe `npx tsc --noEmit` en vez de dibujar otra cosa.
 - **La pantalla nunca se sale de la ventana.** El marco de `PlayCabinet` limita
@@ -103,7 +132,9 @@ estado que se soporte.
   manda la altura y el ancho la sigue, sin deformar nada. Sin eso, un mundo
   vertical como el de Tetris (420 × 600) obliga a hacer scroll para ver los dos
   extremos del tablero.
-- `references/started-games/` es material de referencia: se lee, no se edita.
+- `references/started-games/` y `references/source-assets/` son material de
+  referencia: se leen, no se editan. Lo que sale de ahí se **copia** al repo
+  —`public/snake/fruits.png` es el único caso hasta hoy—.
 
 ## Supabase
 
@@ -121,9 +152,9 @@ El proyecto está conectado a Supabase (`nlfwqnmidfdohuyhklqp`) desde SPEC 04, y
 Desde SPEC 06 las puntuaciones son **una sola tabla compartida**, no una copia por
 navegador. `addScore()` ya no existe. Desde SPEC 07 **arranca vacío**: las noventa
 marcas sembradas se borraron y se llena jugando. Ninguna máquina nueva se siembra:
-SPEC 08 metió la fila de `tetris` en `public.games` y SPEC 09 la de `arkanoid`
-—la tabla tiene **tres**, con `sort_order` 0, 1 y 2—, y ni una marca en
-`public.scores`.
+SPEC 08 metió la fila de `tetris` en `public.games`, SPEC 09 la de `arkanoid` y
+SPEC 10 la de `snake` —la tabla tiene **cuatro**, con `sort_order` 0, 1, 2 y 3—,
+y ni una marca en `public.scores`.
 
 - **Qué vive en la base de datos y qué no.** `public.scores` son las marcas y
   `public.games` existe para que `scores.game_id` tenga una clave ajena real. El

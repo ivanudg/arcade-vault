@@ -14,12 +14,12 @@
  */
 
 /** Una máquina nueva entra añadiendo un literal aquí y su entrada en `GAMES`. */
-export type GameId = "asteroids" | "tetris" | "arkanoid";
+export type GameId = "asteroids" | "tetris" | "arkanoid" | "snake";
 
 /**
  * Vocabulario cerrado de categorías, no inventario de lo que hay hoy: conserva
- * los seis valores aunque de momento sólo se usen `DISPAROS`, `PUZZLE` y
- * `ARCADE`.
+ * los seis valores aunque de momento sólo se usen `DISPAROS`, `PUZZLE`,
+ * `ARCADE` y `CLASICOS`.
  */
 export type GameCategory = "ARCADE" | "CLASICOS" | "DISPAROS" | "REFLEJOS" | "PUZZLE" | "LABERINTO";
 
@@ -73,6 +73,16 @@ export const GAMES: readonly Game[] = [
     desc: "Rompe todos los bloques sin dejar caer la bola.",
     long: "El clásico de la pala y la bola, entero y jugable de verdad. Diez pantallas que van apretando: la bola sale más rápida en cada una y acelera mientras juegas. Los bloques de dos y tres golpes se desgastan a la vista antes de romperse, y los grises no se rompen nunca. El punto de la pala donde golpeas decide el ángulo de salida, hasta sesenta grados. Cada bloque roto vale cien puntos y despejar la decima pantalla acaba la partida.",
     controls: "Flechas ← → mueven la pala · ESPACIO lanza la bola",
+  },
+  {
+    id: "snake",
+    title: "SNAKE",
+    cat: "CLASICOS",
+    glow: "#00f5ff",
+    playable: true,
+    desc: "Come fruta, crece y no te muerdas la cola.",
+    long: "El clásico de la serpiente, con veintidós frutas de verdad en vez de un cuadrado. Cada fruta que comes te hace un segmento más largo y vale diez puntos por nivel, así que la misma manzana renta diez veces más en el nivel diez que en el primero. Cada cinco frutas el juego acelera, de ciento cincuenta milisegundos por celda a sesenta. La pared mata y tu propia cola también. Tres vidas: al perder una vuelves al centro con la puntuación y la velocidad intactas.",
+    controls: "Flechas ← ↑ → ↓ giran · ESPACIO arranca",
   },
 ];
 
