@@ -43,6 +43,7 @@ const PAD = [
 const ENGINE_KEYS: Partial<Record<GameId, readonly string[]>> = {
   asteroids: ["ArrowLeft", "ArrowUp", "ArrowRight", "Space"],
   tetris: ["ArrowLeft", "ArrowUp", "ArrowRight", "ArrowDown", "Space"],
+  arkanoid: ["ArrowLeft", "ArrowRight", "Space"],
 };
 
 /**

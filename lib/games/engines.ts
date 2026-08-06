@@ -9,6 +9,7 @@
  * añadir aquí una línea.
  */
 
+import { arkanoidGame } from "@/lib/games/arkanoid";
 import { asteroidsGame } from "@/lib/games/asteroids";
 import { tetrisGame } from "@/lib/games/tetris";
 import type { GameMount } from "@/lib/games/engine";
@@ -17,4 +18,5 @@ import type { GameId } from "@/lib/games";
 export const ENGINES: Partial<Record<GameId, GameMount>> = {
   asteroids: asteroidsGame,
   tetris: tetrisGame,
+  arkanoid: arkanoidGame,
 };
