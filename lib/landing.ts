@@ -50,8 +50,9 @@ export const FEATURES: readonly Feature[] = [
     title: "JUEGOS CLASICOS",
     // Sólo se nombra lo que está en `GAMES`: SPEC 07 quitó de aquí a Arkanoid y
     // a Tetris, que volvieron al entrar con motor —Tetris en SPEC 08, Arkanoid
-    // en SPEC 09—. Ninguna promesa de máquina que no esté en el catálogo.
-    desc: "Asteroids, Tetris y Arkanoid, tres clásicos enteros y jugables en el navegador. Sin descargas ni emuladores.",
+    // en SPEC 09, y Snake llegó en SPEC 10—. Ninguna promesa de máquina que no
+    // esté en el catálogo.
+    desc: "Asteroids, Tetris, Arkanoid y Snake, cuatro clásicos enteros y jugables en el navegador. Sin descargas ni emuladores.",
     accent: "cyan",
   },
   {
@@ -82,7 +83,7 @@ export const FEATURES: readonly Feature[] = [
  * que no.
  */
 export const STATS: readonly Stat[] = [
-  { value: "3", unit: "MAQUINAS", note: "JUGABLES DE VERDAD" },
+  { value: "4", unit: "MAQUINAS", note: "JUGABLES DE VERDAD" },
   { value: "MILES", unit: "DE PARTIDAS", note: "JUGADAS CADA DÍA" },
   { value: "GLOBAL", unit: "RANKING", note: "COMPITE CON EL MUNDO" },
 ];
