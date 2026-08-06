@@ -1,6 +1,6 @@
 # SPEC 09 — Arkanoid: tercera máquina y el puerto sin sprites
 
-> **Estado:** Aprobado
+> **Estado:** Implementado
 > **Depende de:** SPEC 05, SPEC 07, SPEC 08
 > **Fecha:** 2026-08-05
 > **Objetivo:** Portar el Arkanoid de `references/started-games/04-arkanoid/` a un motor que cumpla el contrato y añadirlo como tercera máquina del vault, redibujando con primitivas de canvas todo lo que el original resolvía con un spritesheet.
