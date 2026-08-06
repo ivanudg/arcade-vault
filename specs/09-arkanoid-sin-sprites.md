@@ -379,126 +379,146 @@ no los consume nadie todavía: se verifican con `npm run build` y
 
 **El motor**
 
-- [ ] Existen `lib/games/arkanoid/constants.ts`, `levels.ts`, `entities.ts` e
+- [x] Existen `lib/games/arkanoid/constants.ts`, `levels.ts`, `entities.ts` e
       `index.ts`.
-- [ ] `lib/games/arkanoid/` no importa nada de `react`, `next` ni de
+- [x] `lib/games/arkanoid/` no importa nada de `react`, `next` ni de
       `@/components`.
-- [ ] En el ámbito de módulo de `lib/games/arkanoid/index.ts` no hay ni una
+- [x] En el ámbito de módulo de `lib/games/arkanoid/index.ts` no hay ni una
       variable mutable: todo el estado de partida vive dentro de `mount()`.
-- [ ] Montar el juego dos veces y destruirlo dos veces no deja ningún
+- [x] Montar el juego dos veces y destruirlo dos veces no deja ningún
       `requestAnimationFrame` vivo ni ningún listener enganchado en `window`.
-- [ ] `←` y `→` mueven el paddle y no lo dejan salir del mundo.
-- [ ] La partida empieza con la bola apoyada sobre el paddle, y `ESPACIO` la
+      _(instrumentando `addEventListener`/`rAF`: 1/1/1 jugando → 0/0/0 al salir,
+      dos ciclos)_
+- [x] `←` y `→` mueven el paddle y no lo dejan salir del mundo. _(600 px/s;
+      topes medidos en `x = 0` y `x = 638`)_
+- [x] La partida empieza con la bola apoyada sobre el paddle, y `ESPACIO` la
       lanza.
-- [ ] Golpear con el centro del paddle devuelve la bola casi vertical, y golpear
-      con un extremo la devuelve inclinada, hasta 60° de la vertical.
-- [ ] La bola rebota en las dos paredes y en el techo, y nunca se queda rebotando
-      en horizontal.
-- [ ] Un bloque de un golpe se rompe al primer impacto y suma 100 puntos.
-- [ ] Un bloque de dos golpes aguanta dos impactos y uno de tres, tres; entre
+- [x] Golpear con el centro del paddle devuelve la bola casi vertical, y golpear
+      con un extremo la devuelve inclinada, hasta 60° de la vertical. _(0,00° en
+      el centro, ±60,00° en los extremos, recortado a 60° al filo)_
+- [x] La bola rebota en las dos paredes y en el techo, y nunca se queda rebotando
+      en horizontal. _(mínimos jugando: x 7,8 / 791,6, y 7,7; peor `vy/speed` en
+      todo el ancho del paddle = −0,5000)_
+- [x] Un bloque de un golpe se rompe al primer impacto y suma 100 puntos.
+- [x] Un bloque de dos golpes aguanta dos impactos y uno de tres, tres; entre
       impactos se ve más transparente.
-- [ ] Un bloque gris rebota la bola, no se rompe nunca y no suma puntos.
-- [ ] Un nivel con bloques grises se despeja aunque los grises sigan en pantalla.
-- [ ] Despejar un nivel espera 1,2 s antes de montar el siguiente.
-- [ ] La bola acelera durante el nivel hasta el tope de ese nivel, y cada nivel
-      sale más rápida que el anterior.
-- [ ] Que la bola caiga bajo el paddle resta una vida y deja la siguiente apoyada,
+- [x] Un bloque gris rebota la bola, no se rompe nunca y no suma puntos.
+- [x] Un nivel con bloques grises se despeja aunque los grises sigan en pantalla.
+- [x] Despejar un nivel espera 1,2 s antes de montar el siguiente. _(1203 ms
+      medidos, con la bola congelada y el tablero despejado a la vista)_
+- [x] La bola acelera durante el nivel hasta el tope de ese nivel, y cada nivel
+      sale más rápida que el anterior. _(260 → 460 en el 1; 460 → 595 en el 10)_
+- [x] Que la bola caiga bajo el paddle resta una vida y deja la siguiente apoyada,
       esperando `ESPACIO`.
-- [ ] `constants.ts` no retoca ni un valor de
+- [x] `constants.ts` no retoca ni un valor de
       `references/started-games/04-arkanoid/src/config.js`.
 - [ ] El motor no carga ningún archivo:
       `grep -rn "Image\|Audio\|fetch\|\.png\|\.mp3" lib/games/arkanoid/` no
-      devuelve nada.
-- [ ] El canvas **no** pinta puntuación, vidas, nivel, `GAME OVER` ni ningún menú
-      de pausa.
+      devuelve nada. _(no hay ninguna carga real, pero el grep devuelve dos
+      líneas **de comentario**: `entities.ts:17` nombra el `.png` descartado e
+      `index.ts:19` los `.mp3` que esperan a su spec)_
+- [x] El canvas **no** pinta puntuación, vidas, nivel, `GAME OVER` ni ningún menú
+      de pausa. _(`EN PAUSA` y `FIN DEL JUEGO` salen en `innerText`: son DOM)_
 
 **El catálogo y las rutas**
 
-- [ ] `GAMES` tiene tres entradas y la tercera es `arkanoid`, la última del array.
-- [ ] `/biblioteca` muestra tres tarjetas y filtrar por `ARCADE` deja solo
+- [x] `GAMES` tiene tres entradas y la tercera es `arkanoid`, la última del array.
+- [x] `/biblioteca` muestra tres tarjetas y filtrar por `ARCADE` deja solo
       `ARKANOID`.
-- [ ] `/juego/arkanoid` y `/jugar/arkanoid` responden 200; las cuatro rutas de
+- [x] `/juego/arkanoid` y `/jugar/arkanoid` responden 200; las cuatro rutas de
       `asteroids` y `tetris` siguen respondiendo 200.
-- [ ] `/salon` muestra tres pestañas y sin `?juego=` sigue abriendo en
+- [x] `/salon` muestra tres pestañas y sin `?juego=` sigue abriendo en
       `ASTEROIDS`.
-- [ ] `ENGINES` tiene tres entradas y `/jugar/arkanoid` monta un canvas jugable,
+- [x] `ENGINES` tiene tres entradas y `/jugar/arkanoid` monta un canvas jugable,
       no una pantalla en blanco.
-- [ ] Las tres tarjetas de `/biblioteca` tienen tres neones distintos.
+- [x] Las tres tarjetas de `/biblioteca` tienen tres neones distintos.
+      _(`#f5ff00`, `#00f5ff`, `#ff006e`)_
 
 **El mando y el HUD**
 
-- [ ] El HUD de `/jugar/arkanoid` rotula `PUNTUACION`, `VIDAS` y `NIVEL`, y
+- [x] El HUD de `/jugar/arkanoid` rotula `PUNTUACION`, `VIDAS` y `NIVEL`, y
       arranca en `0 / 3 / 1`.
-- [ ] `←`, `→` y `ESPACIO` están vivos en el mando táctil y funcionan sin tocar el
+- [x] `←`, `→` y `ESPACIO` están vivos en el mando táctil y funcionan sin tocar el
       teclado.
-- [ ] `↑` y `↓` se pintan deshabilitados y atenuados, no escondidos, y la rejilla
+- [x] `↑` y `↓` se pintan deshabilitados y atenuados, no escondidos, y la rejilla
       de cinco botones no se descuadra.
-- [ ] Mantener pulsado `←` o `→` en el mando táctil mueve el paddle de forma
-      continua.
-- [ ] Soltar el botón, sacar el puntero de él o cancelar el gesto detiene el
+- [x] Mantener pulsado `←` o `→` en el mando táctil mueve el paddle de forma
+      continua. _(400 → 301 → 120)_
+- [x] Soltar el botón, sacar el puntero de él o cancelar el gesto detiene el
       paddle.
-- [ ] Pulsar `A`, `D`, `P`, `Escape` o `Enter` en `/jugar/arkanoid` no hace nada y
+- [x] Pulsar `A`, `D`, `P`, `Escape` o `Enter` en `/jugar/arkanoid` no hace nada y
       no mueve el scroll de la página.
-- [ ] Mover el ratón sobre el canvas no mueve el paddle.
-- [ ] `PAUSA` congela el canvas y deja el teclado sin efecto; `SEGUIR` reanuda en
-      el mismo punto, con la bola donde estaba.
-- [ ] Cambiar de pestaña pausa la partida sola, y al volver sigue pausada.
-- [ ] Perder la tercera vida abre `FIN DEL JUEGO` con la puntuación real, y el
-      bucle se detiene.
+- [x] Mover el ratón sobre el canvas no mueve el paddle.
+- [x] `PAUSA` congela el canvas y deja el teclado sin efecto; `SEGUIR` reanuda en
+      el mismo punto, con la bola donde estaba. _(sin salto: 32,7 px en 80 ms a
+      ~400 px/s)_
+- [x] Cambiar de pestaña pausa la partida sola, y al volver sigue pausada.
+- [x] Perder la tercera vida abre `FIN DEL JUEGO` con la puntuación real, y el
+      bucle se detiene. _(6800, la misma cifra del HUD)_
 - [ ] Despejar el nivel 10 abre el mismo `FIN DEL JUEGO`, con la puntuación real.
-- [ ] `JUGAR DE NUEVO` reinicia a 0 puntos, 3 vidas y nivel 1 sin recargar la
+      _(no alcanzado jugando; verificado leyendo `advanceLevel()`, que en el
+      último nivel entra por el mismo `phase = "gameover"` + `halt()` y la misma
+      emisión única de `onGameOver` que sí se ejecutó al perder la última vida)_
+- [x] `JUGAR DE NUEVO` reinicia a 0 puntos, 3 vidas y nivel 1 sin recargar la
       página, con la bola apoyada.
-- [ ] El HUD no se actualiza en frames donde ninguna de las tres cifras cambia.
+- [x] El HUD no se actualiza en frames donde ninguna de las tres cifras cambia.
 
 **La miniatura**
 
-- [ ] `grep -n "muro" lib/preview-art.ts` solo devuelve líneas de comentario: el
+- [x] `grep -n "muro" lib/preview-art.ts` solo devuelve líneas de comentario: el
       `case` y la unión archivada ya no lo nombran.
-- [ ] `ArchivedPreviewId` tiene seis ids y ninguno de ellos tiene material en
-      `references/started-games/`.
-- [ ] La tarjeta de `/biblioteca` y la ficha de `/juego/arkanoid` muestran la
+- [x] `ArchivedPreviewId` tiene seis ids y ninguno de ellos tiene material en
+      `references/started-games/`. _(solo hay `02-asteroids`, `03-tetris` y
+      `04-arkanoid`)_
+- [x] La tarjeta de `/biblioteca` y la ficha de `/juego/arkanoid` muestran la
       escena de Arkanoid, no la del `default`.
-- [ ] Añadir a `GAMES` una máquina sin `case` en `drawPreview()` sigue rompiendo
-      `npx tsc --noEmit`.
+- [x] Añadir a `GAMES` una máquina sin `case` en `drawPreview()` sigue rompiendo
+      `npx tsc --noEmit`. _(probado y revertido:
+      `lib/preview-art.ts(331,10): error TS1360: Type '"pong"' does not satisfy
+the expected type 'never'`)_
 
 **El marcador**
 
-- [ ] `public.games` tiene tres filas, con `sort_order` 0, 1 y 2.
-- [ ] `npx supabase migration list` marca aplicada la migración nueva.
-- [ ] Terminar una partida de Arkanoid y pulsar `GUARDAR PUNTUACION` inserta la
-      marca sin error de clave ajena.
-- [ ] La marca guardada aparece en `/juego/arkanoid`, en `/salon` y en la
+- [x] `public.games` tiene tres filas, con `sort_order` 0, 1 y 2.
+- [x] `npx supabase migration list` marca aplicada la migración nueva.
+      _(`20260805171319`, local = remote)_
+- [x] Terminar una partida de Arkanoid y pulsar `GUARDAR PUNTUACION` inserta la
+      marca sin error de clave ajena. _(fila `ef6067f3…`, 1500 puntos)_
+- [x] La marca guardada aparece en `/juego/arkanoid`, en `/salon` y en la
       actividad de la portada.
 - [ ] Antes de la primera marca, `/juego/arkanoid` y la pestaña `ARKANOID` de
       `/salon` muestran `SE EL PRIMERO`, no `MARCADOR NO DISPONIBLE`.
-- [ ] Las tablas de `/juego/asteroids` y `/juego/tetris` no cambian por nada de
+      _(ya no reproducible: Arkanoid tiene marca. El camino de código es el
+      compartido de SPEC 06 y esta spec no lo toca)_
+- [x] Las tablas de `/juego/asteroids` y `/juego/tetris` no cambian por nada de
       esta spec.
 
 **Nada más se ha movido**
 
-- [ ] `npm run build`, `npx tsc --noEmit` y `npm run lint` terminan sin errores.
-- [ ] `lib/games/engine.ts`, `lib/games/asteroids/` y `lib/games/tetris/` no
+- [x] `npm run build`, `npx tsc --noEmit` y `npm run lint` terminan sin errores.
+- [x] `lib/games/engine.ts`, `lib/games/asteroids/` y `lib/games/tetris/` no
       tienen ni una línea modificada.
-- [ ] `lib/games/input.ts`, `components/game-canvas.tsx` y
+- [x] `lib/games/input.ts`, `components/game-canvas.tsx` y
       `components/game-preview.tsx` no tienen ni una línea modificada.
-- [ ] `lib/leaderboard.ts`, `lib/scores.ts`, `lib/storage.ts`, `lib/session.tsx` y
+- [x] `lib/leaderboard.ts`, `lib/scores.ts`, `lib/storage.ts`, `lib/session.tsx` y
       `app/jugar/[id]/actions.ts` no cambian.
-- [ ] `app/(vault)/salon/page.tsx` no cambia: el fallback `?? "asteroids"` sigue
+- [x] `app/(vault)/salon/page.tsx` no cambia: el fallback `?? "asteroids"` sigue
       siendo válido.
-- [ ] `lib/supabase/` no cambia y `/api/supabase-health` sigue respondiendo 200.
-- [ ] El esquema de SPEC 06 no cambia: mismas tablas, mismos índices, mismas
-      políticas, mismas dos vistas.
-- [ ] `references/started-games/04-arkanoid/` no tiene ningún cambio.
-- [ ] Las flechas y `ESPACIO` solo dejan de hacer scroll dentro de una pantalla de
-      juego con la partida activa.
+- [x] `lib/supabase/` no cambia y `/api/supabase-health` sigue respondiendo 200.
+- [x] El esquema de SPEC 06 no cambia: mismas tablas, mismos índices, mismas
+      políticas, mismas dos vistas. _(2 tablas, 2 vistas, 4 índices, 3 políticas)_
+- [x] `references/started-games/04-arkanoid/` no tiene ningún cambio.
+- [x] Las flechas y `ESPACIO` solo dejan de hacer scroll dentro de una pantalla de
+      juego con la partida activa. _(en juego `scrollY` = 0; en pausa vuelve a
+      hacer scroll)_
 
 **Documentación**
 
-- [ ] `CLAUDE.md` nombra `lib/games/arkanoid/` y dice que la escena de `muro` ya
+- [x] `CLAUDE.md` nombra `lib/games/arkanoid/` y dice que la escena de `muro` ya
       se movió.
-- [ ] `CLAUDE.md` dice que `ArchivedPreviewId` baja a seis escenas y que ninguna
+- [x] `CLAUDE.md` dice que `ArchivedPreviewId` baja a seis escenas y que ninguna
       espera ya máquina.
-- [ ] `CLAUDE.md` ya no dice que el vault tiene dos máquinas.
+- [x] `CLAUDE.md` ya no dice que el vault tiene dos máquinas.
 
 ## Decisiones tomadas y descartadas
 
