@@ -1,8 +1,9 @@
 /**
  * Ficha de máquina. Puerto de references/templates/detalle.dc.html.
  *
- * Server Component: el catálogo es fijo, así que las 8 fichas se prerenderizan
- * en build. Sólo la preview y el panel de puntuaciones bajan a cliente.
+ * Server Component: el catálogo es fijo, así que `generateStaticParams()` cierra
+ * la lista de rutas —una por máquina— aunque el marcador obligue a renderizar en
+ * cada visita. Sólo la preview y el panel de puntuaciones bajan a cliente.
  */
 
 import type { Metadata } from "next";
@@ -14,7 +15,7 @@ import { GAMES, getGame, tint } from "@/lib/games";
 import { board } from "@/lib/leaderboard";
 import { formatScore } from "@/lib/scores";
 
-/** Sólo existen estas ocho rutas: cualquier otra es 404 sin ejecutar código. */
+/** Sólo existe una ruta por máquina: cualquier otra es 404 sin ejecutar código. */
 export const dynamicParams = false;
 
 /**

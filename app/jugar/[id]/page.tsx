@@ -1,8 +1,8 @@
 /**
  * Pantalla de juego. Puerto de references/templates/jugar.dc.html.
  *
- * El HUD, el gabinete y el D-pad viven en `PlayCabinet`; los superpuestos de
- * carga y fin de partida llegan en el paso 18.
+ * El HUD, el gabinete, el D-pad y los superpuestos de carga y fin de partida
+ * viven todos en `PlayCabinet`: esta ruta sólo resuelve la máquina.
  */
 
 import type { Metadata } from "next";

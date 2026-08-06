@@ -1,8 +1,8 @@
 /**
  * Portada del vault. Puerto de references/templates/home-about/home.jsx.
  *
- * De momento monta el hero; las secciones restantes llegan en los pasos
- * siguientes de SPEC 02. El catálogo que ocupaba esta ruta vive en
+ * Monta el recorrido entero de SPEC 02: hero, ventajas, cifras, plan, FAQ y la
+ * banda de actividad del marcador. El catálogo que ocupaba esta ruta vive en
  * `/biblioteca`.
  *
  * Los rótulos van sin tildes (`CLASICO ESTA`) porque Press Start 2P no tiene

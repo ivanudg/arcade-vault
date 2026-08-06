@@ -79,7 +79,7 @@ export async function saveScore(
 
   // Las cuatro pantallas que pintan marcas. La ficha se revalida por su ruta
   // concreta y no por el patrón `/juego/[id]`, que exigiría el segundo
-  // argumento y revalidaría las nueve.
+  // argumento y revalidaría las de todas las máquinas del catálogo.
   revalidatePath("/");
   revalidatePath("/salon");
   revalidatePath("/biblioteca");

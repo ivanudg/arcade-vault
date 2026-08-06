@@ -6,11 +6,45 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Proyecto
 
-**Arcade Vault**: plataforma para jugar online y competir por la mayor cantidad de puntos. Actualmente el repo es el scaffold inicial de `create-next-app` (solo `app/layout.tsx` + `app/page.tsx`); la mayor parte del producto está por construirse.
+**Arcade Vault**: plataforma para jugar online y competir por la mayor cantidad de
+puntos. Ya no es el scaffold de `create-next-app`: hoy son **siete pantallas**, cuatro
+máquinas jugables con motor propio y un marcador compartido en Supabase. Lo construido
+llega hasta **SPEC 10**.
 
 El flujo de trabajo del proyecto es **Spec Driven Design** vía las skills `/spec` y `/spec-impl` de [Klerith/fernando-skills](https://github.com/Klerith/fernando-skills) (`npx skills@latest add Klerith/fernando-skills`). Antes de implementar una feature nueva, espera/produce la spec correspondiente en lugar de escribir código directamente.
 
+Las specs viven en `specs/NN-<slug>.md` y llevan su estado en la segunda línea. El
+historial cuenta el producto mejor que el código:
+
+| Spec | Qué trajo                                                                                  |
+| ---- | ------------------------------------------------------------------------------------------ |
+| 01   | MVP visual: biblioteca, ficha, salón, cuenta y gabinete, puerto de `references/templates/` |
+| 02   | Portada en `/` y mudanza del catálogo a `/biblioteca`                                      |
+| 03   | `/acerca-de` y el formulario de contacto con Resend                                        |
+| 04   | Conexión con Supabase (clientes, `env.ts`, `/api/supabase-health`)                         |
+| 05   | Asteroids: el primer motor real y el contrato `GameMount`                                  |
+| 06   | El marcador se muda a Supabase: `public.games` y `public.scores`                           |
+| 07   | El catálogo encoge a una máquina y el marcador arranca vacío                               |
+| 08   | Tetris y los rótulos de HUD por motor                                                      |
+| 09   | Arkanoid, puerto sin spritesheet                                                           |
+| 10   | Snake, escrita desde cero, con `public/snake/fruits.png`                                   |
+
+Ojo: la spec 02 sigue marcada como `Aprobado` aunque la portada está implementada; el
+estado del encabezado no siempre se actualizó al cerrar.
+
 No hay framework de tests configurado. Si se añade uno, documenta aquí cómo correr un test individual.
+
+## Comandos
+
+```bash
+npm run dev            # Turbopack, por defecto en Next 16
+npm run build          # build de producción (hace el type-check)
+npm run lint           # ESLint flat config (core-web-vitals + typescript)
+npm run format         # Prettier sobre todo el repo
+npm run supabase:types # regenera lib/supabase/database.types.ts contra el proyecto enlazado
+npx tsc --noEmit       # type-check aislado
+npx supabase db push   # aplica las migraciones de supabase/migrations/
+```
 
 ## Stack y convenciones
 
@@ -20,7 +54,34 @@ No hay framework de tests configurado. Si se añade uno, documenta aquí cómo c
 - Las fuentes se cargan con `next/font/google` en `app/layout.tsx` y se exponen como variables CSS (`--font-press-start` para Press Start 2P, `--font-courier-prime` para Courier Prime) enlazadas al tema de Tailwind (`font-display`, `font-mono`/`font-sans`).
 - El tema es **dark-only**: los tokens `--av-*` de `app/globals.css` derivan de `references/templates/` (paleta neón `#00f5ff` / `#ff006e` / `#f5ff00` sobre `#0a0a0f`). No hay variante clara ni theme switcher; no uses variantes `dark:`.
 - Los efectos CRT del template son utilidades propias en `globals.css`: `av-glow-*`, `av-halo-*`, `av-grid-floor`, `av-scanlines`, `av-vignette`, y las animaciones `animate-av-*` (fade, slide, row, caret, spin, sweep, cabinet, pulse, flicker, grid).
-- `next.config.ts` está vacío: cualquier flag (p. ej. `cacheComponents`) es una decisión nueva, no algo ya asumido.
+- `next.config.ts` sólo declara `turbopack.root = import.meta.dirname`, porque hay un `package-lock.json` suelto por encima del repo y sin eso Turbopack lo toma como raíz del workspace y avisa en cada build. Cualquier otro flag (p. ej. `cacheComponents`) es una decisión nueva, no algo ya asumido.
+- **Lo que se pinta en Press Start 2P va en mayúsculas y sin tildes.** La fuente no tiene glifos acentuados y el navegador los sustituye por otra, que al lado de un avance de 20px sale como una mota. Lo mismo con los símbolos del template (`▸ ▶ ✦ …`): se dibujan con ASCII. El único no-ASCII admitido es `·`. Los cuerpos de texto van en Courier Prime y **sí** llevan su acentuación.
+- **El texto editorial no vive en la maquetación**: los literales de la portada están en `lib/landing.ts` (`FEATURES`, `STATS`, `PLAN`, `FAQ`), los de «Acerca de» en `lib/about.ts` (`MISSION`, `HIGHLIGHTS`, `CONTACT_TIPS`, `TERMINAL_*`, `LIMITS`) y los de las máquinas en `lib/games.ts`. Un retoque de copia no abre un `.tsx`.
+- **Los acentos son cuatro** —`Accent = "cyan" | "magenta" | "yellow" | "amber"`, definido en `lib/landing.ts`— y **nunca se interpolan en un nombre de clase**: Tailwind sólo ve las cadenas escritas enteras, así que cada componente declara su `Record<Accent, string>` con las clases completas. El color de una máquina (`game.glow`) sí es dinámico y se resuelve en `style`, con `tint()` de `lib/games.ts` para los velos y halos.
+- **Prettier y ESLint corren solos.** `.claude/settings.json` engancha un hook `PostToolUse` a `Write|Edit|MultiEdit|NotebookEdit` que ejecuta `.claude/hooks/format-file.sh`: pasa el archivo tocado por `eslint --fix` y `prettier --write`, salta lo que esté en `node_modules/`, `.next/` o `references/`, y devuelve por stderr lo que ESLint no pudo auto-corregir. No hace falta formatear a mano; sí hace falta contar con que el archivo cambie después de escribirlo.
+
+## Rutas y pantallas
+
+Siete pantallas y una ruta de diagnóstico. El grupo `app/(vault)/` **no aparece en la
+URL**: existe para que `/jugar/[id]` quede fuera y monte su cabecera reducida
+(`PlayHeader`) sin heredar el `SiteHeader` ni el `SiteFooter` de `app/(vault)/layout.tsx`.
+
+| Ruta                   | Archivo                            | Qué es                                                 |
+| ---------------------- | ---------------------------------- | ------------------------------------------------------ |
+| `/`                    | `app/(vault)/page.tsx`             | Portada: hero, ventajas, cifras, plan, FAQ y actividad |
+| `/biblioteca`          | `app/(vault)/biblioteca/page.tsx`  | Catálogo con buscador y filtros                        |
+| `/juego/[id]`          | `app/(vault)/juego/[id]/page.tsx`  | Ficha: miniatura, descripción, controles y top 10      |
+| `/salon`               | `app/(vault)/salon/page.tsx`       | Salón de la fama, una pestaña por máquina              |
+| `/cuenta`              | `app/(vault)/cuenta/page.tsx`      | `AuthPanel`: sesión simulada                           |
+| `/acerca-de`           | `app/(vault)/acerca-de/page.tsx`   | Misión y formulario de contacto                        |
+| `/jugar/[id]`          | `app/jugar/[id]/page.tsx`          | El gabinete: HUD, canvas y mando                       |
+| `/api/supabase-health` | `app/api/supabase-health/route.ts` | Diagnóstico de conexión                                |
+
+- **`app/layout.tsx` es de todas**: fuentes, `metadata` con plantilla `"%s · Arcade Vault"`, `VaultBackdrop` y `SessionProvider`. Su contenedor no lleva `z-index` a propósito, para no crear contexto de apilamiento: los z de dentro compiten con los del fondo (rejilla 0, cabecera 40, scanlines 50, superpuestos 55 y 60).
+- **`app/not-found.tsx` vive en la raíz, fuera del grupo**, y monta cabecera y pie por su cuenta: un `not-found` dentro de un grupo de rutas no atiende las URLs que no corresponden a ninguna ruta.
+- **Las dos rutas por máquina son cerradas**: `/juego/[id]` y `/jugar/[id]` declaran `generateStaticParams()` sobre `GAMES` y `dynamicParams = false`, así que un id inventado es 404 sin ejecutar código. `getGame()` devuelve `undefined` —no la primera máquina— justamente para eso.
+- **`?juego=` sólo existe en `/salon`** y sólo elige la pestaña inicial; un valor inventado abre en `asteroids` en vez de dar 404. A partir de ahí las pestañas son estado de cliente y la URL no cambia. Lo mismo con el buscador y los filtros de `/biblioteca`: estado de cliente, no `searchParams`, para no navegar en cada pulsación.
+- **El ancho máximo va dentro y el relleno fuera.** Las plantillas de `references/templates/` miden en `content-box`; con el `border-box` de Tailwind, juntar ancho y relleno en el mismo elemento encoge la rejilla.
 
 ## Motores de juego
 
@@ -105,6 +166,16 @@ estado que se soporte.
   del `GameMount` y llama a `destroy()` al limpiar. Los callbacks viven en una
   `ref`, así que un re-render del padre no remonta el juego ni reinicia la
   partida.
+- **`components/play-cabinet.tsx` es quien orquesta la partida.** El HUD lee sus
+  rótulos del motor; la partida arranca cuando acaba el superpuesto de carga
+  (`LOAD_MS = 750`) y no al montar, porque debajo del superpuesto correría a
+  ciegas. `PAUSA` y las dos pausas automáticas —`visibilitychange` y `blur`—
+  mueven un solo `paused` y un efecto se lo pasa al motor; terminada la partida
+  no se reanuda nada, que resucitaría una nave muerta detrás del superpuesto.
+  `REINTENTAR` llama a `restart()` sin volver a enseñar la carga. El nombre que
+  firma la marca es el de la sesión o `INVITADO`, y el mando pinta deshabilitados
+  los botones que la máquina no usa, en vez de esconderlos y descuadrar la
+  rejilla de cinco.
 - **Para añadir una máquina** son cuatro sitios: implementar `GameMount` en
   `lib/games/<juego>/`, añadir una línea a `ENGINES`, un literal a `GameId` con
   su entrada en `GAMES`, y una migración que la meta en `public.games`. Son
@@ -200,16 +271,50 @@ y ni una marca en `public.scores`.
   desde el navegador: ahí se normaliza el nombre como en `lib/session.tsx`, se
   comprueba el `gameId` contra `GAMES` y se llama a `revalidatePath` de `/`,
   `/salon`, `/biblioteca` y la ruta concreta del juego.
-- **Las cinco pantallas que leen marcas son dinámicas** (`dynamic =
-"force-dynamic"`). Vacío con aviso; nunca marcas inventadas.
+- **Las cuatro pantallas que leen marcas se renderizan en cada visita**: la
+  portada, la biblioteca y la ficha lo declaran con `dynamic = "force-dynamic"`;
+  `/salon` no hace falta que lo declare, porque su `searchParams` ya la hace
+  dinámica. Decirlo a las claras ahorra el intento de prerenderizar y abortar
+  —el cliente de Supabase mira las cookies— y deja escrito por qué. Vacío con
+  aviso; nunca marcas inventadas.
 - **Las migraciones se aplican con `npx supabase db push`** y quedan en
   `supabase/migrations/`. Nada de `apply_migration` por MCP: iría al proyecto
   remoto sin dejar rastro en el repo. Se corrige hacia delante: SPEC 07 no
   revirtió la siembra de SPEC 06, añadió una migración que la borra.
 
+## Sesión y `localStorage`
+
+**No hay autenticación real.** `/cuenta` es un panel que escribe un nombre en
+`localStorage`; entra de verdad con la spec que traiga el login.
+
+- **Un solo contexto**, `SessionProvider` de `lib/session.tsx`, montado en el layout raíz: la cabecera, `/cuenta` y `/jugar` leen el mismo usuario en vez de tocar el almacenamiento cada una por su cuenta. `useSession()` lanza si no hay proveedor por encima.
+- **`ready` se deduce, no se guarda**: el estado es `VaultUser | null | undefined` y `undefined` significa «aún no se ha leído `localStorage`». Hasta que `ready` sea `true` nadie pinta estado de sesión —el servidor no tiene almacenamiento y pintarlo antes sería un desajuste de hidratación—.
+- **`lib/storage.ts` es el único que toca `localStorage`.** La clave es `arcadevault:v1` (la versión va dentro: un cambio de esquema estrena clave). Dentro sólo quedan `user` y `deviceId`; desde SPEC 06 las puntuaciones viven en Supabase, y el campo `scores` que hubiera guardado un navegador viejo se queda ahí sin que lo lea nadie. Todo va envuelto en `try/catch`: en modo privado la interfaz funciona igual, sólo que no persiste.
+- **El nombre se normaliza igual en los dos sitios**: mayúsculas y 12 caracteres, en `login()` y otra vez en la Server Action que guarda la marca.
+- **`deviceId()` puede devolver `undefined`.** `crypto.randomUUID()` sólo existe en contexto seguro, así que probando desde el móvil por `http://192.168.x.x` no está. La marca se guarda igual, sin dueño: se pierde un color en la tabla, no una puntuación.
+
+## Contacto y Resend
+
+El formulario de `/acerca-de` envía por la Server Action `app/(vault)/acerca-de/actions.ts`.
+
+- **Sin `RESEND_API_KEY` el envío se finge**: se registra en la consola del servidor con un aviso explícito y se devuelve éxito, para que el repo se pueda clonar y demostrar sin cuenta de Resend. Es lo contrario de lo que hace Supabase, que lanza. En producción, si falta la variable el mensaje se pierde en silencio y sólo lo delata ese registro.
+- **La acción revalida lo que el formulario ya comprobó**, porque una Server Action es una URL pública que responde a cualquier POST. Los topes son `LIMITS` de `lib/about.ts`, compartidos con el `maxLength` de los campos.
+- **Hay un campo trampa** (`website`), invisible y fuera del tabulador: si viene relleno se responde éxito a propósito —un bot que recibe error reintenta; uno que se cree atendido, no—.
+- El cliente de Resend se construye dentro de la acción, no en el módulo: su constructor exige la clave y a nivel de módulo reventaría el arranque de quien no la tiene. El remitente es el de pruebas (`onboarding@resend.dev`) y el correo del visitante viaja en `replyTo`, no en `from`.
+
+## Herramientas del repo
+
+- **`.claude/skills/spec-game/`** es una skill local del proyecto: `/spec-game` diseña la spec de una máquina nueva —motor, catálogo, miniatura, mando y migración— y la guarda en `specs/NN-<slug>.md` en estado `Borrador`. **No escribe código de juego**; implementar sigue siendo trabajo de `/spec-impl` con la spec ya aprobada por un humano. Sus dos apoyos son `contact-points.md` (los sitios que toca una máquina nueva) y `engine-contract.md`.
+- **`.mcp.json`** declara el servidor MCP de Supabase apuntando al proyecto `nlfwqnmidfdohuyhklqp`. Sirve para consultar e inspeccionar; las migraciones siguen yendo por `npx supabase db push` (ver «El marcador»).
+- **`.env.example`** documenta las cinco variables: `RESEND_API_KEY`, `SUPABASE_DB_PASSWORD` y las tres de Supabase. Al añadir una variable nueva, se añade ahí.
+- **`demos/demo.tsx`** no forma parte de la app: nadie lo importa y no cuelga de ninguna ruta.
+
 # Skills
 
-Usa sempre /frontend-design para diseñar interfaces de usuario
+Usa siempre `/frontend-design` para diseñar interfaces de usuario.
+
+Para una máquina nueva del vault, el punto de partida es la skill local
+`/spec-game` (ver «Herramientas del repo»), no escribir el motor directamente.
 
 ## Next.js 16: diferencias que rompen suposiciones previas
 
