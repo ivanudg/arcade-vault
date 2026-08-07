@@ -93,6 +93,11 @@ se borró entero (`lib/demo-run.ts` y la bifurcación «sin motor» de
 `PlayCabinet`), así que `GAMES` sin entrada correspondiente en `ENGINES` no es un
 estado que se soporte.
 
+**Para saber qué máquinas hay hoy, consulta `references/implemented-games.md`**: una
+tabla con el id, el título, la categoría, el color y la descripción de cada una. Es un
+resumen derivado de `lib/games.ts`, que sigue siendo la fuente de verdad; al añadir una
+máquina, se actualiza también esa tabla.
+
 - `tetris` entró en SPEC 08 y es la primera que ejerce la regla; su motor vive en
   `lib/games/tetris/` y es el Tetris clásico de
   `references/started-games/03-tetris/`, sin la capa moderna de puntuación, los
@@ -184,7 +189,9 @@ estado que se soporte.
   teclado se coge de `lib/games/input.ts`
   (`createInput()`), que engancha `window` solo mientras hay partida y limita el
   `preventDefault` a las flechas y `Space`. Declara sus teclas vivas en
-  `ENGINE_KEYS`, dentro de `components/play-cabinet.tsx`.
+  `ENGINE_KEYS`, dentro de `components/play-cabinet.tsx`. Y añade su fila a
+  `references/implemented-games.md`, que es la tabla que se consulta para saber
+  qué hay implementado.
 - **`lib/preview-art.ts` guarda arte sin máquina.** Su `PreviewId` es
   `GameId | ArchivedPreviewId`, y `ArchivedPreviewId` son las escenas de las
   máquinas que salieron del catálogo en SPEC 07: eran ocho y hoy son **cinco**,
@@ -203,9 +210,13 @@ estado que se soporte.
   manda la altura y el ancho la sigue, sin deformar nada. Sin eso, un mundo
   vertical como el de Tetris (420 × 600) obliga a hacer scroll para ver los dos
   extremos del tablero.
-- `references/started-games/` y `references/source-assets/` son material de
-  referencia: se leen, no se editan. Lo que sale de ahí se **copia** al repo
-  —`public/snake/fruits.png` es el único caso hasta hoy—.
+- `references/started-games/`, `references/source-assets/` y
+  `references/templates/` son material de referencia: se leen, no se editan. Lo
+  que sale de ahí se **copia** al repo —`public/snake/fruits.png` es el único
+  caso hasta hoy—. La excepción es `references/implemented-games.md`, que no es
+  material de origen sino un resumen del repo, y sí se mantiene al día. Ojo:
+  `.prettierignore` excluye `references/` entera, así que ese archivo no pasa
+  por el formateador y sus columnas se alinean a mano.
 
 ## Supabase
 
