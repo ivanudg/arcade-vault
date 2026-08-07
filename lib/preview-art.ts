@@ -3,8 +3,8 @@
  * references/templates/arcade-core.js.
  *
  * Es dibujo, no juego: ni bucle de animación ni entrada de teclado. Función
- * pura sobre un contexto 2D, sin dependencias de React, para que el componente
- * del paso 8 sólo tenga que pasarle el canvas.
+ * pura sobre un contexto 2D, sin dependencias de React, para que
+ * `components/game-preview.tsx` sólo tenga que pasarle el canvas.
  *
  * La aritmética se copia literal, incluidos los números mágicos: cualquier
  * "limpieza" cambiaría la escena. Todo se mide en fracciones de `W`/`H` y en

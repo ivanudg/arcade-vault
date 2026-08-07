@@ -1,8 +1,8 @@
 /**
  * Acerca de y contacto. Puerto de references/templates/home-about/about.jsx.
  *
- * De momento monta la mitad de arriba —misión y banda divisoria—; la sección
- * de contacto y su formulario llegan en los pasos siguientes de SPEC 03.
+ * Monta la pantalla entera de SPEC 03: misión, banda divisoria y la sección de
+ * contacto con su formulario (`ContactForm`, que envía por Server Action).
  *
  * El kicker es propio (`>> ACERCA DE`) y no el `// 01` numerado de
  * `SectionHead`: la numeración de la portada cuenta las paradas de un recorrido
@@ -22,8 +22,7 @@ import type { Accent } from "@/lib/landing";
 
 export const metadata: Metadata = {
   title: "ACERCA DE",
-  description:
-    "Quiénes somos, por qué existe Arcade Vault y cómo escribirnos.",
+  description: "Quiénes somos, por qué existe Arcade Vault y cómo escribirnos.",
 };
 
 /** Clases completas por acento: Tailwind no ve nombres interpolados. */
