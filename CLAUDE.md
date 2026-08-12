@@ -13,6 +13,14 @@ llega hasta **SPEC 10**.
 
 El flujo de trabajo del proyecto es **Spec Driven Design** vía las skills `/spec` y `/spec-impl` de [Klerith/fernando-skills](https://github.com/Klerith/fernando-skills) (`npx skills@latest add Klerith/fernando-skills`). Antes de implementar una feature nueva, espera/produce la spec correspondiente en lugar de escribir código directamente.
 
+Para las máquinas del vault ese flujo tiene un eslabón más, y va **antes** que la spec:
+el subagente **`game-planner`** (`.claude/agents/game-planner.md`), que decide **cuál** entra.
+Con el material de `references/started-games/` agotado, elegir la siguiente máquina dejó de
+ser obvio, así que el agente puntúa candidatos contra el contrato del motor, recomienda uno y
+para. Recuerda lo que ya propuso en `.claude/game-planner/memoria.md`, porque arranca en frío
+en cada invocación. La cadena completa es **`game-planner` → `/spec-game` → `/spec-impl`**;
+los detalles, en «Herramientas del repo».
+
 Las specs viven en `specs/NN-<slug>.md` y llevan su estado en la segunda línea. El
 historial cuenta el producto mejor que el código:
 
@@ -181,6 +189,15 @@ máquina, se actualiza también esa tabla.
   firma la marca es el de la sesión o `INVITADO`, y el mando pinta deshabilitados
   los botones que la máquina no usa, en vez de esconderlos y descuadrar la
   rejilla de cinco.
+- **Qué máquina entra lo decide `game-planner`**, el subagente de
+  `.claude/agents/game-planner.md`. Es quien lee este apartado convertido en
+  rúbrica: los siete criterios eliminatorios de
+  `.claude/game-planner/rubrica.md` son el contrato de aquí —tres cifras de HUD,
+  cinco botones, primitivas de canvas sin espera de assets, sin audio, un
+  jugador, puntuación entera, todo dentro del closure de `mount()`—. Si un
+  candidato falla uno, no entra. Y como cada categoría de `GameCategory` sin
+  estrenar y cada escena libre de `lib/preview-art.ts` puntúan, el agente empuja
+  hacia donde el catálogo tiene hueco.
 - **Para añadir una máquina** son cuatro sitios: implementar `GameMount` en
   `lib/games/<juego>/`, añadir una línea a `ENGINES`, un literal a `GameId` con
   su entrada en `GAMES`, y una migración que la meta en `public.games`. Son
@@ -315,6 +332,8 @@ El formulario de `/acerca-de` envía por la Server Action `app/(vault)/acerca-de
 
 ## Herramientas del repo
 
+- **`.claude/agents/game-planner.md`** es el eslabón de **antes** de la spec: un subagente que decide **qué** máquina entra. Reconstruye el catálogo desde `lib/games.ts`, puntúa entre cinco y ocho candidatos con los doce criterios de `.claude/game-planner/rubrica.md` —siete eliminatorios contra el contrato del motor, cinco ponderados— y devuelve una terna con un ganador y su ficha. **Para ahí**: no escribe specs ni código, y cierra con un `/spec-game <juego>` literal.
+- **`.claude/game-planner/memoria.md`** es lo que hace que ese agente no se repita. Un subagente arranca en frío —no ve el hilo que lo llamó ni lo que se habló ayer—, así que cada candidato queda escrito ahí con su nota y su veredicto (`propuesta`, `no-encaja`, `descartada`, `aparcada`, `elegida`, `en-spec`, `implementada`, `desincronizada`). Se versiona en git a propósito, es el único archivo que el agente escribe, y **el repo manda sobre él**: si la tabla y `lib/games.ts` no coinciden, se corrige la tabla. Para que anote un veredicto tuyo, pásaselo literal («descarta Pong porque…»): entonces sólo reconcilia y escribe. Nota: el CLI trae una memoria nativa de agente (`memory: project`); se descartó a propósito por ser de forma libre y de índice truncable, pero podría sumarse encima del ledger, nunca en su lugar.
 - **`.claude/skills/spec-game/`** es una skill local del proyecto: `/spec-game` diseña la spec de una máquina nueva —motor, catálogo, miniatura, mando y migración— y la guarda en `specs/NN-<slug>.md` en estado `Borrador`. **No escribe código de juego**; implementar sigue siendo trabajo de `/spec-impl` con la spec ya aprobada por un humano. Sus dos apoyos son `contact-points.md` (los sitios que toca una máquina nueva) y `engine-contract.md`.
 - **`.mcp.json`** declara el servidor MCP de Supabase apuntando al proyecto `nlfwqnmidfdohuyhklqp`. Sirve para consultar e inspeccionar; las migraciones siguen yendo por `npx supabase db push` (ver «El marcador»).
 - **`.env.example`** documenta las cinco variables: `RESEND_API_KEY`, `SUPABASE_DB_PASSWORD` y las tres de Supabase. Al añadir una variable nueva, se añade ahí.
@@ -324,8 +343,10 @@ El formulario de `/acerca-de` envía por la Server Action `app/(vault)/acerca-de
 
 Usa siempre `/frontend-design` para diseñar interfaces de usuario.
 
-Para una máquina nueva del vault, el punto de partida es la skill local
-`/spec-game` (ver «Herramientas del repo»), no escribir el motor directamente.
+Para una máquina nueva del vault la cadena son tres eslabones, y ninguno se salta
+(ver «Herramientas del repo»): el subagente `game-planner` decide **cuál**, la skill
+local `/spec-game` escribe su spec y `/spec-impl` la implementa. Si el juego ya está
+elegido, se entra por `/spec-game`; escribir el motor directamente, nunca.
 
 ## Next.js 16: diferencias que rompen suposiciones previas
 
