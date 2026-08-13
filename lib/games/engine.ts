@@ -9,6 +9,8 @@
  * `lib/games/engines.ts`.
  */
 
+import type { SkinId } from "./skins";
+
 /** Tamaño lógico del mundo. El gabinete lo usa para el `aspect-ratio`. */
 export interface GameWorld {
   width: number;
@@ -43,6 +45,14 @@ export interface GameHandle {
   press(code: string): void;
   /** Suelta una tecla inyectada con `press()`. */
   release(code: string): void;
+  /**
+   * Cambia la piel en caliente, sin tocar la partida en curso.
+   *
+   * Opcional a propósito: un motor sin vestir no la tiene, y el gabinete pinta
+   * su selector deshabilitado en vez de romper. El día que las cuatro máquinas
+   * estén vestidas, deja de tener sentido que sea opcional.
+   */
+  setSkin?(id: SkinId): void;
 }
 
 /** Lo que implementa cada juego. `world` es estático, no depende del canvas. */
@@ -57,5 +67,15 @@ export interface GameMount {
    * vez de heredar en silencio unos rótulos que podrían mentir en pantalla.
    */
   hud: readonly [string, string, string];
+  /**
+   * Las pieles que este motor sabe pintar. Ausente mientras no esté vestido:
+   * es lo que el gabinete mira para saber si enciende el selector, y lo mira
+   * antes de montar nada, porque `GameMount` es estático.
+   *
+   * `mount()` no cambia de firma: el gabinete llama a `setSkin()` en cuanto
+   * recibe el handle, y la partida no arranca hasta que termina el superpuesto
+   * de carga, así que no hay ni un frame con el color equivocado.
+   */
+  skins?: readonly SkinId[];
   mount(canvas: HTMLCanvasElement, cb: GameCallbacks): GameHandle;
 }

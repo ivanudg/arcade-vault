@@ -13,15 +13,16 @@
 
 import {
   BLOCK_H,
-  COLOR_MAP,
   GAP_X,
   GAP_Y,
-  HP_COLOR,
+  HP_KINDS,
   LEVELS,
   SIDE_MARGIN,
   TOP_MARGIN,
   UNBREAKABLE_LETTER,
   WORLD,
+  isBlockKind,
+  type BlockKind,
 } from "./constants";
 
 export interface Block {
@@ -29,8 +30,12 @@ export interface Block {
   y: number;
   w: number;
   h: number;
-  /** Nombre de color CSS: "red" | "yellow" | "cyan" | … */
-  color: string;
+  /**
+   * Qué celda de la rejilla lo puso: `"r"`, `"a"`, `"3"`… El color sale de la
+   * piel activa **al dibujar**, no de aquí: guardarlo en el bloque dejaría la
+   * rejilla en curso con los colores viejos al cambiar de piel.
+   */
+  kind: BlockKind;
   /** Golpes que le quedan. */
   hp: number;
   /** Golpes con los que nació. El desgaste se dibuja con `hp / maxHp`. */
@@ -61,37 +66,32 @@ export function buildLevel(index: number): Block[] {
     for (let col = 0; col < line.length; col++) {
       const cell = line[col];
       if (cell === ".") continue; // hueco
+      if (!isBlockKind(cell)) continue; // celda desconocida → ignorar
 
-      // Resuelve color, golpes (hp/maxHp) y si es rompible según el tipo de celda.
-      let color: string | undefined;
+      // Resuelve golpes (hp/maxHp) y si es rompible según el tipo de celda.
       let hp: number;
       let breakable: boolean;
 
       if (cell === UNBREAKABLE_LETTER) {
         // Gris irrompible: la bola rebota, nunca se rompe ni cuenta para despejar.
-        color = COLOR_MAP[cell];
         hp = 1;
         breakable = false;
-      } else if (HP_COLOR[cell]) {
-        // Multi-golpe: el dígito indica los golpes; color exclusivo por HP.
-        color = HP_COLOR[cell];
+      } else if (HP_KINDS.includes(cell)) {
+        // Multi-golpe: el dígito indica los golpes.
         hp = Number(cell);
         breakable = true;
       } else {
         // Bloque de un golpe de siempre (letra de color).
-        color = COLOR_MAP[cell];
         hp = 1;
         breakable = true;
       }
-
-      if (!color) continue; // celda desconocida → ignorar
 
       blocks.push({
         x: SIDE_MARGIN + col * (blockW + GAP_X),
         y: TOP_MARGIN + row * (BLOCK_H + GAP_Y),
         w: blockW,
         h: BLOCK_H,
-        color,
+        kind: cell,
         alive: true,
         hp,
         maxHp: hp,

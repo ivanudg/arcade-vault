@@ -10,6 +10,9 @@
  * Del catálogo de piezas y colores del original entran los siete tetrominós: la
  * tuerca, los power-ups, el comodín, los pentominós y el monominó esperan a su
  * propia spec.
+ *
+ * Los colores ya no están aquí: viven en `skins.ts`, que tiene los del original
+ * y los de las otras dos pieles. Aquí sólo quedan números y matrices.
  */
 
 /** Una celda del tablero o de una pieza: 0 = vacía, 1..7 = tetrominó. */
@@ -32,28 +35,8 @@ export const WORLD = { width: COLS * BLOCK + 120, height: ROWS * BLOCK };
 // ── Piezas ───────────────────────────────────────────────────────────────────
 
 /**
- * Color de cada tipo de pieza. El índice es el valor de la celda, así que el
- * hueco del 0 —la celda vacía— se conserva del original: las matrices de
- * `PIECES` llevan el número del tipo dentro, y desplazar el índice obligaría a
- * restar uno en cada dibujo.
- */
-export const COLORS: readonly (string | null)[] = [
-  null,
-  "#4dd0e1", // I - cyan
-  "#ffd54f", // O - yellow
-  "#ba68c8", // T - purple
-  "#81c784", // S - green
-  "#e57373", // Z - red
-  "#64b5f6", // J - azul pálido
-  "#ffb74d", // L - orange
-];
-
-/** Líneas de la rejilla del tablero: el `GRID_COLORS.dark` del original. */
-export const GRID_COLOR = "#22222e";
-
-/**
  * Las siete matrices, con la I en 4×4 y la O en 2×2 para que roten sobre su
- * centro. Mismo índice que `COLORS`.
+ * centro. Mismo índice que el `pieces` de una `Palette`.
  */
 export const PIECES: readonly (readonly Cell[][] | null)[] = [
   null,

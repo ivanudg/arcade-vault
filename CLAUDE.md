@@ -13,6 +13,14 @@ llega hasta **SPEC 10**.
 
 El flujo de trabajo del proyecto es **Spec Driven Design** vía las skills `/spec` y `/spec-impl` de [Klerith/fernando-skills](https://github.com/Klerith/fernando-skills) (`npx skills@latest add Klerith/fernando-skills`). Antes de implementar una feature nueva, espera/produce la spec correspondiente en lugar de escribir código directamente.
 
+Para las máquinas del vault ese flujo tiene un eslabón más, y va **antes** que la spec:
+el subagente **`game-planner`** (`.claude/agents/game-planner.md`), que decide **cuál** entra.
+Con el material de `references/started-games/` agotado, elegir la siguiente máquina dejó de
+ser obvio, así que el agente puntúa candidatos contra el contrato del motor, recomienda uno y
+para. Recuerda lo que ya propuso en `.claude/game-planner/memoria.md`, porque arranca en frío
+en cada invocación. La cadena completa es **`game-planner` → `/spec-game` → `/spec-impl`**;
+los detalles, en «Herramientas del repo».
+
 Las specs viven en `specs/NN-<slug>.md` y llevan su estado en la segunda línea. El
 historial cuenta el producto mejor que el código:
 
@@ -52,7 +60,7 @@ npx supabase db push   # aplica las migraciones de supabase/migrations/
 - Alias de imports: `@/*` apunta a la raíz del repo (`@/app/...`, no hay `src/`).
 - Tailwind v4 se configura **en CSS**, no en `tailwind.config.js`: los tokens viven en el bloque `@theme inline` de `app/globals.css`, alimentados por variables CSS de `:root`. Para añadir colores/fuentes del tema, edítalo ahí. PostCSS solo carga `@tailwindcss/postcss`.
 - Las fuentes se cargan con `next/font/google` en `app/layout.tsx` y se exponen como variables CSS (`--font-press-start` para Press Start 2P, `--font-courier-prime` para Courier Prime) enlazadas al tema de Tailwind (`font-display`, `font-mono`/`font-sans`).
-- El tema es **dark-only**: los tokens `--av-*` de `app/globals.css` derivan de `references/templates/` (paleta neón `#00f5ff` / `#ff006e` / `#f5ff00` sobre `#0a0a0f`). No hay variante clara ni theme switcher; no uses variantes `dark:`.
+- El tema es **dark-only**: los tokens `--av-*` de `app/globals.css` derivan de `references/templates/` (paleta neón `#00f5ff` / `#ff006e` / `#f5ff00` sobre `#0a0a0f`). No hay variante clara ni theme switcher; no uses variantes `dark:`. Ojo: las **skins** de las que habla `skin-designer` son otra cosa —la paleta del canvas de un motor, que no hereda nada del tema del sitio—, y no contradicen esto: el sitio sigue siendo dark-only.
 - Los efectos CRT del template son utilidades propias en `globals.css`: `av-glow-*`, `av-halo-*`, `av-grid-floor`, `av-scanlines`, `av-vignette`, y las animaciones `animate-av-*` (fade, slide, row, caret, spin, sweep, cabinet, pulse, flicker, grid).
 - `next.config.ts` sólo declara `turbopack.root = import.meta.dirname`, porque hay un `package-lock.json` suelto por encima del repo y sin eso Turbopack lo toma como raíz del workspace y avisa en cada build. Cualquier otro flag (p. ej. `cacheComponents`) es una decisión nueva, no algo ya asumido.
 - **Lo que se pinta en Press Start 2P va en mayúsculas y sin tildes.** La fuente no tiene glifos acentuados y el navegador los sustituye por otra, que al lado de un avance de 20px sale como una mota. Lo mismo con los símbolos del template (`▸ ▶ ✦ …`): se dibujan con ASCII. El único no-ASCII admitido es `·`. Los cuerpos de texto van en Courier Prime y **sí** llevan su acentuación.
@@ -181,6 +189,15 @@ máquina, se actualiza también esa tabla.
   firma la marca es el de la sesión o `INVITADO`, y el mando pinta deshabilitados
   los botones que la máquina no usa, en vez de esconderlos y descuadrar la
   rejilla de cinco.
+- **Qué máquina entra lo decide `game-planner`**, el subagente de
+  `.claude/agents/game-planner.md`. Es quien lee este apartado convertido en
+  rúbrica: los siete criterios eliminatorios de
+  `.claude/game-planner/rubrica.md` son el contrato de aquí —tres cifras de HUD,
+  cinco botones, primitivas de canvas sin espera de assets, sin audio, un
+  jugador, puntuación entera, todo dentro del closure de `mount()`—. Si un
+  candidato falla uno, no entra. Y como cada categoría de `GameCategory` sin
+  estrenar y cada escena libre de `lib/preview-art.ts` puntúan, el agente empuja
+  hacia donde el catálogo tiene hueco.
 - **Para añadir una máquina** son cuatro sitios: implementar `GameMount` en
   `lib/games/<juego>/`, añadir una línea a `ENGINES`, un literal a `GameId` con
   su entrada en `GAMES`, y una migración que la meta en `public.games`. Son
@@ -315,7 +332,12 @@ El formulario de `/acerca-de` envía por la Server Action `app/(vault)/acerca-de
 
 ## Herramientas del repo
 
+- **`.claude/agents/game-planner.md`** es el eslabón de **antes** de la spec: un subagente que decide **qué** máquina entra. Reconstruye el catálogo desde `lib/games.ts`, puntúa entre cinco y ocho candidatos con los doce criterios de `.claude/game-planner/rubrica.md` —siete eliminatorios contra el contrato del motor, cinco ponderados— y devuelve una terna con un ganador y su ficha. **Para ahí**: no escribe specs ni código, y cierra con un `/spec-game <juego>` literal.
+- **`.claude/game-planner/memoria.md`** es lo que hace que ese agente no se repita. Un subagente arranca en frío —no ve el hilo que lo llamó ni lo que se habló ayer—, así que cada candidato queda escrito ahí con su nota y su veredicto (`propuesta`, `no-encaja`, `descartada`, `aparcada`, `elegida`, `en-spec`, `implementada`, `desincronizada`). Se versiona en git a propósito, es el único archivo que el agente escribe, y **el repo manda sobre él**: si la tabla y `lib/games.ts` no coinciden, se corrige la tabla. Para que anote un veredicto tuyo, pásaselo literal («descarta Pong porque…»): entonces sólo reconcilia y escribe. Nota: el CLI trae una memoria nativa de agente (`memory: project`); se descartó a propósito por ser de forma libre y de índice truncable, pero podría sumarse encima del ledger, nunca en su lugar.
+- **`.claude/agents/game-jam.md`** es el subagente que desarrolla **la decisión de alcance**, una vez la máquina ya está decidida. **Se le da el juego** —«haz una jam de Galaga»— y escribe **dos specs alternativas de él**, `specs/game-jam/<game-id>/spec-minima.md` y `spec-completa.md`. **No elige la máquina**: eso es de `game-planner`, y sin argumento para y lo pide. De la máquina dada sólo comprueba que **cabe**, con la pasada eliminatoria C1-C7 de `.claude/game-planner/rubrica.md`; si falla un criterio en sus dos versiones, para y cita cuál. Antes de separar fija lo que las dos comparten —`id`, `title`, `cat`, `glow`, miniatura y `sort_order`—, así que lo único que varía es el alcance y se pueden comparar. Detecta solo si hay material en `references/started-games/` o `source-assets/`: con él las constantes se copian, sin él se fijan en cada spec como hizo SPEC 10. Las dos salen enteras, al nivel de las specs 09 y 10: ocho secciones, plan por pasos, criterios de aceptación sin marcar y riesgos. Va **del tirón**, sin preguntar. Es la decisión que más se pelea aquí —SPEC 08 dejó fuera 31 de las 45 features de su original— y hasta ahora se tomaba antes de saber qué costaba cada camino. **Las dos son excluyentes**: se implementa una, y sus dos `insert` llevan el mismo `id`. Sus specs **no llevan número** —la numeración de `specs/NN-*.md` está reservada para lo que sí se implementa— y salen en estado `Borrador de jam`; aprobar una significa mudarla a `specs/NN-<slug>.md`, y cerrar la hermana, antes de `/spec-impl`. **Lee `.claude/game-planner/memoria.md` para avisar de veredictos anteriores y nunca escribe en él**: el ledger es de `game-planner`.
 - **`.claude/skills/spec-game/`** es una skill local del proyecto: `/spec-game` diseña la spec de una máquina nueva —motor, catálogo, miniatura, mando y migración— y la guarda en `specs/NN-<slug>.md` en estado `Borrador`. **No escribe código de juego**; implementar sigue siendo trabajo de `/spec-impl` con la spec ya aprobada por un humano. Sus dos apoyos son `contact-points.md` (los sitios que toca una máquina nueva) y `engine-contract.md`.
+- **`.claude/agents/skin-designer.md`** es el subagente que se ocupa del **vestido** de las máquinas, y es transversal a la cadena anterior: no decide qué máquina entra ni con qué alcance, sino que comprueba que cada motor de `ENGINES` tenga sus **tres skins obligatorias** —`clasico` (la paleta que el motor ya tiene hoy, extraída del código y no rediseñada), `neon` (sólo tokens `--av-*`) y `retro` (fósforo verde monocromo, donde las entidades se distinguen por brillo y no por tinte)—, diseña hex por hex las que falten y **las aplica al código de la máquina que se le diga**. Es el único agente del repo que escribe en `lib/` y `components/`, y por eso va acotado: **una máquina por invocación**, y verifica con `tsc` y `lint` antes de responder. Lo que lo hace fiable es que **inventaria las ranuras de color leyendo el código**, incluidas las que no están en `constants.ts` —los literales sueltos de `asteroids/entities.ts`, el `"#000"` de fondo, el brillo de `tetris/board.ts`—, que una auditoría a ojo se deja. Sus tres apoyos son `contrato-skin.md` (qué es una skin y las ocho reglas S1-S8), `aplicar-skins.md` (la receta de la aplicación: qué archivos, con qué forma) y el ledger `skins.md`, que lleva el control de qué máquina está vestida y se versiona como la memoria de `game-planner`. Ojo con lo que **no** toca: `components/game-canvas.tsx`, nunca, porque su efecto de montaje depende sólo de `[game]` y meter ahí la skin reiniciaría la partida al cambiarla; la skin viaja por el `GameHandle` que el gabinete ya guarda.
+- **El sistema de skins es aditivo y opcional a propósito.** `lib/games/skins.ts` tiene el vocabulario (`SkinId`, `SKIN_IDS`, `DEFAULT_SKIN`), y el contrato gana dos campos **opcionales**: `GameMount.skins` y `GameHandle.setSkin()`. Que sean opcionales es lo que permite vestir las máquinas de una en una sin romper las que aún no lo están, y `mount()` no cambia de firma. La skin activa vive en el closure de `mount()` —en el ámbito de módulo de un motor sigue sin haber una variable mutable— y el default es `clasico`, así que estrenar el sistema no cambia el aspecto de ninguna partida.
 - **`.mcp.json`** declara el servidor MCP de Supabase apuntando al proyecto `nlfwqnmidfdohuyhklqp`. Sirve para consultar e inspeccionar; las migraciones siguen yendo por `npx supabase db push` (ver «El marcador»).
 - **`.env.example`** documenta las cinco variables: `RESEND_API_KEY`, `SUPABASE_DB_PASSWORD` y las tres de Supabase. Al añadir una variable nueva, se añade ahí.
 - **`demos/demo.tsx`** no forma parte de la app: nadie lo importa y no cuelga de ninguna ruta.
@@ -324,8 +346,25 @@ El formulario de `/acerca-de` envía por la Server Action `app/(vault)/acerca-de
 
 Usa siempre `/frontend-design` para diseñar interfaces de usuario.
 
-Para una máquina nueva del vault, el punto de partida es la skill local
-`/spec-game` (ver «Herramientas del repo»), no escribir el motor directamente.
+Para una máquina nueva del vault la cadena son tres eslabones, y ninguno se salta
+(ver «Herramientas del repo»): el subagente `game-planner` decide **cuál**, la skill
+local `/spec-game` escribe su spec y `/spec-impl` la implementa. Si el juego ya está
+elegido, se entra por `/spec-game`; escribir el motor directamente, nunca.
+
+Al margen de esa cadena está el subagente `game-jam`, que entra **entre el primer y
+el segundo eslabón**: con la máquina ya decidida, se le da el juego y deja dos specs
+de borrador de esa misma máquina —`spec-minima.md` y `spec-completa.md`, en
+`specs/game-jam/<game-id>/`— para leer y elegir el alcance. No elige la máquina, no
+implementa ninguna, y la que se apruebe vuelve al flujo normal mudándose a
+`specs/NN-<slug>.md`.
+
+Y fuera de la cadena entera está el subagente `skin-designer`, que no mira **qué** máquina
+entra sino **cómo va vestida**: se invoca cuando hay que saber qué skins tiene una máquina,
+cuando entra una nueva y hay que comprobar que trae sus tres —`clasico`, `neon` y `retro`— o
+cuando hay que vestir una máquina concreta: «aplícale los skins a Snake». Audita, diseña,
+**escribe el código** de esa máquina y lleva el control en `.claude/skin-designer/skins.md`.
+Es la excepción a que el código entre por `/spec-impl`, y está acotada a lo que es: color, una
+máquina por ronda y con el type-check pasado.
 
 ## Next.js 16: diferencias que rompen suposiciones previas
 

@@ -11,8 +11,10 @@
  * parámetro, porque el estado de partida vive dentro del closure de `mount()`.
  */
 
-import { BLOCK, COLORS, COLS, ROWS, type Cell } from "@/lib/games/tetris/constants";
+import { tint } from "@/lib/games";
+import { BLOCK, COLS, ROWS, type Cell } from "@/lib/games/tetris/constants";
 import type { Piece } from "@/lib/games/tetris/pieces";
+import type { Palette } from "@/lib/games/tetris/skins";
 
 /** La rejilla consolidada. `board[fila][columna]`, con la fila 0 arriba. */
 export type Board = Cell[][];
@@ -83,24 +85,30 @@ export function ghostY(board: Board, piece: Piece): number {
  * Una celda, en píxeles y no en coordenadas de rejilla: el tablero dibuja en el
  * origen, y la pieza siguiente en la banda derecha con otro tamaño.
  *
- * Es el `drawBlockFlat` del original —el skin Retro, el que trae puesto—:
- * relleno plano con un margen de un píxel y una banda de brillo arriba. Los
- * otros tres skins no entran, así que aquí no hay dispatcher.
+ * Es el `drawBlockFlat` del original —el único de los cuatro estilos de bloque
+ * que trae puesto—: relleno plano con un margen de un píxel y una banda de
+ * brillo arriba. Los otros tres no entran, así que aquí no hay dispatcher; lo
+ * que sí cambia el color es la piel, que llega por parámetro.
+ *
+ * El `alpha` es de quien dibuja, no de la piel: con él se pinta translúcida la
+ * proyección de aterrizaje. El 0,12 del brillo tampoco es de la piel, que sólo
+ * pone su color.
  */
 export function drawCell(
   ctx: CanvasRenderingContext2D,
   x: number,
   y: number,
   cell: Cell,
+  p: Palette,
   size: number = BLOCK,
   alpha: number = 1,
 ): void {
-  const color = COLORS[cell];
+  const color = p.pieces[cell];
   if (!color) return;
   ctx.globalAlpha = alpha;
   ctx.fillStyle = color;
   ctx.fillRect(x + 1, y + 1, size - 2, size - 2);
-  ctx.fillStyle = "rgba(255,255,255,0.12)";
+  ctx.fillStyle = tint(p.gloss, 0.12);
   ctx.fillRect(x + 1, y + 1, size - 2, 4);
   ctx.globalAlpha = 1;
 }

@@ -10,6 +10,8 @@
  * nadie; lo que hubiera guardado se queda ahí hasta que el navegador lo tire.
  */
 
+import type { SkinId } from "@/lib/games/skins";
+
 /** La versión va en la clave: un cambio de esquema estrena clave y olvida lo viejo. */
 const KEY = "arcadevault:v1";
 
@@ -22,6 +24,15 @@ export interface VaultData {
   user?: VaultUser | null;
   /** UUID de este navegador. Lo crea `deviceId()` la primera vez. */
   deviceId?: string;
+  /**
+   * Piel elegida en cada máquina. La clave es el `GameId`.
+   *
+   * `Record<string, SkinId>` y no `Record<GameId, SkinId>` a propósito: este
+   * archivo no importa del catálogo y no va a empezar por esto. Es opcional, así
+   * que no invalida lo ya guardado y `KEY` sigue en `v1`: subir de versión
+   * cerraría la sesión de todo el mundo por un color.
+   */
+  skins?: Record<string, SkinId>;
 }
 
 /**

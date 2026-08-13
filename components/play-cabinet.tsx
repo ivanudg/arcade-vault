@@ -21,10 +21,11 @@ import { saveScore } from "@/app/jugar/[id]/actions";
 import { GameCanvas } from "@/components/game-canvas";
 import type { GameHandle, GameState } from "@/lib/games/engine";
 import { ENGINES } from "@/lib/games/engines";
+import { DEFAULT_SKIN, SKIN_IDS, SKIN_LABELS, type SkinId } from "@/lib/games/skins";
 import type { Game, GameId } from "@/lib/games";
 import { formatScore } from "@/lib/scores";
 import { useSession } from "@/lib/session";
-import { deviceId } from "@/lib/storage";
+import { deviceId, persist, read } from "@/lib/storage";
 
 /** Las cinco teclas del mando, en el orden del prototipo. */
 const PAD = [
@@ -80,6 +81,10 @@ export function PlayCabinet({ game }: { game: Game }) {
   const [saveError, setSaveError] = useState<string | null>(null);
   /** Las tres cifras de la partida real. `null` hasta el primer `onState`. */
   const [live, setLive] = useState<GameState | null>(null);
+  /** Piel activa de esta máquina. Arranca en la de siempre y no en la guardada:
+      `localStorage` no existe en el servidor y leerlo aquí desajustaría la
+      hidratación. La guardada se aplica al recibir el handle. */
+  const [skin, setSkin] = useState<SkinId>(DEFAULT_SKIN);
 
   const engine = ENGINES[game.id];
   const loadTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
@@ -160,6 +165,18 @@ export function PlayCabinet({ game }: { game: Game }) {
       setSavedText(SAVED_MESSAGE.slice(0, i));
       if (i >= SAVED_MESSAGE.length) clearInterval(typer.current);
     }, 55);
+  }
+
+  /**
+   * Cambia la piel en caliente. No toca la partida: `setSkin()` sólo cambia el
+   * color con el que se pinta el frame siguiente, y por eso esto no pasa por
+   * `GameCanvas` —su efecto de montaje depende sólo del motor, y meter la piel
+   * ahí remontaría el juego y reiniciaría la partida en curso—.
+   */
+  function chooseSkin(id: SkinId) {
+    handle.current?.setSkin?.(id);
+    setSkin(id);
+    persist({ skins: { ...read().skins, [game.id]: id } });
   }
 
   function replay() {
@@ -252,6 +269,16 @@ export function PlayCabinet({ game }: { game: Game }) {
               onGameOver={() => setOver(true)}
               onReady={(h) => {
                 handle.current = h;
+                // Al desmontar llega `null`, y entonces no hay nada que vestir.
+                if (!h) return;
+                // La piel guardada de esta máquina se aplica aquí, con el motor
+                // ya montado y antes de que `start()` pinte el primer frame: no
+                // hay ni un fotograma con el color equivocado.
+                const saved = read().skins?.[game.id];
+                if (saved && engine.skins?.includes(saved)) {
+                  h.setSkin?.(saved);
+                  setSkin(saved);
+                }
               }}
               className="block h-auto w-full"
             />
@@ -310,6 +337,37 @@ export function PlayCabinet({ game }: { game: Game }) {
           <p className="mt-3.5 text-center text-[12px] tracking-av text-av-text-faint">
             {game.controls}
           </p>
+
+          {/* Selector de piel. Va aquí y no dentro del marco de la pantalla:
+              el ancho de ese marco está calculado con el ratio del mundo del
+              motor y cualquier cosa dentro lo descuadra. Los tres botones se
+              pintan deshabilitados si la máquina aún no está vestida, igual que
+              hace el mando con las teclas que no usa. */}
+          <div className="mt-4.5 flex flex-wrap items-center justify-center gap-2.5 border-t border-av-cyan/15 pt-4">
+            <span className="font-display text-[9px] tracking-av text-av-text-faint">PIEL</span>
+            {SKIN_IDS.map((id) => {
+              const dressed = !!engine.skins?.includes(id);
+              const active = dressed && skin === id;
+              return (
+                <button
+                  key={id}
+                  type="button"
+                  aria-pressed={active}
+                  disabled={!dressed}
+                  onClick={dressed ? () => chooseSkin(id) : undefined}
+                  className={`border px-3 py-2.25 font-display text-[9px] tracking-av ${
+                    !dressed
+                      ? "cursor-not-allowed border-av-line/40 text-av-text-faint opacity-35"
+                      : active
+                        ? "cursor-pointer border-av-yellow bg-av-yellow/16 text-av-yellow"
+                        : "cursor-pointer border-av-cyan/30 text-av-cyan hover:bg-av-cyan/14 hover:text-white"
+                  }`}
+                >
+                  {SKIN_LABELS[id]}
+                </button>
+              );
+            })}
+          </div>
         </div>
       </section>
 

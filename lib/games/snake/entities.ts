@@ -10,8 +10,9 @@
  * solo pasan a píxeles dentro de `draw()`.
  */
 
-import { CELL, COLOR_BODY, COLOR_FRUIT_FALLBACK, COLOR_HEAD, COLS, ROWS } from "./constants";
+import { CELL, COLS, ROWS } from "./constants";
 import { randInt, type Cell } from "./math";
+import type { Palette } from "./skins";
 import { FRUITS, FRUIT_KEYS } from "./sprites";
 
 export type Dir = "up" | "down" | "left" | "right";
@@ -106,12 +107,12 @@ export class Snake {
     return this.cells.some((cell, i) => i > 0 && cell.x === x && cell.y === y);
   }
 
-  /** Cuerpo cian y cabeza amarilla, una celda con inset por segmento. */
-  draw(ctx: CanvasRenderingContext2D): void {
+  /** Cabeza y cuerpo de distinto color, una celda con inset por segmento. */
+  draw(ctx: CanvasRenderingContext2D, p: Palette): void {
     const size = CELL - INSET * 2;
     for (let i = this.cells.length - 1; i >= 0; i--) {
       const cell = this.cells[i];
-      ctx.fillStyle = i === 0 ? COLOR_HEAD : COLOR_BODY;
+      ctx.fillStyle = i === 0 ? p.head : p.body;
       ctx.fillRect(cell.x * CELL + INSET, cell.y * CELL + INSET, size, size);
     }
   }
@@ -137,18 +138,22 @@ export class Fruit {
   }
 
   /**
-   * El sprite del atlas si ya sirve, y si no un círculo magenta.
+   * El sprite del atlas si el que llama lo da, y si no un círculo plano.
+   *
+   * `atlas` llega en `null` de dos maneras: porque la imagen aún no sirve —o no
+   * servirá nunca— y porque la piel activa no lo usa. Las dos acaban en el mismo
+   * camino, que es el que el motor ya tenía escrito.
    *
    * El recorte se escala **conservando su proporción** y centrado en la celda:
    * los 22 son verticales —110 × 160 la manzana, 170 × 160 el kiwi— y estirarlos
    * a 32 × 32 los deformaría todos.
    */
-  draw(ctx: CanvasRenderingContext2D, atlas: HTMLImageElement | null): void {
+  draw(ctx: CanvasRenderingContext2D, atlas: HTMLImageElement | null, p: Palette): void {
     const left = this.x * CELL;
     const top = this.y * CELL;
 
     if (atlas === null) {
-      ctx.fillStyle = COLOR_FRUIT_FALLBACK;
+      ctx.fillStyle = p.fruit;
       ctx.beginPath();
       ctx.arc(left + CELL / 2, top + CELL / 2, CELL * 0.35, 0, Math.PI * 2);
       ctx.fill();

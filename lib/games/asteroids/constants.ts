@@ -5,6 +5,9 @@
  * El juego original está equilibrado: retocar un valor «de paso» —la duración
  * de un power-up, una probabilidad de drop, el rozamiento— lo desafina. Si algo
  * hay que ajustar es la tabla de semillas de `lib/scores.ts`, nunca esto.
+ *
+ * Los colores ya no están aquí: viven en `skins.ts`, que tiene los del original
+ * y los de las otras dos pieles. Aquí sólo quedan números.
  */
 
 /** Mundo lógico. El canvas se escala; estas dos cifras no cambian. */
@@ -21,20 +24,14 @@ export const POINTS = [0, 100, 50, 20];
 export const TRIPLE_DURATION = 10;
 /** rad (~15°) de separación entre balas del abanico. */
 export const TRIPLE_SPREAD = 0.26;
-/** Cian, color del power-up Disparo Triple. */
-export const PU_COLOR = "#0ff";
 
 // ── Power-up: Escudo ─────────────────────────────────────────────────────────
 export const SHIELD_DURATION = 5;
-/** Azul claro. */
-export const SHIELD_COLOR = "#8cf";
 
 // ── Power-up: Cámara lenta ───────────────────────────────────────────────────
 export const SLOW_DURATION = 6;
 /** Asteroides a mitad de velocidad durante el efecto. */
 export const SLOW_FACTOR = 0.5;
-/** Ámbar. */
-export const SLOW_COLOR = "#fd4";
 
 // ── Power-up: Hiperpropulsión ────────────────────────────────────────────────
 export const HYPER_DURATION = 8;
@@ -46,14 +43,10 @@ export const HYPER_ROT_MULT = 1.3;
 export const HYPER_DRAG = 0.994;
 /** Rozamiento normal de la nave, fuera de hiperpropulsión. */
 export const SHIP_DRAG = 0.987;
-/** Verde. */
-export const HYPER_COLOR = "#5f8";
 
 // ── Power-up: Bomba Nova ─────────────────────────────────────────────────────
 /** Probabilidad baja de drop: es el ítem escaso, máx. uno por nivel. */
 export const NOVA_CHANCE = 0.04;
-/** Rojo. */
-export const NOVA_COLOR = "#f55";
 
 // ── Drops ────────────────────────────────────────────────────────────────────
 /** Probabilidad de drop al destruir un asteroide. */
