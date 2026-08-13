@@ -16,7 +16,7 @@
  */
 
 import Link from "next/link";
-import { useEffect, useRef, useState } from "react";
+import { type CSSProperties, useEffect, useRef, useState } from "react";
 import { saveScore } from "@/app/jugar/[id]/actions";
 import { GameCanvas } from "@/components/game-canvas";
 import type { GameHandle, GameState } from "@/lib/games/engine";
@@ -49,19 +49,6 @@ const ENGINE_KEYS: Partial<Record<GameId, readonly string[]>> = {
   // `ESPACIO` arranca la serpiente.
   snake: ["ArrowLeft", "ArrowUp", "ArrowRight", "ArrowDown", "Space"],
 };
-
-/**
- * Alto que ocupa la pantalla de juego por encima y por debajo del canvas:
- * cabecera del sitio, HUD, el marco del gabinete, el mando y la línea de
- * controles. Es el presupuesto que se le resta a la ventana para saber cuánto
- * alto le queda a la pantalla.
- *
- * Está calibrado por lo bajo a propósito: con un presupuesto mayor cabría
- * también el mando sin desplazar la página, pero un mundo apaisado como el de
- * Asteroids —que hoy entra de sobra— empezaría a encogerse en pantallas
- * normales. Lo que no puede quedar fuera de la ventana es el tablero.
- */
-const CABINET_CHROME = "16rem";
 
 const SAVED_MESSAGE = "PUNTUACION GUARDADA";
 /** Lo que enseña el HUD antes del primer `onState`. */
@@ -254,11 +241,24 @@ export function PlayCabinet({ game }: { game: Game }) {
               mundo del motor nunca se deforme. Sin esto, un mundo apaisado como
               el de Asteroids cabe, y uno vertical como el de Tetris se estira
               hasta obligar a hacer scroll para ver los dos extremos del
-              tablero. `CABINET_CHROME` es lo que ocupa todo lo demás de la
-              pantalla de juego: cabecera, HUD, marco, mando y controles. */}
+              tablero.
+
+              El reparto es a medias: el ratio lo sabe JavaScript, porque sale
+              del `world` del motor, y el presupuesto lo sabe CSS, porque
+              cambia con la maquetación y un `style` en línea no entiende de
+              `@media`. `--av-chrome` es lo que ocupa todo lo demás de la
+              pantalla de juego, y cada maquetación reserva lo suyo: en
+              escritorio, cabecera, HUD, marco, mando, controles y PIEL; en
+              vertical de mano, lo mismo sin la línea de controles; en
+              horizontal, sólo cabecera y HUD, porque el mando se va a los
+              lados. El de escritorio está calibrado por lo bajo a propósito:
+              con más presupuesto cabría también el mando, pero un mundo
+              apaisado como el de Asteroids empezaría a encogerse en pantallas
+              normales. Lo que no puede quedar fuera de la ventana es el
+              tablero. */}
           <div
-            style={{ maxWidth: `calc((100svh - ${CABINET_CHROME}) * ${aspectRatio})` }}
-            className="relative mx-auto overflow-hidden rounded-[22px] bg-av-void shadow-[inset_0_0_60px_rgba(0,0,0,0.9),inset_0_0_12px_rgba(0,245,255,0.16)]"
+            style={{ "--av-ratio": aspectRatio } as CSSProperties}
+            className="relative mx-auto overflow-hidden rounded-[22px] bg-av-void shadow-[inset_0_0_60px_rgba(0,0,0,0.9),inset_0_0_12px_rgba(0,245,255,0.16)] [--av-chrome:16rem] max-w-[calc((100svh-var(--av-chrome))*var(--av-ratio))] handheld:[--av-chrome:13rem] handheld-wide:[--av-chrome:7rem]"
           >
             <GameCanvas
               game={engine}
