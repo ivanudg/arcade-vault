@@ -9,7 +9,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 **Arcade Vault**: plataforma para jugar online y competir por la mayor cantidad de
 puntos. Ya no es el scaffold de `create-next-app`: hoy son **siete pantallas**, cuatro
 máquinas jugables con motor propio y un marcador compartido en Supabase. Lo construido
-llega hasta **SPEC 10**.
+llega hasta **SPEC 11**.
 
 El flujo de trabajo del proyecto es **Spec Driven Design** vía las skills `/spec` y `/spec-impl` de [Klerith/fernando-skills](https://github.com/Klerith/fernando-skills) (`npx skills@latest add Klerith/fernando-skills`). Antes de implementar una feature nueva, espera/produce la spec correspondiente en lugar de escribir código directamente.
 
@@ -36,6 +36,7 @@ historial cuenta el producto mejor que el código:
 | 08   | Tetris y los rótulos de HUD por motor                                                      |
 | 09   | Arkanoid, puerto sin spritesheet                                                           |
 | 10   | Snake, escrita desde cero, con `public/snake/fruits.png`                                   |
+| 11   | `/jugar/[id]` jugable con el dedo: maquetación vertical y horizontal de mano               |
 
 Ojo: la spec 02 sigue marcada como `Aprobado` aunque la portada está implementada; el
 estado del encabezado no siempre se actualizó al cerrar.
@@ -62,6 +63,7 @@ npx supabase db push   # aplica las migraciones de supabase/migrations/
 - Las fuentes se cargan con `next/font/google` en `app/layout.tsx` y se exponen como variables CSS (`--font-press-start` para Press Start 2P, `--font-courier-prime` para Courier Prime) enlazadas al tema de Tailwind (`font-display`, `font-mono`/`font-sans`).
 - El tema es **dark-only**: los tokens `--av-*` de `app/globals.css` derivan de `references/templates/` (paleta neón `#00f5ff` / `#ff006e` / `#f5ff00` sobre `#0a0a0f`). No hay variante clara ni theme switcher; no uses variantes `dark:`. Ojo: las **skins** de las que habla `skin-designer` son otra cosa —la paleta del canvas de un motor, que no hereda nada del tema del sitio—, y no contradicen esto: el sitio sigue siendo dark-only.
 - Los efectos CRT del template son utilidades propias en `globals.css`: `av-glow-*`, `av-halo-*`, `av-grid-floor`, `av-scanlines`, `av-vignette`, y las animaciones `animate-av-*` (fade, slide, row, caret, spin, sweep, cabinet, pulse, flicker, grid).
+- **Dos variantes propias, también en `globals.css`**, declaradas con `@custom-variant` de Tailwind v4 y usadas por nombre en el marcado: `handheld` es puntero grueso con la ventana por debajo de 480px de ancho **o** de alto, y `handheld-wide` es lo mismo en horizontal. Las dos llevan `(pointer: coarse)` acompañado siempre del umbral, para que un portátil táctil no cumpla ninguna y una tableta —un iPad mini mide 744px por su lado corto— se quede con la maquetación de escritorio. Sólo las usa la pantalla de juego; para ocultar algo con el dedo sin cambiar de maquetación está `pointer-coarse:`, que ya trae Tailwind. Junto a ellas vive `--av-play-header`, el alto de `PlayHeader` con el dedo: la cabecera lo fija y el `<main>` de `/jugar/[id]` se lo resta a `100svh`, y va en `:root` porque son hermanos y sólo comparten lo que herede la raíz.
 - `next.config.ts` sólo declara `turbopack.root = import.meta.dirname`, porque hay un `package-lock.json` suelto por encima del repo y sin eso Turbopack lo toma como raíz del workspace y avisa en cada build. Cualquier otro flag (p. ej. `cacheComponents`) es una decisión nueva, no algo ya asumido.
 - **Lo que se pinta en Press Start 2P va en mayúsculas y sin tildes.** La fuente no tiene glifos acentuados y el navegador los sustituye por otra, que al lado de un avance de 20px sale como una mota. Lo mismo con los símbolos del template (`▸ ▶ ✦ …`): se dibujan con ASCII. El único no-ASCII admitido es `·`. Los cuerpos de texto van en Courier Prime y **sí** llevan su acentuación.
 - **El texto editorial no vive en la maquetación**: los literales de la portada están en `lib/landing.ts` (`FEATURES`, `STATS`, `PLAN`, `FAQ`), los de «Acerca de» en `lib/about.ts` (`MISSION`, `HIGHLIGHTS`, `CONTACT_TIPS`, `TERMINAL_*`, `LIMITS`) y los de las máquinas en `lib/games.ts`. Un retoque de copia no abre un `.tsx`.
@@ -222,11 +224,34 @@ máquina, se actualiza también esa tabla.
   `drawPreview()` acaba en `id satisfies never`, así que una máquina nueva sin
   escena rompe `npx tsc --noEmit` en vez de dibujar otra cosa.
 - **La pantalla nunca se sale de la ventana.** El marco de `PlayCabinet` limita
-  su ancho a `calc((100svh - CABINET_CHROME) * ratio)`, con el ratio del `world`
-  del motor: normalmente manda el ancho del gabinete, y cuando el alto no cabe
-  manda la altura y el ancho la sigue, sin deformar nada. Sin eso, un mundo
-  vertical como el de Tetris (420 × 600) obliga a hacer scroll para ver los dos
-  extremos del tablero.
+  su ancho a `calc((100svh - var(--av-chrome)) * var(--av-ratio))`: normalmente
+  manda el ancho del gabinete, y cuando el alto no cabe manda la altura y el
+  ancho la sigue, sin deformar nada. Sin eso, un mundo vertical como el de
+  Tetris (420 × 600) obliga a hacer scroll para ver los dos extremos del
+  tablero. El reparto es a medias y desde SPEC 11: el ratio lo sabe JavaScript,
+  porque sale del `world` del motor y viaja en un `style` en línea; el
+  presupuesto lo sabe CSS, porque cambia con la maquetación y un `style` en
+  línea no entiende de `@media`. La constante `CABINET_CHROME` ya no existe.
+- **La pantalla de juego tiene tres maquetaciones**, y las tres son sólo CSS:
+  no hay detección de dispositivo en JavaScript ni estado que hidratar, y
+  ningún motor se entera de que se está jugando con el dedo. `--av-chrome` es
+  lo que cada una le resta a la ventana.
+
+  | Maquetación                          | `--av-chrome` | Qué cambia                                                                      |
+  | ------------------------------------ | ------------- | ------------------------------------------------------------------------------- |
+  | Escritorio                           | `16rem`       | la de siempre: HUD, gabinete, fila de cinco botones, controles y `PIEL`         |
+  | Vertical de mano (`handheld`)        | `13rem`       | HUD en una línea, marco y rellenos reducidos, sin la línea de controles         |
+  | Horizontal de mano (`handheld-wide`) | `7rem`        | gabinete en fila: cruz de flechas, tablero a `h-full` y `FUEGO`; cabecera corta |
+
+  Sólo `/jugar/[id]` declara `viewport` propio —escala fija y `viewportFit:
+"cover"`—, así que el pellizco se pierde ahí y se conserva en las otras siete
+  pantallas; a cambio, esa ruta rellena con `env(safe-area-inset-*)`. El
+  `<main>` mide `100svh` menos `--av-play-header`, que es lo que ocupa
+  `PlayHeader` con el dedo, y no se desplaza. Los cinco botones del mando se
+  pintan **dos veces** en el DOM —la fila de cinco y el mando repartido— y CSS
+  enseña una u otra; el canvas, en cambio, se pinta una sola vez, y por eso
+  girar el aparato no remonta el motor ni reinicia la partida.
+
 - `references/started-games/`, `references/source-assets/` y
   `references/templates/` son material de referencia: se leen, no se editan. Lo
   que sale de ahí se **copia** al repo —`public/snake/fruits.png` es el único

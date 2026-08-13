@@ -17,7 +17,8 @@
 
 /**
  * El mundo de Asteroids y Arkanoid, que ya entra de sobra en el gabinete sin
- * que `CABINET_CHROME` lo encoja. Un mundo cuadrado desperdiciaría ancho.
+ * que el presupuesto de alto de la pantalla de juego lo encoja. Un mundo
+ * cuadrado desperdiciaría ancho.
  */
 export const W = 800;
 export const H = 600;
