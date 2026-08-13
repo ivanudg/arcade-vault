@@ -15,7 +15,7 @@ export function PlayHeader({ game }: { game: Game }) {
     // Con el dedo la cabecera mide exactamente `--av-play-header`: es lo que
     // el `<main>` de la pantalla de juego le resta a la ventana para caber sin
     // desplazar la página. El relleno vertical sobra con la altura fija.
-    <header className="sticky top-0 z-40 flex items-center justify-between gap-3.5 border-b border-av-cyan/24 bg-[rgba(10,10,15,0.9)] px-[clamp(14px,3vw,40px)] py-3.5 handheld:h-[var(--av-play-header)] handheld:py-0">
+    <header className="sticky top-0 z-40 flex items-center justify-between gap-3.5 border-b border-av-cyan/24 bg-[rgba(10,10,15,0.9)] px-[clamp(14px,3vw,40px)] py-3.5 handheld:h-[var(--av-play-header)] handheld:py-0 handheld:pr-[calc(14px+env(safe-area-inset-right))] handheld:pl-[calc(14px+env(safe-area-inset-left))]">
       <Link
         href="/"
         className="font-display text-[clamp(10px,2vw,13px)] tracking-av text-av-cyan [text-shadow:0_0_8px_rgba(0,245,255,0.9)]"
@@ -24,7 +24,10 @@ export function PlayHeader({ game }: { game: Game }) {
         <span className="text-av-magenta [text-shadow:0_0_8px_rgba(255,0,110,0.9)]"> VAULT</span>
       </Link>
 
-      <span className="font-display text-[clamp(9px,1.8vw,12px)] tracking-av text-av-text-bright">
+      {/* En horizontal de mano el alto es todo del tablero, y el título de la
+          máquina es lo único de aquí que no hace falta: se acaba de leer en su
+          ficha. ARCADE VAULT y SALIR se quedan. */}
+      <span className="font-display text-[clamp(9px,1.8vw,12px)] tracking-av text-av-text-bright handheld-wide:hidden">
         {game.title}
       </span>
 
@@ -32,7 +35,7 @@ export function PlayHeader({ game }: { game: Game }) {
           donde se llega a jugar. */}
       <Link
         href={`/juego/${game.id}`}
-        className="border border-av-magenta/45 px-3.25 py-2.75 font-display text-[9px] tracking-av text-av-magenta hover:bg-av-magenta/16 hover:text-white"
+        className="shrink-0 border border-av-magenta/45 px-3.25 py-2.75 font-display text-[9px] tracking-av text-av-magenta hover:bg-av-magenta/16 hover:text-white handheld-wide:py-2"
       >
         SALIR
       </Link>

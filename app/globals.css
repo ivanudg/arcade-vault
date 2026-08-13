@@ -178,6 +178,16 @@
 @custom-variant handheld (@media (pointer: coarse) and ((max-width: 480px) or (max-height: 480px)));
 @custom-variant handheld-wide (@media (pointer: coarse) and (orientation: landscape) and (max-height: 480px));
 
+/* En horizontal el alto es lo que escasea, así que la cabecera de la pantalla
+   de juego se encoge todavía más. Va escrito como `@media` y no con la
+   variante porque quien lo lee es `:root`: la cabecera y el `<main>` de
+   `/jugar/[id]` son hermanos, y sólo comparten lo que herede la raíz. */
+@media (pointer: coarse) and (orientation: landscape) and (max-height: 480px) {
+  :root {
+    --av-play-header: 2.75rem;
+  }
+}
+
 /* ============================================================
    Utilidades de firma: los efectos CRT que repiten las pantallas
    ============================================================ */
