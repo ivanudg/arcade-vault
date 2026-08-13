@@ -53,7 +53,7 @@ export default async function PlayPage({ params }: PageProps<"/jugar/[id]">) {
     // Con el dedo la pantalla de juego es la ventana entera menos la cabecera,
     // y no se desplaza: lo que no quepa se recorta. Los 5rem de abajo eran
     // aire de escritorio; en un teléfono sólo queda el margen seguro.
-    <main className="flex-1 pt-[clamp(18px,3vw,34px)] pr-[calc(clamp(14px,3vw,30px)+env(safe-area-inset-right))] pb-[calc(5rem+env(safe-area-inset-bottom))] pl-[calc(clamp(14px,3vw,30px)+env(safe-area-inset-left))] handheld:h-[calc(100svh-var(--av-play-header))] handheld:overflow-hidden handheld:pt-2.5 handheld:pb-[env(safe-area-inset-bottom)]">
+    <main className="flex-1 pt-[clamp(18px,3vw,34px)] pr-[calc(clamp(14px,3vw,30px)+env(safe-area-inset-right))] pb-[calc(5rem+env(safe-area-inset-bottom))] pl-[calc(clamp(14px,3vw,30px)+env(safe-area-inset-left))] handheld:h-[calc(100svh-var(--av-play-header))] handheld:overflow-hidden handheld:pt-2.5 handheld:pr-[calc(6px+env(safe-area-inset-right))] handheld:pb-[env(safe-area-inset-bottom)] handheld:pl-[calc(6px+env(safe-area-inset-left))]">
       <PlayCabinet game={game} />
     </main>
   );

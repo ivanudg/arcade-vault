@@ -194,30 +194,40 @@ export function PlayCabinet({ game }: { game: Game }) {
           contenedor de los hijos `fixed`: dentro, un `inset-0` cubriría la
           sección en vez de la ventana. */}
       <section className="mx-auto w-full max-w-195 animate-av-fade">
-        <div className="flex flex-wrap items-center justify-between gap-3 border border-av-cyan/30 bg-[rgba(13,15,22,0.9)] px-4 py-3.5">
-          <div className="flex flex-wrap gap-5.5 font-display text-[9px] tracking-av">
+        {/* Con el dedo el HUD va en una sola línea: envolver en tres empuja el
+            tablero fuera de la ventana. Press Start 2P es monoespaciada y
+            avanza 1em por carácter, así que lo que se recorta es lo que se
+            paga por carácter —el cuerpo, el tracking de 1px y los huecos—, no
+            ninguna de las cuatro celdas: las tres cifras y el jugador se
+            quedan, y PAUSA con ellas en la misma fila. */}
+        <div className="flex flex-wrap items-center justify-between gap-3 border border-av-cyan/30 bg-[rgba(13,15,22,0.9)] px-4 py-3.5 handheld:flex-nowrap handheld:gap-1.5 handheld:px-1.5 handheld:py-1.5">
+          <div className="flex flex-wrap gap-5.5 font-display text-[9px] tracking-av handheld:min-w-0 handheld:flex-nowrap handheld:gap-1.5 handheld:text-[6px] handheld:tracking-normal">
             {/* Los rótulos los pone el motor: las tres cifras son siempre las
                 mismas, pero la del medio son vidas en Asteroids y líneas en
                 Tetris. */}
-            <span className="text-av-text-dim">
+            <span className="whitespace-nowrap text-av-text-dim">
               {engine.hud[0]}{" "}
               <span className="text-av-cyan [text-shadow:0_0_10px_rgba(0,245,255,0.6)]">
                 {formatScore(run.score)}
               </span>
             </span>
-            <span className="text-av-text-dim">
+            <span className="whitespace-nowrap text-av-text-dim">
               {engine.hud[1]}{" "}
               <span className="text-av-magenta [text-shadow:0_0_10px_rgba(255,0,110,0.6)]">
                 {run.lives}
               </span>
             </span>
-            <span className="text-av-text-dim">
+            <span className="whitespace-nowrap text-av-text-dim">
               {engine.hud[2]}{" "}
               <span className="text-av-yellow [text-shadow:0_0_10px_rgba(245,255,0,0.6)]">
                 {run.level}
               </span>
             </span>
-            <span className="text-av-text-dim">
+            {/* La única celda que puede crecer sin techo es ésta: la puntuación
+                sube de dígito en dígito y el nombre admite doce caracteres. Es
+                la que cede si la línea no da, cortando el nombre por el final
+                en vez de empujar el resto del HUD a una segunda fila. */}
+            <span className="min-w-0 truncate whitespace-nowrap text-av-text-dim">
               JUGADOR{" "}
               {/* Hasta leer `localStorage` se muestra INVITADO, que es también el
                   valor definitivo de quien no tiene sesión. */}
@@ -229,7 +239,9 @@ export function PlayCabinet({ game }: { game: Game }) {
             type="button"
             onClick={() => setPaused((p) => !p)}
             aria-pressed={paused}
-            className="cursor-pointer border border-av-yellow/45 bg-transparent px-3.5 py-2.75 font-display text-[9px] text-av-yellow active:scale-94 hover:bg-av-yellow/16 hover:text-white"
+            // Encoge con el HUD, pero nunca cede su sitio: `shrink-0` lo deja
+            // entero a la derecha de la fila aunque las cifras crezcan.
+            className="cursor-pointer border border-av-yellow/45 bg-transparent px-3.5 py-2.75 font-display text-[9px] text-av-yellow active:scale-94 hover:bg-av-yellow/16 hover:text-white handheld:shrink-0 handheld:px-2 handheld:py-2 handheld:text-[7px]"
           >
             {paused ? "SEGUIR" : "PAUSA"}
           </button>
