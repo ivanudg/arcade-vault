@@ -16,7 +16,7 @@
  */
 
 import Link from "next/link";
-import { useEffect, useRef, useState } from "react";
+import { type CSSProperties, useEffect, useRef, useState } from "react";
 import { saveScore } from "@/app/jugar/[id]/actions";
 import { GameCanvas } from "@/components/game-canvas";
 import type { GameHandle, GameState } from "@/lib/games/engine";
@@ -27,14 +27,33 @@ import { formatScore } from "@/lib/scores";
 import { useSession } from "@/lib/session";
 import { deviceId, persist, read } from "@/lib/storage";
 
-/** Las cinco teclas del mando, en el orden del prototipo. */
+/**
+ * Las cinco teclas del mando, en el orden del prototipo. `side` es de qué lado
+ * cae cada una cuando el mando se reparte —las flechas a la izquierda del
+ * tablero y el fuego a la derecha, que es como caen los dos pulgares al
+ * sostener el teléfono en horizontal—. En vertical no se mira: los cinco van
+ * en una fila, como siempre.
+ */
 const PAD = [
-  { label: "←", code: "ArrowLeft", aria: "Mover ←" },
-  { label: "↑", code: "ArrowUp", aria: "Mover ↑" },
-  { label: "↓", code: "ArrowDown", aria: "Mover ↓" },
-  { label: "→", code: "ArrowRight", aria: "Mover →" },
-  { label: "FUEGO", code: "Space", aria: "Fuego" },
+  { label: "←", code: "ArrowLeft", aria: "Mover ←", side: "dpad" },
+  { label: "↑", code: "ArrowUp", aria: "Mover ↑", side: "dpad" },
+  { label: "↓", code: "ArrowDown", aria: "Mover ↓", side: "dpad" },
+  { label: "→", code: "ArrowRight", aria: "Mover →", side: "dpad" },
+  { label: "FUEGO", code: "Space", aria: "Fuego", side: "fire" },
 ] as const;
+
+/**
+ * Dónde cae cada flecha en la cruz de horizontal: `↑` arriba en el centro,
+ * `←` y `→` a los lados y `↓` abajo. En cruz y no en columna de cuatro porque
+ * en columna `←` y `→` quedan uno encima del otro y el pulgar tiene que
+ * buscar; ocupa lo mismo.
+ */
+const CROSS_CELL: Record<string, string> = {
+  ArrowUp: "col-start-2 row-start-1",
+  ArrowLeft: "col-start-1 row-start-2",
+  ArrowRight: "col-start-3 row-start-2",
+  ArrowDown: "col-start-2 row-start-3",
+};
 
 /**
  * Qué botones del mando sirven en cada máquina con motor. Los que no están se
@@ -49,19 +68,6 @@ const ENGINE_KEYS: Partial<Record<GameId, readonly string[]>> = {
   // `ESPACIO` arranca la serpiente.
   snake: ["ArrowLeft", "ArrowUp", "ArrowRight", "ArrowDown", "Space"],
 };
-
-/**
- * Alto que ocupa la pantalla de juego por encima y por debajo del canvas:
- * cabecera del sitio, HUD, el marco del gabinete, el mando y la línea de
- * controles. Es el presupuesto que se le resta a la ventana para saber cuánto
- * alto le queda a la pantalla.
- *
- * Está calibrado por lo bajo a propósito: con un presupuesto mayor cabría
- * también el mando sin desplazar la página, pero un mundo apaisado como el de
- * Asteroids —que hoy entra de sobra— empezaría a encogerse en pantallas
- * normales. Lo que no puede quedar fuera de la ventana es el tablero.
- */
-const CABINET_CHROME = "16rem";
 
 const SAVED_MESSAGE = "PUNTUACION GUARDADA";
 /** Lo que enseña el HUD antes del primer `onState`. */
@@ -179,6 +185,51 @@ export function PlayCabinet({ game }: { game: Game }) {
     persist({ skins: { ...read().skins, [game.id]: id } });
   }
 
+  /**
+   * Un botón del mando. Se pinta en dos sitios —la fila de cinco de siempre y
+   * el mando repartido de horizontal—, y CSS enseña uno u otro: nunca los dos
+   * a la vez, así que no hay dos botones `FUEGO` que un lector de pantalla
+   * pueda anunciar. Duplicar aquí es barato; lo que no se puede duplicar es el
+   * canvas, que remontaría la partida al girar el teléfono.
+   */
+  function padKey({ label, code, aria }: (typeof PAD)[number], className = "") {
+    const usable = padKeys ? padKeys.includes(code) : true;
+    const inert = !!padKeys && !usable;
+    // `pointerup` fuera del botón nunca llega, así que soltar también al salir
+    // el puntero o al cancelarse el gesto: si no, la nave se queda girando
+    // sola.
+    const release = () => handle.current?.release(code);
+    return (
+      <button
+        key={label}
+        type="button"
+        aria-label={aria}
+        disabled={inert}
+        onPointerDown={
+          padKeys && usable
+            ? (e) => {
+                // Sin foco en el botón, `ESPACIO` no lo re-dispara.
+                e.preventDefault();
+                handle.current?.press(code);
+              }
+            : undefined
+        }
+        onPointerUp={padKeys && usable ? release : undefined}
+        onPointerCancel={padKeys && usable ? release : undefined}
+        onPointerLeave={padKeys && usable ? release : undefined}
+        // 44px de lado corto es el mínimo que un pulgar acierta sin apuntar;
+        // con el relleno de siempre se quedaban en 40.
+        className={`min-h-11 touch-none border border-av-cyan/30 bg-av-panel px-1.5 py-3.75 font-display text-[10px] text-av-cyan ${
+          inert
+            ? "cursor-not-allowed opacity-35"
+            : "cursor-pointer active:bg-av-cyan active:text-av-bg"
+        } ${className}`}
+      >
+        {label}
+      </button>
+    );
+  }
+
   function replay() {
     clearInterval(typer.current);
     setOver(false);
@@ -206,31 +257,41 @@ export function PlayCabinet({ game }: { game: Game }) {
           elemento, y un ancestro con transform se convierte en bloque
           contenedor de los hijos `fixed`: dentro, un `inset-0` cubriría la
           sección en vez de la ventana. */}
-      <section className="mx-auto w-full max-w-195 animate-av-fade">
-        <div className="flex flex-wrap items-center justify-between gap-3 border border-av-cyan/30 bg-[rgba(13,15,22,0.9)] px-4 py-3.5">
-          <div className="flex flex-wrap gap-5.5 font-display text-[9px] tracking-av">
+      <section className="mx-auto w-full max-w-195 animate-av-fade handheld-wide:flex handheld-wide:h-full handheld-wide:flex-col">
+        {/* Con el dedo el HUD va en una sola línea: envolver en tres empuja el
+            tablero fuera de la ventana. Press Start 2P es monoespaciada y
+            avanza 1em por carácter, así que lo que se recorta es lo que se
+            paga por carácter —el cuerpo, el tracking de 1px y los huecos—, no
+            ninguna de las cuatro celdas: las tres cifras y el jugador se
+            quedan, y PAUSA con ellas en la misma fila. */}
+        <div className="flex flex-wrap items-center justify-between gap-3 border border-av-cyan/30 bg-[rgba(13,15,22,0.9)] px-4 py-3.5 handheld:flex-nowrap handheld:gap-1.5 handheld:px-1.5 handheld:py-1.5">
+          <div className="flex flex-wrap gap-5.5 font-display text-[9px] tracking-av handheld:min-w-0 handheld:flex-nowrap handheld:gap-1.5 handheld:text-[6px] handheld:tracking-normal">
             {/* Los rótulos los pone el motor: las tres cifras son siempre las
                 mismas, pero la del medio son vidas en Asteroids y líneas en
                 Tetris. */}
-            <span className="text-av-text-dim">
+            <span className="whitespace-nowrap text-av-text-dim">
               {engine.hud[0]}{" "}
               <span className="text-av-cyan [text-shadow:0_0_10px_rgba(0,245,255,0.6)]">
                 {formatScore(run.score)}
               </span>
             </span>
-            <span className="text-av-text-dim">
+            <span className="whitespace-nowrap text-av-text-dim">
               {engine.hud[1]}{" "}
               <span className="text-av-magenta [text-shadow:0_0_10px_rgba(255,0,110,0.6)]">
                 {run.lives}
               </span>
             </span>
-            <span className="text-av-text-dim">
+            <span className="whitespace-nowrap text-av-text-dim">
               {engine.hud[2]}{" "}
               <span className="text-av-yellow [text-shadow:0_0_10px_rgba(245,255,0,0.6)]">
                 {run.level}
               </span>
             </span>
-            <span className="text-av-text-dim">
+            {/* La única celda que puede crecer sin techo es ésta: la puntuación
+                sube de dígito en dígito y el nombre admite doce caracteres. Es
+                la que cede si la línea no da, cortando el nombre por el final
+                en vez de empujar el resto del HUD a una segunda fila. */}
+            <span className="min-w-0 truncate whitespace-nowrap text-av-text-dim">
               JUGADOR{" "}
               {/* Hasta leer `localStorage` se muestra INVITADO, que es también el
                   valor definitivo de quien no tiene sesión. */}
@@ -242,99 +303,131 @@ export function PlayCabinet({ game }: { game: Game }) {
             type="button"
             onClick={() => setPaused((p) => !p)}
             aria-pressed={paused}
-            className="cursor-pointer border border-av-yellow/45 bg-transparent px-3.5 py-2.75 font-display text-[9px] text-av-yellow active:scale-94 hover:bg-av-yellow/16 hover:text-white"
+            // Encoge con el HUD, pero nunca cede su sitio: `shrink-0` lo deja
+            // entero a la derecha de la fila aunque las cifras crezcan.
+            className="cursor-pointer border border-av-yellow/45 bg-transparent px-3.5 py-2.75 font-display text-[9px] text-av-yellow active:scale-94 hover:bg-av-yellow/16 hover:text-white handheld:shrink-0 handheld:px-2 handheld:py-2 handheld:text-[7px]"
           >
             {paused ? "SEGUIR" : "PAUSA"}
           </button>
         </div>
 
-        <div className="mx-auto mt-6.5 rounded-[34px] border border-av-cyan/22 bg-[linear-gradient(#15171f,#0b0c12)] p-5.5 shadow-[0_0_46px_rgba(0,245,255,0.12),inset_0_0_0_1px_rgba(255,255,255,0.04)]">
+        {/* El marco del gabinete es aire, y con el dedo el aire es lo primero
+            que sobra: sin recortarlo, la fila de cinco botones no cabe a lo
+            ancho de un teléfono y el último se va a una segunda línea. */}
+        <div className="mx-auto mt-6.5 rounded-[34px] border border-av-cyan/22 bg-[linear-gradient(#15171f,#0b0c12)] p-5.5 shadow-[0_0_46px_rgba(0,245,255,0.12),inset_0_0_0_1px_rgba(255,255,255,0.04)] handheld:mt-3 handheld:rounded-[20px] handheld:p-2.5 handheld-wide:mt-1.5 handheld-wide:flex handheld-wide:min-h-0 handheld-wide:flex-1 handheld-wide:flex-col handheld-wide:rounded-[14px] handheld-wide:p-1.5">
           {/* La pantalla llena el ancho del gabinete, salvo que su alto no
               quepa: entonces manda la altura y el ancho la sigue, para que el
               mundo del motor nunca se deforme. Sin esto, un mundo apaisado como
               el de Asteroids cabe, y uno vertical como el de Tetris se estira
               hasta obligar a hacer scroll para ver los dos extremos del
-              tablero. `CABINET_CHROME` es lo que ocupa todo lo demás de la
-              pantalla de juego: cabecera, HUD, marco, mando y controles. */}
-          <div
-            style={{ maxWidth: `calc((100svh - ${CABINET_CHROME}) * ${aspectRatio})` }}
-            className="relative mx-auto overflow-hidden rounded-[22px] bg-av-void shadow-[inset_0_0_60px_rgba(0,0,0,0.9),inset_0_0_12px_rgba(0,245,255,0.16)]"
-          >
-            <GameCanvas
-              game={engine}
-              label={`Partida de ${game.title}`}
-              onState={setLive}
-              // El motor avisa con la puntuación final; el HUD ya viene
-              // cuadrado del `onState` de ese mismo frame.
-              onGameOver={() => setOver(true)}
-              onReady={(h) => {
-                handle.current = h;
-                // Al desmontar llega `null`, y entonces no hay nada que vestir.
-                if (!h) return;
-                // La piel guardada de esta máquina se aplica aquí, con el motor
-                // ya montado y antes de que `start()` pinte el primer frame: no
-                // hay ni un fotograma con el color equivocado.
-                const saved = read().skins?.[game.id];
-                if (saved && engine.skins?.includes(saved)) {
-                  h.setSkin?.(saved);
-                  setSkin(saved);
-                }
-              }}
-              className="block h-auto w-full"
-            />
+              tablero.
 
-            {/* Viñeta del tubo y barrido de brillo que recorre la pantalla. */}
-            <div className="pointer-events-none absolute inset-0 rounded-[22px] bg-[radial-gradient(115%_115%_at_50%_50%,rgba(0,0,0,0)_55%,rgba(0,0,0,0.72)_100%)]" />
-            <div className="pointer-events-none absolute inset-0 h-[34%] bg-[linear-gradient(rgba(255,255,255,0)_0%,rgba(255,255,255,0.045)_55%,rgba(255,255,255,0)_100%)] animate-av-sweep" />
+              El reparto es a medias: el ratio lo sabe JavaScript, porque sale
+              del `world` del motor, y el presupuesto lo sabe CSS, porque
+              cambia con la maquetación y un `style` en línea no entiende de
+              `@media`. `--av-chrome` es lo que ocupa todo lo demás de la
+              pantalla de juego, y cada maquetación reserva lo suyo: en
+              escritorio, cabecera, HUD, marco, mando, controles y PIEL; en
+              vertical de mano, lo mismo sin la línea de controles; en
+              horizontal, sólo cabecera y HUD, porque el mando se va a los
+              lados. El de escritorio está calibrado por lo bajo a propósito:
+              con más presupuesto cabría también el mando, pero un mundo
+              apaisado como el de Asteroids empezaría a encogerse en pantallas
+              normales. Lo que no puede quedar fuera de la ventana es el
+              tablero. */}
+          {/* La fila de juego. En todas las maquetaciones menos la horizontal
+              de mano es `display: contents`, así que no existe: el marco cuelga
+              del gabinete igual que siempre. En horizontal se convierte en la
+              fila que reparte el ancho —el mando a los lados llega en el paso
+              siguiente— y da al marco un alto contra el que medirse. */}
+          <div className="contents handheld-wide:flex handheld-wide:min-h-0 handheld-wide:flex-1 handheld-wide:items-center handheld-wide:justify-center handheld-wide:gap-2">
+            {/* Las cuatro flechas, donde cae el pulgar izquierdo. Sólo existen
+                en horizontal: en vertical las pinta la fila de cinco. */}
+            <div className="hidden shrink-0 grid-cols-3 grid-rows-3 gap-1.5 handheld-wide:grid">
+              {PAD.filter((k) => k.side === "dpad").map((entry) =>
+                padKey(entry, `size-12 px-0 py-0 ${CROSS_CELL[entry.code]}`),
+              )}
+            </div>
 
-            {paused && (
-              <div className="absolute inset-0 grid place-items-center bg-[rgba(5,6,10,0.78)]">
-                <span className="font-display text-[clamp(14px,3vw,22px)] tracking-av-wider text-av-yellow [text-shadow:0_0_18px_rgba(245,255,0,0.6)]">
-                  EN PAUSA
-                </span>
-              </div>
+            <div
+              style={{ "--av-ratio": aspectRatio } as CSSProperties}
+              // En horizontal manda el alto y el ancho lo sigue: el marco llena
+              // la fila y el canvas se encarga de no deformarse, apoyado en el
+              // `aspect-ratio` que `GameCanvas` ya le pone. El tope calculado
+              // sobra ahí, porque quien acota es la altura.
+              className="relative mx-auto overflow-hidden rounded-[22px] bg-av-void shadow-[inset_0_0_60px_rgba(0,0,0,0.9),inset_0_0_12px_rgba(0,245,255,0.16)] [--av-chrome:16rem] max-w-[calc((100svh-var(--av-chrome))*var(--av-ratio))] handheld:[--av-chrome:26rem] handheld-wide:h-full handheld-wide:w-auto handheld-wide:max-w-none handheld-wide:rounded-[12px] handheld-wide:[--av-chrome:7rem]"
+            >
+              <GameCanvas
+                game={engine}
+                label={`Partida de ${game.title}`}
+                onState={setLive}
+                // El motor avisa con la puntuación final; el HUD ya viene
+                // cuadrado del `onState` de ese mismo frame.
+                onGameOver={() => setOver(true)}
+                onReady={(h) => {
+                  handle.current = h;
+                  // Al desmontar llega `null`, y entonces no hay nada que vestir.
+                  if (!h) return;
+                  // La piel guardada de esta máquina se aplica aquí, con el motor
+                  // ya montado y antes de que `start()` pinte el primer frame: no
+                  // hay ni un fotograma con el color equivocado.
+                  const saved = read().skins?.[game.id];
+                  if (saved && engine.skins?.includes(saved)) {
+                    h.setSkin?.(saved);
+                    setSkin(saved);
+                  }
+                }}
+                // El dedo sobre el tablero es juego, no desplazamiento: sin
+                // esto, arrastrar para girar la nave arrastra la página.
+                className="block h-auto w-full touch-none handheld-wide:h-full handheld-wide:w-auto"
+              />
+
+              {/* Viñeta del tubo y barrido de brillo que recorre la pantalla. */}
+              <div className="pointer-events-none absolute inset-0 rounded-[22px] bg-[radial-gradient(115%_115%_at_50%_50%,rgba(0,0,0,0)_55%,rgba(0,0,0,0.72)_100%)]" />
+              <div className="pointer-events-none absolute inset-0 h-[34%] bg-[linear-gradient(rgba(255,255,255,0)_0%,rgba(255,255,255,0.045)_55%,rgba(255,255,255,0)_100%)] animate-av-sweep" />
+
+              {paused && (
+                <div className="absolute inset-0 grid place-items-center bg-[rgba(5,6,10,0.78)]">
+                  <span className="font-display text-[clamp(14px,3vw,22px)] tracking-av-wider text-av-yellow [text-shadow:0_0_18px_rgba(245,255,0,0.6)]">
+                    EN PAUSA
+                  </span>
+                </div>
+              )}
+            </div>
+
+            {/* Y el fuego, donde cae el derecho. Más alto que ancho porque el
+                pulgar lo busca de arriba abajo, no de lado a lado. */}
+            <div className="hidden shrink-0 items-center handheld-wide:flex">
+              {PAD.filter((k) => k.side === "fire").map((entry) =>
+                padKey(entry, "h-24 w-16 px-0 py-0"),
+              )}
+            </div>
+          </div>
+
+          {/* La fila de cinco de siempre, la de ratón y teclado. Con el dedo se
+              apaga en las dos posturas: un pulgar no busca botones en fila. */}
+          <div className="mt-4.5 grid grid-cols-[repeat(auto-fit,minmax(60px,1fr))] gap-2.5 handheld:hidden">
+            {PAD.map((entry) => padKey(entry))}
+          </div>
+
+          {/* El mando de vertical: la misma cruz de horizontal, con el fuego
+              enfrente. Cae bajo el tablero y a lo ancho del gabinete, así que
+              cada pulgar tiene el suyo sin cruzar la mano. En horizontal esto
+              se apaga, porque allí los dos bloques están a los lados. */}
+          <div className="mt-3 hidden items-center justify-between gap-3 handheld:flex handheld-wide:hidden">
+            <div className="grid shrink-0 grid-cols-3 grid-rows-3 gap-1.5">
+              {PAD.filter((k) => k.side === "dpad").map((entry) =>
+                padKey(entry, `size-12 px-0 py-0 ${CROSS_CELL[entry.code]}`),
+              )}
+            </div>
+            {PAD.filter((k) => k.side === "fire").map((entry) =>
+              padKey(entry, "h-16 w-24 shrink-0 px-0 py-0"),
             )}
           </div>
 
-          <div className="mt-4.5 grid grid-cols-[repeat(auto-fit,minmax(60px,1fr))] gap-2.5">
-            {PAD.map(({ label, code, aria }) => {
-              const usable = padKeys ? padKeys.includes(code) : true;
-              const inert = !!padKeys && !usable;
-              // `pointerup` fuera del botón nunca llega, así que soltar también
-              // al salir el puntero o al cancelarse el gesto: si no, la nave se
-              // queda girando sola.
-              const release = () => handle.current?.release(code);
-              return (
-                <button
-                  key={label}
-                  type="button"
-                  aria-label={aria}
-                  disabled={inert}
-                  onPointerDown={
-                    padKeys && usable
-                      ? (e) => {
-                          // Sin foco en el botón, `ESPACIO` no lo re-dispara.
-                          e.preventDefault();
-                          handle.current?.press(code);
-                        }
-                      : undefined
-                  }
-                  onPointerUp={padKeys && usable ? release : undefined}
-                  onPointerCancel={padKeys && usable ? release : undefined}
-                  onPointerLeave={padKeys && usable ? release : undefined}
-                  className={`touch-none border border-av-cyan/30 bg-av-panel px-1.5 py-3.75 font-display text-[10px] text-av-cyan ${
-                    inert
-                      ? "cursor-not-allowed opacity-35"
-                      : "cursor-pointer active:bg-av-cyan active:text-av-bg"
-                  }`}
-                >
-                  {label}
-                </button>
-              );
-            })}
-          </div>
-
-          <p className="mt-3.5 text-center text-[12px] tracking-av text-av-text-faint">
+          {/* Los controles que describe esta línea son los del teclado, y con
+              el dedo no hay teclado: en un puntero grueso sobra. */}
+          <p className="mt-3.5 text-center text-[12px] tracking-av text-av-text-faint pointer-coarse:hidden">
             {game.controls}
           </p>
 
@@ -343,7 +436,7 @@ export function PlayCabinet({ game }: { game: Game }) {
               motor y cualquier cosa dentro lo descuadra. Los tres botones se
               pintan deshabilitados si la máquina aún no está vestida, igual que
               hace el mando con las teclas que no usa. */}
-          <div className="mt-4.5 flex flex-wrap items-center justify-center gap-2.5 border-t border-av-cyan/15 pt-4">
+          <div className="mt-4.5 flex flex-wrap items-center justify-center gap-2.5 border-t border-av-cyan/15 pt-4 handheld-wide:mt-1.5 handheld-wide:gap-1.5 handheld-wide:pt-1.5">
             <span className="font-display text-[9px] tracking-av text-av-text-faint">PIEL</span>
             {SKIN_IDS.map((id) => {
               const dressed = !!engine.skins?.includes(id);
@@ -397,8 +490,8 @@ export function PlayCabinet({ game }: { game: Game }) {
 /** CARGANDO CARTUCHO: cuatro cuadrados de neón girando a saltos. */
 function LoadingOverlay() {
   return (
-    <div className="fixed inset-0 z-60 grid place-items-center bg-[rgba(5,6,10,0.94)]">
-      <div className="grid justify-items-center gap-4.5">
+    <div className="fixed inset-0 z-60 grid place-items-center bg-[rgba(5,6,10,0.94)] px-[calc(1.25rem+env(safe-area-inset-left))]">
+      <div className="grid justify-items-center gap-4.5 text-center">
         <div aria-hidden className="grid size-13.5 grid-cols-2 gap-1.5 animate-av-spin">
           <span className="bg-av-cyan shadow-[0_0_12px_#00f5ff]" />
           <span className="bg-av-magenta shadow-[0_0_12px_#ff006e]" />
@@ -413,7 +506,7 @@ function LoadingOverlay() {
   );
 }
 
-const OVER_BUTTON = "p-3.75 font-display text-[10px] tracking-av";
+const OVER_BUTTON = "p-3.75 font-display text-[10px] tracking-av handheld-wide:p-2.5";
 
 function GameOverOverlay({
   score,
@@ -437,20 +530,28 @@ function GameOverOverlay({
   onReplay: () => void;
 }) {
   return (
-    <div className="fixed inset-0 z-55 grid place-items-center bg-[rgba(5,6,10,0.9)] p-5">
-      <div className="w-[min(100%,460px)] border border-av-magenta/45 bg-[#0d0f16] p-[clamp(22px,4vw,34px)] text-center shadow-[0_0_48px_rgba(255,0,110,0.22)] animate-av-fade">
+    // El superpuesto respeta la muesca y el indicador de inicio como el resto
+    // de la pantalla: es lo que pide haber declarado `viewportFit: "cover"`.
+    <div className="fixed inset-0 z-55 grid place-items-center bg-[rgba(5,6,10,0.9)] pt-[calc(1.25rem+env(safe-area-inset-top))] pr-[calc(1.25rem+env(safe-area-inset-right))] pb-[calc(1.25rem+env(safe-area-inset-bottom))] pl-[calc(1.25rem+env(safe-area-inset-left))]">
+      {/* En horizontal de mano el panel no cabe de una pieza: en vez de
+          recortarlo o encogerlo hasta lo ilegible, se queda con todo el alto
+          disponible y se desplaza por dentro. `overscroll-contain` deja el
+          rebote aquí y no en la página de debajo. */}
+      <div className="max-h-full w-[min(100%,460px)] overflow-y-auto overscroll-contain border border-av-magenta/45 bg-[#0d0f16] p-[clamp(22px,4vw,34px)] text-center shadow-[0_0_48px_rgba(255,0,110,0.22)] animate-av-fade handheld-wide:p-4">
         <h3 className="font-display text-av-subtitle tracking-av-wider text-av-magenta [text-shadow:0_0_16px_rgba(255,0,110,0.7)]">
           FIN DEL JUEGO
         </h3>
-        <p className="mt-5 mb-1.5 text-[12px] tracking-av-wider text-av-text-dim">
+        <p className="mt-5 mb-1.5 text-[12px] tracking-av-wider text-av-text-dim handheld-wide:mt-2 handheld-wide:mb-0.5">
           PUNTUACIÓN FINAL
         </p>
         <p className="font-display text-av-title text-av-yellow [text-shadow:0_0_18px_rgba(245,255,0,0.6)]">
           {formatScore(score)}
         </p>
-        <p className="mt-3.5 mb-5.5 text-[13px] tracking-av text-av-text-muted">{note}</p>
+        <p className="mt-3.5 mb-5.5 text-[13px] tracking-av text-av-text-muted handheld-wide:mt-2 handheld-wide:mb-3">
+          {note}
+        </p>
 
-        <div className="flex flex-col gap-3">
+        <div className="flex flex-col gap-3 handheld-wide:gap-2">
           {canSave && (
             <button
               type="button"
