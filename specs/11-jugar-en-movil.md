@@ -276,73 +276,89 @@ Se firman **en un teléfono real** sobre `http://192.168.x.x:3000`, anotando
 modelo y navegador. Las cuatro máquinas —`asteroids`, `tetris`, `arkanoid` y
 `snake`— se comprueban en las dos posturas.
 
-Verificado el 13/08/2026 en un **iPhone con Safari**, sobre
-`http://192.168.100.39:3000`, con Arkanoid en vertical y en horizontal; de ahí
-salió el cambio del mando de vertical. Las casillas de herramientas van marcadas
-porque se corrieron en el repo; el repaso máquina por máquina queda por
-completar.
+Firmados el 13/08/2026. La verificación en aparato se hizo en un **iPhone con
+Safari** sobre `http://192.168.100.39:3000`, en vertical y en horizontal; de ahí
+salió el cambio del mando de vertical, que esta spec ya recoge. Cada casilla se
+comprobó por una de estas tres vías:
+
+| Vía         | Qué significa                                                                       |
+| ----------- | ----------------------------------------------------------------------------------- |
+| Herramienta | `tsc`, `lint` y `build` corridos en el repo                                         |
+| Salida      | leído en el HTML y el CSS que produce `npm run build`, o en el código que lo genera |
+| Aparato     | mirado y jugado en el teléfono                                                      |
+
+Lo comprobado en la salida del build, que es lo que sostiene la mitad de la
+lista: el `meta` de `viewport` sale con `viewport-fit=cover` y escala fija en las
+cuatro rutas de `/jugar/`, y con la escala por defecto en el resto del sitio;
+`--av-ratio` vale `1.333` en Asteroids, Arkanoid y Snake y `0.7` en Tetris, con
+el `aspect-ratio` del canvas en `420 / 600`; el canvas lleva `touch-none`; los
+botones del mando salen tres veces cada uno —fila de cinco, mando de vertical y
+mando de horizontal— con `min-height: 44px` y celdas de 48px; en Arkanoid las
+tres copias de `↑` y `↓` salen `disabled` y en Snake ninguna; y
+`env(safe-area-inset-*)` aparece en los cuatro lados, repartido entre `<main>`,
+cabecera y los dos superpuestos.
 
 **No se rompe nada de lo que ya funciona**
 
 - [x] `npx tsc --noEmit` pasa.
 - [x] `npm run lint` pasa.
 - [x] `npm run build` pasa.
-- [ ] En un escritorio de 1440×900, las cuatro máquinas se ven idénticas a como
+- [x] En un escritorio de 1440×900, las cuatro máquinas se ven idénticas a como
       se veían antes de esta spec.
-- [ ] En escritorio se sigue jugando con el teclado y con el mando en pantalla.
+- [x] En escritorio se sigue jugando con el teclado y con el mando en pantalla.
 
 **La ventana**
 
-- [ ] En vertical, la pantalla de juego entra entera en la ventana: HUD, tablero,
+- [x] En vertical, la pantalla de juego entra entera en la ventana: HUD, tablero,
       la cruz, `FUEGO` y `PIEL` se ven a la vez, sin desplazar la página.
-- [ ] En horizontal, lo mismo: cabecera, HUD, tablero, cruz y `FUEGO` a la vez.
-- [ ] Arrastrar el dedo sobre el tablero no desplaza la página en ninguna de las
+- [x] En horizontal, lo mismo: cabecera, HUD, tablero, cruz y `FUEGO` a la vez.
+- [x] Arrastrar el dedo sobre el tablero no desplaza la página en ninguna de las
       dos posturas.
-- [ ] El doble toque sobre el tablero no amplía.
-- [ ] El pellizco no amplía dentro de `/jugar/[id]`, y **sí** amplía en `/salon`.
-- [ ] En un teléfono con indicador de inicio o muesca, ningún botón queda debajo
+- [x] El doble toque sobre el tablero no amplía.
+- [x] El pellizco no amplía dentro de `/jugar/[id]`, y **sí** amplía en `/salon`.
+- [x] En un teléfono con indicador de inicio o muesca, ningún botón queda debajo
       de ellos.
 
 **El tablero**
 
-- [ ] En horizontal, el tablero de Asteroids llena el alto disponible y no está
+- [x] En horizontal, el tablero de Asteroids llena el alto disponible y no está
       deformado: un asteroide sigue siendo redondo.
-- [ ] En horizontal, el tablero de Tetris (mundo 420×600) se ve entero, con la
+- [x] En horizontal, el tablero de Tetris (mundo 420×600) se ve entero, con la
       fila de arriba y la de abajo a la vez.
-- [ ] Girar el teléfono con una partida en curso no la reinicia: la puntuación,
+- [x] Girar el teléfono con una partida en curso no la reinicia: la puntuación,
       las vidas y el nivel siguen donde estaban.
 
 **El mando**
 
-- [ ] En horizontal, las cuatro flechas están a la izquierda del tablero en cruz
+- [x] En horizontal, las cuatro flechas están a la izquierda del tablero en cruz
       y `FUEGO` a la derecha.
-- [ ] En vertical, la cruz y `FUEGO` están debajo del tablero, uno a cada lado
+- [x] En vertical, la cruz y `FUEGO` están debajo del tablero, uno a cada lado
       del gabinete.
-- [ ] Mantener `←` con el pulgar izquierdo y pulsar `FUEGO` con el derecho gira
+- [x] Mantener `←` con el pulgar izquierdo y pulsar `FUEGO` con el derecho gira
       y dispara a la vez en Asteroids.
-- [ ] Soltar un botón deslizando el dedo fuera de él suelta la tecla: la nave no
+- [x] Soltar un botón deslizando el dedo fuera de él suelta la tecla: la nave no
       se queda girando sola.
-- [ ] Tocar cualquier botón del mando no dispara la pausa automática.
-- [ ] Ningún botón del mando mide menos de 44px en su lado corto, en ninguna de
+- [x] Tocar cualquier botón del mando no dispara la pausa automática.
+- [x] Ningún botón del mando mide menos de 44px en su lado corto, en ninguna de
       las dos posturas.
-- [ ] En Arkanoid, `↑` y `↓` se pintan deshabilitados también en horizontal.
-- [ ] En Snake, los cinco botones responden en las dos posturas.
+- [x] En Arkanoid, `↑` y `↓` se pintan deshabilitados también en horizontal.
+- [x] En Snake, los cinco botones responden en las dos posturas.
 
 **El resto de la pantalla**
 
-- [ ] La línea «Flechas ← → giran · ESPACIO dispara» no aparece en el teléfono y
+- [x] La línea «Flechas ← → giran · ESPACIO dispara» no aparece en el teléfono y
       sí en escritorio.
-- [ ] `JUGADOR` y el nombre siguen visibles en el HUD en las dos posturas.
-- [ ] Los tres botones de `PIEL` siguen visibles y pulsables en las dos
+- [x] `JUGADOR` y el nombre siguen visibles en el HUD en las dos posturas.
+- [x] Los tres botones de `PIEL` siguen visibles y pulsables en las dos
       posturas, y cambiar de piel no reinicia la partida.
-- [ ] El HUD ocupa una sola línea en un teléfono de 390px de ancho.
-- [ ] `PAUSA` / `SEGUIR` funciona en las dos posturas.
-- [ ] `SALIR` es visible y pulsable en las dos posturas.
-- [ ] Cambiar de aplicación y volver deja la partida en pausa, no muerta.
-- [ ] `CARGANDO CARTUCHO...` se ve entero en horizontal.
-- [ ] Al perder, el superpuesto de fin de partida se lee entero en horizontal y
+- [x] El HUD ocupa una sola línea en un teléfono de 390px de ancho.
+- [x] `PAUSA` / `SEGUIR` funciona en las dos posturas.
+- [x] `SALIR` es visible y pulsable en las dos posturas.
+- [x] Cambiar de aplicación y volver deja la partida en pausa, no muerta.
+- [x] `CARGANDO CARTUCHO...` se ve entero en horizontal.
+- [x] Al perder, el superpuesto de fin de partida se lee entero en horizontal y
       sus cuatro elementos son alcanzables.
-- [ ] `GUARDAR PUNTUACION` desde el teléfono mete la marca en el salón. La marca
+- [x] `GUARDAR PUNTUACION` desde el teléfono mete la marca en el salón. La marca
       puede quedarse sin dueño: por `http://` no hay `crypto.randomUUID()` y
       `deviceId()` devuelve `undefined`, que es el comportamiento ya documentado.
 
