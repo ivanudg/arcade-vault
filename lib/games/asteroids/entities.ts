@@ -8,20 +8,19 @@
  * - `draw()` recibe el `ctx` por parámetro en vez de cerrar sobre el global.
  * - `Ship.update()` recibe `(dt, input, hyperActive)` en vez de leer `keys` y
  *   `hyperTimer` del ámbito de módulo.
+ * - `draw()` recibe además la `Palette` de la piel activa, por el mismo motivo:
+ *   vive en el closure de `mount()` y aquí no hay dónde leerla. Los alfas siguen
+ *   siendo del dibujo, no de la piel.
  */
 
+import { tint } from "@/lib/games";
 import type { GameInput } from "@/lib/games/input";
 import {
   HYPER_DRAG,
-  HYPER_COLOR,
   HYPER_ROT_MULT,
   HYPER_THRUST_MULT,
-  NOVA_COLOR,
-  PU_COLOR,
   RADII,
-  SHIELD_COLOR,
   SHIP_DRAG,
-  SLOW_COLOR,
   SPEEDS,
   TRIPLE_SPREAD,
   W,
@@ -29,6 +28,7 @@ import {
   type PowerUpType,
 } from "@/lib/games/asteroids/constants";
 import { rand, randInt, wrap } from "@/lib/games/asteroids/math";
+import type { Palette } from "@/lib/games/asteroids/skins";
 
 // ── Bullet ───────────────────────────────────────────────────────────────────
 export class Bullet {
@@ -55,8 +55,8 @@ export class Bullet {
     if (this.ttl <= 0) this.dead = true;
   }
 
-  draw(ctx: CanvasRenderingContext2D) {
-    ctx.fillStyle = "#fff";
+  draw(ctx: CanvasRenderingContext2D, p: Palette) {
+    ctx.fillStyle = p.bullet;
     ctx.beginPath();
     ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
     ctx.fill();
@@ -112,11 +112,11 @@ export class Asteroid {
     ];
   }
 
-  draw(ctx: CanvasRenderingContext2D) {
+  draw(ctx: CanvasRenderingContext2D, p: Palette) {
     ctx.save();
     ctx.translate(this.x, this.y);
     ctx.rotate(this.rot);
-    ctx.strokeStyle = "#fff";
+    ctx.strokeStyle = p.asteroid;
     ctx.lineWidth = 1.5;
     ctx.lineJoin = "round";
     ctx.beginPath();
@@ -197,7 +197,7 @@ export class Ship {
     ];
   }
 
-  draw(ctx: CanvasRenderingContext2D) {
+  draw(ctx: CanvasRenderingContext2D, p: Palette) {
     if (this.dead) return;
     // Parpadeo durante invencibilidad de reaparición
     if (this.invincible > 0 && Math.floor(this.invincible * 8) % 2 === 0) return;
@@ -205,7 +205,7 @@ export class Ship {
     ctx.save();
     ctx.translate(this.x, this.y);
     ctx.rotate(this.angle);
-    ctx.strokeStyle = "#fff";
+    ctx.strokeStyle = p.ship;
     ctx.lineWidth = 1.5;
     ctx.lineJoin = "round";
 
@@ -224,7 +224,8 @@ export class Ship {
       ctx.moveTo(-8, -4);
       ctx.lineTo(-8 - rand(6, 14), 0);
       ctx.lineTo(-8, 4);
-      ctx.strokeStyle = "rgba(255, 130, 0, 0.85)";
+      // El 0,85 es del dibujo, no de la piel: la llama siempre va translúcida.
+      ctx.strokeStyle = tint(p.thruster, 0.85);
       ctx.stroke();
     }
 
@@ -260,9 +261,11 @@ export class Particle {
     if (this.ttl <= 0) this.dead = true;
   }
 
-  draw(ctx: CanvasRenderingContext2D) {
+  draw(ctx: CanvasRenderingContext2D, p: Palette) {
+    // El trazo se apaga con la vida que le queda: ese alfa es del dibujo y la
+    // piel sólo decide de qué color es el polvo.
     const alpha = this.ttl / this.life;
-    ctx.strokeStyle = `rgba(255,255,255,${alpha.toFixed(2)})`;
+    ctx.strokeStyle = tint(p.particle, Number(alpha.toFixed(2)));
     ctx.lineWidth = 1;
     ctx.beginPath();
     ctx.moveTo(this.x, this.y);
@@ -300,7 +303,7 @@ export class PowerUp {
     this.rot += this.rotSpeed * dt;
   }
 
-  draw(ctx: CanvasRenderingContext2D) {
+  draw(ctx: CanvasRenderingContext2D, p: Palette) {
     ctx.save();
     ctx.translate(this.x, this.y);
     ctx.rotate(this.rot);
@@ -308,8 +311,8 @@ export class PowerUp {
     ctx.lineJoin = "round";
 
     if (this.type === "shield") {
-      // Anillo doble en azul (alude al escudo de energía)
-      ctx.strokeStyle = SHIELD_COLOR;
+      // Anillo doble (alude al escudo de energía)
+      ctx.strokeStyle = p.shield;
       ctx.beginPath();
       ctx.arc(0, 0, this.radius, 0, Math.PI * 2);
       ctx.stroke();
@@ -317,8 +320,8 @@ export class PowerUp {
       ctx.arc(0, 0, this.radius * 0.55, 0, Math.PI * 2);
       ctx.stroke();
     } else if (this.type === "slow") {
-      // Reloj en ámbar (alude a la cámara lenta)
-      ctx.strokeStyle = SLOW_COLOR;
+      // Reloj (alude a la cámara lenta)
+      ctx.strokeStyle = p.slow;
       ctx.beginPath();
       ctx.arc(0, 0, this.radius, 0, Math.PI * 2);
       ctx.stroke();
@@ -330,8 +333,8 @@ export class PowerUp {
       ctx.lineTo(this.radius * 0.5, 0);
       ctx.stroke();
     } else if (this.type === "hyper") {
-      // Doble chevron (>>) en verde (alude a la velocidad)
-      ctx.strokeStyle = HYPER_COLOR;
+      // Doble chevron (>>) (alude a la velocidad)
+      ctx.strokeStyle = p.hyper;
       const r = this.radius;
       for (const dx of [-r * 0.5, r * 0.15]) {
         ctx.beginPath();
@@ -341,8 +344,8 @@ export class PowerUp {
         ctx.stroke();
       }
     } else if (this.type === "nova") {
-      // Estallido radial en rojo (alude a la explosión)
-      ctx.strokeStyle = NOVA_COLOR;
+      // Estallido radial (alude a la explosión)
+      ctx.strokeStyle = p.nova;
       for (let i = 0; i < 8; i++) {
         const a = (i / 8) * Math.PI * 2;
         ctx.beginPath();
@@ -351,8 +354,8 @@ export class PowerUp {
         ctx.stroke();
       }
     } else {
-      // Triple: rombo cian + abanico de 3 líneas
-      ctx.strokeStyle = PU_COLOR;
+      // Triple: rombo + abanico de 3 líneas
+      ctx.strokeStyle = p.triple;
       ctx.beginPath();
       ctx.moveTo(0, -this.radius);
       ctx.lineTo(this.radius, 0);

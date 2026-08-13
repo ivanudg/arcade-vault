@@ -12,19 +12,16 @@
 
 import type { GameCallbacks, GameHandle, GameMount, GameState } from "@/lib/games/engine";
 import { createInput } from "@/lib/games/input";
+import { DEFAULT_SKIN, SKIN_IDS } from "@/lib/games/skins";
 import {
   ALL_PU_TYPES,
   DROP_CHANCE,
   DROP_GUARANTEE,
   H,
-  HYPER_COLOR,
   HYPER_DURATION,
   NOVA_CHANCE,
   POINTS,
-  PU_COLOR,
-  SHIELD_COLOR,
   SHIELD_DURATION,
-  SLOW_COLOR,
   SLOW_DURATION,
   SLOW_FACTOR,
   TRIPLE_DURATION,
@@ -34,6 +31,7 @@ import {
 } from "@/lib/games/asteroids/constants";
 import { dist, rand, randInt } from "@/lib/games/asteroids/math";
 import { Asteroid, Bullet, Particle, PowerUp, Ship } from "@/lib/games/asteroids/entities";
+import { PALETTES } from "@/lib/games/asteroids/skins";
 
 /** El estado de partida entero. Una instancia por `mount()`. */
 interface Run {
@@ -65,6 +63,7 @@ const MAX_DT = 0.05;
 export const asteroidsGame: GameMount = {
   world: { width: W, height: H },
   hud: ["PUNTUACION", "VIDAS", "NIVEL"],
+  skins: SKIN_IDS,
 
   mount(canvas: HTMLCanvasElement, cb: GameCallbacks): GameHandle {
     const context2d = canvas.getContext("2d");
@@ -74,6 +73,14 @@ export const asteroidsGame: GameMount = {
     const ctx: CanvasRenderingContext2D = context2d;
 
     const input = createInput();
+
+    /**
+     * La piel activa, y vive sólo aquí. En el ámbito de módulo no hay ni una
+     * variable mutable, y ésta no va a ser la primera: dos partidas montadas a
+     * la vez compartirían color. Cada frame la lee, así que `setSkin()` no
+     * necesita repintar nada.
+     */
+    let palette = PALETTES[DEFAULT_SKIN];
 
     let run = createRun();
     let frame: number | null = null;
@@ -319,7 +326,7 @@ export const asteroidsGame: GameMount = {
       if (r.timers.shield <= 0 || r.ship.dead) return;
       // Parpadeo en el último ~1s antes de expirar
       if (r.timers.shield < 1 && Math.floor(r.timers.shield * 8) % 2 === 0) return;
-      ctx.strokeStyle = SHIELD_COLOR;
+      ctx.strokeStyle = palette.shield;
       ctx.lineWidth = 1.5;
       ctx.beginPath();
       ctx.arc(r.ship.x, r.ship.y, r.ship.radius + 7, 0, Math.PI * 2);
@@ -335,25 +342,25 @@ export const asteroidsGame: GameMount = {
     function draw() {
       const r = run;
 
-      ctx.fillStyle = "#000";
+      ctx.fillStyle = palette.bg;
       ctx.fillRect(0, 0, W, H);
 
-      r.particles.forEach((p) => p.draw(ctx));
-      r.asteroids.forEach((a) => a.draw(ctx));
-      r.bullets.forEach((b) => b.draw(ctx));
-      r.powerups.forEach((p) => p.draw(ctx));
+      r.particles.forEach((p) => p.draw(ctx, palette));
+      r.asteroids.forEach((a) => a.draw(ctx, palette));
+      r.bullets.forEach((b) => b.draw(ctx, palette));
+      r.powerups.forEach((p) => p.draw(ctx, palette));
       drawShield(r);
-      r.ship.draw(ctx);
+      r.ship.draw(ctx, palette);
 
       // Indicadores de power-ups activos (fila inferior, uno por línea)
       if (r.timers.hyper > 0)
-        drawPowerBar("HYPER", r.timers.hyper / HYPER_DURATION, HYPER_COLOR, H - 68);
+        drawPowerBar("HYPER", r.timers.hyper / HYPER_DURATION, palette.hyper, H - 68);
       if (r.timers.slow > 0)
-        drawPowerBar("SLOW", r.timers.slow / SLOW_DURATION, SLOW_COLOR, H - 50);
+        drawPowerBar("SLOW", r.timers.slow / SLOW_DURATION, palette.slow, H - 50);
       if (r.timers.shield > 0)
-        drawPowerBar("SHIELD", r.timers.shield / SHIELD_DURATION, SHIELD_COLOR, H - 32);
+        drawPowerBar("SHIELD", r.timers.shield / SHIELD_DURATION, palette.shield, H - 32);
       if (r.timers.triple > 0)
-        drawPowerBar("TRIPLE", r.timers.triple / TRIPLE_DURATION, PU_COLOR, H - 14);
+        drawPowerBar("TRIPLE", r.timers.triple / TRIPLE_DURATION, palette.triple, H - 14);
     }
 
     // ── Bucle ────────────────────────────────────────────────────────────────
@@ -426,6 +433,13 @@ export const asteroidsGame: GameMount = {
         if (destroyed) return;
         destroyed = true;
         halt();
+      },
+
+      // Sólo cambia el color: no repinta, no reinicia y no toca el bucle. El
+      // frame siguiente ya sale con la paleta nueva porque `draw()` la lee cada
+      // vez, así que se puede cambiar con la partida en marcha o en pausa.
+      setSkin(id) {
+        palette = PALETTES[id];
       },
 
       // El mando táctil entra por la misma puerta que el teclado.
