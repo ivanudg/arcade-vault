@@ -12,16 +12,16 @@ import type { Game } from "@/lib/games";
 
 export function PlayHeader({ game }: { game: Game }) {
   return (
-    <header className="sticky top-0 z-40 flex items-center justify-between gap-3.5 border-b border-av-cyan/24 bg-[rgba(10,10,15,0.9)] px-[clamp(14px,3vw,40px)] py-3.5">
+    // Con el dedo la cabecera mide exactamente `--av-play-header`: es lo que
+    // el `<main>` de la pantalla de juego le resta a la ventana para caber sin
+    // desplazar la página. El relleno vertical sobra con la altura fija.
+    <header className="sticky top-0 z-40 flex items-center justify-between gap-3.5 border-b border-av-cyan/24 bg-[rgba(10,10,15,0.9)] px-[clamp(14px,3vw,40px)] py-3.5 handheld:h-[var(--av-play-header)] handheld:py-0">
       <Link
         href="/"
         className="font-display text-[clamp(10px,2vw,13px)] tracking-av text-av-cyan [text-shadow:0_0_8px_rgba(0,245,255,0.9)]"
       >
         ARCADE
-        <span className="text-av-magenta [text-shadow:0_0_8px_rgba(255,0,110,0.9)]">
-          {" "}
-          VAULT
-        </span>
+        <span className="text-av-magenta [text-shadow:0_0_8px_rgba(255,0,110,0.9)]"> VAULT</span>
       </Link>
 
       <span className="font-display text-[clamp(9px,1.8vw,12px)] tracking-av text-av-text-bright">

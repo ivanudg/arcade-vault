@@ -50,7 +50,10 @@ export default async function PlayPage({ params }: PageProps<"/jugar/[id]">) {
     // El margen seguro se suma al relleno de siempre, no lo sustituye: en
     // Android y en escritorio `env(safe-area-inset-*)` vale 0 y la pantalla
     // queda exactamente como estaba.
-    <main className="flex-1 pt-[clamp(18px,3vw,34px)] pr-[calc(clamp(14px,3vw,30px)+env(safe-area-inset-right))] pb-[calc(5rem+env(safe-area-inset-bottom))] pl-[calc(clamp(14px,3vw,30px)+env(safe-area-inset-left))]">
+    // Con el dedo la pantalla de juego es la ventana entera menos la cabecera,
+    // y no se desplaza: lo que no quepa se recorta. Los 5rem de abajo eran
+    // aire de escritorio; en un teléfono sólo queda el margen seguro.
+    <main className="flex-1 pt-[clamp(18px,3vw,34px)] pr-[calc(clamp(14px,3vw,30px)+env(safe-area-inset-right))] pb-[calc(5rem+env(safe-area-inset-bottom))] pl-[calc(clamp(14px,3vw,30px)+env(safe-area-inset-left))] handheld:h-[calc(100svh-var(--av-play-header))] handheld:overflow-hidden handheld:pt-2.5 handheld:pb-[env(safe-area-inset-bottom)]">
       <PlayCabinet game={game} />
     </main>
   );

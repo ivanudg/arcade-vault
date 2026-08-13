@@ -280,7 +280,9 @@ export function PlayCabinet({ game }: { game: Game }) {
                   setSkin(saved);
                 }
               }}
-              className="block h-auto w-full"
+              // El dedo sobre el tablero es juego, no desplazamiento: sin
+              // esto, arrastrar para girar la nave arrastra la página.
+              className="block h-auto w-full touch-none"
             />
 
             {/* Viñeta del tubo y barrido de brillo que recorre la pantalla. */}

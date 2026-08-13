@@ -42,6 +42,12 @@
   --av-header-bg: rgba(10, 10, 15, 0.88);
   --av-scrim: rgba(5, 5, 10, 0.72);
 
+  /* Alto de la cabecera de la pantalla de juego cuando se juega con el dedo.
+     Sólo lo usan `PlayHeader`, que lo fija como su altura, y el `<main>` de
+     `/jugar/[id]`, que lo resta a `100svh`: la cabecera es un hermano anterior
+     del main, así que sin restarla la página se desplaza justo su alto. */
+  --av-play-header: 3.5rem;
+
   /* Alias base que consume el reset */
   --background: var(--av-bg);
   --foreground: var(--av-text);
