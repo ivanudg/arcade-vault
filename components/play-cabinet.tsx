@@ -475,8 +475,8 @@ export function PlayCabinet({ game }: { game: Game }) {
 /** CARGANDO CARTUCHO: cuatro cuadrados de neón girando a saltos. */
 function LoadingOverlay() {
   return (
-    <div className="fixed inset-0 z-60 grid place-items-center bg-[rgba(5,6,10,0.94)]">
-      <div className="grid justify-items-center gap-4.5">
+    <div className="fixed inset-0 z-60 grid place-items-center bg-[rgba(5,6,10,0.94)] px-[calc(1.25rem+env(safe-area-inset-left))]">
+      <div className="grid justify-items-center gap-4.5 text-center">
         <div aria-hidden className="grid size-13.5 grid-cols-2 gap-1.5 animate-av-spin">
           <span className="bg-av-cyan shadow-[0_0_12px_#00f5ff]" />
           <span className="bg-av-magenta shadow-[0_0_12px_#ff006e]" />
@@ -491,7 +491,7 @@ function LoadingOverlay() {
   );
 }
 
-const OVER_BUTTON = "p-3.75 font-display text-[10px] tracking-av";
+const OVER_BUTTON = "p-3.75 font-display text-[10px] tracking-av handheld-wide:p-2.5";
 
 function GameOverOverlay({
   score,
@@ -515,20 +515,28 @@ function GameOverOverlay({
   onReplay: () => void;
 }) {
   return (
-    <div className="fixed inset-0 z-55 grid place-items-center bg-[rgba(5,6,10,0.9)] p-5">
-      <div className="w-[min(100%,460px)] border border-av-magenta/45 bg-[#0d0f16] p-[clamp(22px,4vw,34px)] text-center shadow-[0_0_48px_rgba(255,0,110,0.22)] animate-av-fade">
+    // El superpuesto respeta la muesca y el indicador de inicio como el resto
+    // de la pantalla: es lo que pide haber declarado `viewportFit: "cover"`.
+    <div className="fixed inset-0 z-55 grid place-items-center bg-[rgba(5,6,10,0.9)] pt-[calc(1.25rem+env(safe-area-inset-top))] pr-[calc(1.25rem+env(safe-area-inset-right))] pb-[calc(1.25rem+env(safe-area-inset-bottom))] pl-[calc(1.25rem+env(safe-area-inset-left))]">
+      {/* En horizontal de mano el panel no cabe de una pieza: en vez de
+          recortarlo o encogerlo hasta lo ilegible, se queda con todo el alto
+          disponible y se desplaza por dentro. `overscroll-contain` deja el
+          rebote aquí y no en la página de debajo. */}
+      <div className="max-h-full w-[min(100%,460px)] overflow-y-auto overscroll-contain border border-av-magenta/45 bg-[#0d0f16] p-[clamp(22px,4vw,34px)] text-center shadow-[0_0_48px_rgba(255,0,110,0.22)] animate-av-fade handheld-wide:p-4">
         <h3 className="font-display text-av-subtitle tracking-av-wider text-av-magenta [text-shadow:0_0_16px_rgba(255,0,110,0.7)]">
           FIN DEL JUEGO
         </h3>
-        <p className="mt-5 mb-1.5 text-[12px] tracking-av-wider text-av-text-dim">
+        <p className="mt-5 mb-1.5 text-[12px] tracking-av-wider text-av-text-dim handheld-wide:mt-2 handheld-wide:mb-0.5">
           PUNTUACIÓN FINAL
         </p>
         <p className="font-display text-av-title text-av-yellow [text-shadow:0_0_18px_rgba(245,255,0,0.6)]">
           {formatScore(score)}
         </p>
-        <p className="mt-3.5 mb-5.5 text-[13px] tracking-av text-av-text-muted">{note}</p>
+        <p className="mt-3.5 mb-5.5 text-[13px] tracking-av text-av-text-muted handheld-wide:mt-2 handheld-wide:mb-3">
+          {note}
+        </p>
 
-        <div className="flex flex-col gap-3">
+        <div className="flex flex-col gap-3 handheld-wide:gap-2">
           {canSave && (
             <button
               type="button"
