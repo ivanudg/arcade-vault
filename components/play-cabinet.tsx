@@ -334,7 +334,9 @@ export function PlayCabinet({ game }: { game: Game }) {
             })}
           </div>
 
-          <p className="mt-3.5 text-center text-[12px] tracking-av text-av-text-faint">
+          {/* Los controles que describe esta línea son los del teclado, y con
+              el dedo no hay teclado: en un puntero grueso sobra. */}
+          <p className="mt-3.5 text-center text-[12px] tracking-av text-av-text-faint pointer-coarse:hidden">
             {game.controls}
           </p>
 

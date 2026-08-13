@@ -156,6 +156,23 @@
 }
 
 /* ============================================================
+   Variantes propias: qué es una pantalla «de mano»
+
+   Un teléfono: puntero grueso y una ventana que no da para el gabinete de
+   escritorio. El umbral de 480px separa teléfonos de tabletas —un iPad mini
+   mide 744px de ancho en vertical y 744px de alto en horizontal—, así que una
+   tableta se queda con la maquetación de siempre. Y `(pointer: coarse)` va
+   siempre acompañado del umbral: un portátil con pantalla táctil cumple lo
+   primero y no lo segundo.
+
+   Sólo las usa la pantalla de juego, que es la única que se maqueta distinto
+   con el dedo.
+   ============================================================ */
+
+@custom-variant handheld (@media (pointer: coarse) and ((max-width: 480px) or (max-height: 480px)));
+@custom-variant handheld-wide (@media (pointer: coarse) and (orientation: landscape) and (max-height: 480px));
+
+/* ============================================================
    Utilidades de firma: los efectos CRT que repiten las pantallas
    ============================================================ */
 
@@ -188,7 +205,8 @@
 /* Rejilla en perspectiva del fondo. Se aplica al div de fondo:
    position absolute + inset negativos, igual que en las referencias. */
 @utility av-grid-floor {
-  background-image: linear-gradient(to right, rgba(0, 245, 255, 0.16) 1px, transparent 1px),
+  background-image:
+    linear-gradient(to right, rgba(0, 245, 255, 0.16) 1px, transparent 1px),
     linear-gradient(to bottom, rgba(255, 0, 110, 0.14) 1px, transparent 1px);
   background-size: 60px 60px;
   transform: perspective(320px) rotateX(62deg);
@@ -208,7 +226,8 @@
 
 /* Viñeta de color que tiñe las esquinas del salón */
 @utility av-vignette {
-  background: radial-gradient(120% 80% at 50% 0%, rgba(245, 255, 0, 0.05), transparent 60%),
+  background:
+    radial-gradient(120% 80% at 50% 0%, rgba(245, 255, 0, 0.05), transparent 60%),
     radial-gradient(90% 60% at 80% 100%, rgba(255, 0, 110, 0.09), transparent 65%);
 }
 
@@ -217,86 +236,161 @@
    ============================================================ */
 
 @keyframes av-flicker {
-  0%, 19%, 21%, 23%, 25%, 54%, 56%, 100% { opacity: 1; }
-  20%, 24%, 55% { opacity: 0.45; }
+  0%,
+  19%,
+  21%,
+  23%,
+  25%,
+  54%,
+  56%,
+  100% {
+    opacity: 1;
+  }
+  20%,
+  24%,
+  55% {
+    opacity: 0.45;
+  }
 }
 
 @keyframes av-grid {
-  from { transform: translateY(0); }
-  to { transform: translateY(60px); }
+  from {
+    transform: translateY(0);
+  }
+  to {
+    transform: translateY(60px);
+  }
 }
 
 @keyframes av-fade {
-  from { opacity: 0; transform: translateY(14px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 @keyframes av-slide {
-  from { transform: translateX(100%); }
-  to { transform: translateX(0); }
+  from {
+    transform: translateX(100%);
+  }
+  to {
+    transform: translateX(0);
+  }
 }
 
 @keyframes av-row {
-  from { opacity: 0; transform: translateX(-18px); }
-  to { opacity: 1; transform: translateX(0); }
+  from {
+    opacity: 0;
+    transform: translateX(-18px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
 }
 
 @keyframes av-caret {
-  50% { opacity: 0; }
+  50% {
+    opacity: 0;
+  }
 }
 
 @keyframes av-spin {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 @keyframes av-sweep {
-  from { transform: translateY(-100%); }
-  to { transform: translateY(220%); }
+  from {
+    transform: translateY(-100%);
+  }
+  to {
+    transform: translateY(220%);
+  }
 }
 
 @keyframes av-cabinet {
-  0%, 100% {
-    box-shadow: 0 0 0 1px currentColor, 0 0 16px -4px currentColor, 0 14px 30px rgba(0, 0, 0, 0.55);
+  0%,
+  100% {
+    box-shadow:
+      0 0 0 1px currentColor,
+      0 0 16px -4px currentColor,
+      0 14px 30px rgba(0, 0, 0, 0.55);
   }
   50% {
-    box-shadow: 0 0 0 2px currentColor, 0 0 34px 0px currentColor, 0 18px 42px rgba(0, 0, 0, 0.62);
+    box-shadow:
+      0 0 0 2px currentColor,
+      0 0 34px 0px currentColor,
+      0 18px 42px rgba(0, 0, 0, 0.62);
   }
 }
 
 @keyframes av-pulse {
-  0%, 100% {
-    box-shadow: 0 0 0 0 rgba(255, 0, 110, 0.55), 0 0 18px rgba(255, 0, 110, 0.5);
+  0%,
+  100% {
+    box-shadow:
+      0 0 0 0 rgba(255, 0, 110, 0.55),
+      0 0 18px rgba(255, 0, 110, 0.5);
   }
   50% {
-    box-shadow: 0 0 0 14px rgba(255, 0, 110, 0), 0 0 34px rgba(255, 0, 110, 0.85);
+    box-shadow:
+      0 0 0 14px rgba(255, 0, 110, 0),
+      0 0 34px rgba(255, 0, 110, 0.85);
   }
 }
 
 /* Deriva de las siluetas del hero de la portada */
 @keyframes av-float {
-  0%, 100% { transform: translateY(0) rotate(-2deg); }
-  50% { transform: translateY(-14px) rotate(2deg); }
+  0%,
+  100% {
+    transform: translateY(0) rotate(-2deg);
+  }
+  50% {
+    transform: translateY(-14px) rotate(2deg);
+  }
 }
 
 /* Flecha del "DESLIZA ▼" */
 @keyframes av-bounce {
-  50% { transform: translateY(6px); }
+  50% {
+    transform: translateY(6px);
+  }
 }
 
 /* Píxeles de la banda que separa «Acerca de» de «Contacto»: no se apagan del
    todo, bajan a un quinto. Con `steps(2)` el cambio es seco, como un LED. */
 @keyframes av-px {
-  50% { opacity: 0.2; }
+  50% {
+    opacity: 0.2;
+  }
 }
 
 /* La negativa del formulario de contacto: falta algo y el marco se sacude. */
 @keyframes av-shake {
-  0%, 100% { transform: translateX(0); }
-  20% { transform: translateX(-6px); }
-  40% { transform: translateX(6px); }
-  60% { transform: translateX(-4px); }
-  80% { transform: translateX(4px); }
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  20% {
+    transform: translateX(-6px);
+  }
+  40% {
+    transform: translateX(6px);
+  }
+  60% {
+    transform: translateX(-4px);
+  }
+  80% {
+    transform: translateX(4px);
+  }
 }
 
 /* El parpadeo y la rejilla marean a quien pide menos movimiento:
