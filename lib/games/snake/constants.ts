@@ -8,6 +8,9 @@
  * Quien quiera reequilibrar el juego lo hace aquí y contra ese documento: los
  * siete números del ritmo y la puntuación viven juntos a propósito, para que
  * ajustarlos no obligue a tocar el motor.
+ *
+ * Los colores ya no están aquí: viven en `skins.ts`, que tiene los de SPEC 10 y
+ * los de las otras dos pieles. Aquí sólo quedan números.
  */
 
 // ── Mundo y rejilla ──────────────────────────────────────────────────────────
@@ -46,27 +49,6 @@ export const FRUITS_PER_LEVEL = 5;
 
 /** Puntos por fruta: `POINTS_PER_FRUIT * level`. */
 export const POINTS_PER_FRUIT = 10;
-
-// ── Colores ──────────────────────────────────────────────────────────────────
-
-/**
- * El fondo del vault, no un color propio del tablero: la escena archivada que
- * hace de miniatura se dibuja sobre él, así que la partida y la miniatura se ven
- * iguales. Va opaco y cubre el mundo entero, o sea que borra el frame anterior.
- */
-export const COLOR_BG = "#0a0a0f";
-
-export const COLOR_BODY = "#00f5ff";
-export const COLOR_HEAD = "#f5ff00";
-
-/**
- * La fruta cuando el atlas no ha cargado, o no cargará nunca. Magenta y no cian
- * porque el cian es el color del cuerpo: una fruta invisible justo cuando la
- * imagen ha fallado.
- */
-export const COLOR_FRUIT_FALLBACK = "#ff006e";
-
-export const COLOR_GRID = "rgba(0,245,255,0.1)";
 
 /**
  * Duración del tick del nivel `level`, en milisegundos.

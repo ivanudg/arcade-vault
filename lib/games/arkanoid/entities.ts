@@ -16,9 +16,12 @@
  * Y el dibujo es de primitivas. El original recorta cada cosa de
  * `assets/spritesheet-breakout.png`; aquí paddle y bloques son `fillRect` y la
  * bola es un `arc`. En el PNG el paddle es blanco con remaches rojos y la bola
- * gris muy claro, así que el blanco liso es lo más cerca que queda del original
- * sin cargar un archivo, y es además el criterio que dejó a Asteroids en
- * vectores blancos: el neón lo pone el gabinete, no el juego.
+ * gris muy claro, así que el blanco liso de la piel `clasico` es lo más cerca
+ * que queda del original sin cargar un archivo.
+ *
+ * Los colores llegan por parámetro, en la `Palette` de la piel activa: vive en
+ * el closure de `mount()`, así que dos partidas del mismo juego no comparten
+ * color.
  */
 
 import type { GameInput } from "@/lib/games/input";
@@ -33,6 +36,7 @@ import {
   maxSpeedForLevel,
 } from "./constants";
 import type { Block } from "./levels";
+import type { Palette } from "./skins";
 
 /** `x`/`y` son la esquina superior-izquierda. */
 export interface Paddle {
@@ -52,9 +56,6 @@ export interface Ball {
   r: number;
   speed: number;
 }
-
-/** El blanco de los dos recortes del spritesheet original. */
-const ENTITY_COLOR = "#fff";
 
 // ── Creación y colocación ────────────────────────────────────────────────────
 
@@ -266,24 +267,24 @@ export function ballVsBlocks(ball: Ball, blocks: readonly Block[]): BlockHit {
  * (`hp === maxHp`) → 1,0; baja con cada golpe hasta un mínimo de 0,4. Ya era una
  * primitiva en el original y no un sprite, así que se copia tal cual.
  */
-export function drawBlocks(ctx: CanvasRenderingContext2D, blocks: readonly Block[]) {
+export function drawBlocks(ctx: CanvasRenderingContext2D, blocks: readonly Block[], p: Palette) {
   for (const b of blocks) {
     if (!b.alive) continue;
     ctx.save();
     ctx.globalAlpha = 0.4 + 0.6 * (b.hp / b.maxHp);
-    ctx.fillStyle = b.color;
+    ctx.fillStyle = p.blocks[b.kind];
     ctx.fillRect(b.x, b.y, b.w, b.h);
     ctx.restore();
   }
 }
 
-export function drawPaddle(ctx: CanvasRenderingContext2D, paddle: Paddle) {
-  ctx.fillStyle = ENTITY_COLOR;
+export function drawPaddle(ctx: CanvasRenderingContext2D, paddle: Paddle, p: Palette) {
+  ctx.fillStyle = p.paddle;
   ctx.fillRect(paddle.x, paddle.y, paddle.w, paddle.h);
 }
 
-export function drawBall(ctx: CanvasRenderingContext2D, ball: Ball) {
-  ctx.fillStyle = ENTITY_COLOR;
+export function drawBall(ctx: CanvasRenderingContext2D, ball: Ball, p: Palette) {
+  ctx.fillStyle = p.ball;
   ctx.beginPath();
   ctx.arc(ball.x, ball.y, ball.r, 0, Math.PI * 2);
   ctx.fill();

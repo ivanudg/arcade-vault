@@ -17,12 +17,12 @@
  * todo el estado de partida vive en el closure de `mount()`.
  */
 
+import { tint } from "@/lib/games";
 import type { GameCallbacks, GameHandle, GameMount, GameState } from "@/lib/games/engine";
 import { createInput } from "@/lib/games/input";
+import { DEFAULT_SKIN, SKIN_IDS } from "@/lib/games/skins";
 import {
   CELL,
-  COLOR_BG,
-  COLOR_GRID,
   COLS,
   FRUITS_PER_LEVEL,
   H,
@@ -36,6 +36,7 @@ import {
 } from "./constants";
 import { Fruit, Snake } from "./entities";
 import { pickFreeCell } from "./math";
+import { PALETTES } from "./skins";
 import { loadFruitAtlas } from "./sprites";
 
 /**
@@ -69,9 +70,17 @@ const MAX_DT = 0.05;
 /** La celda donde nace la serpiente, y donde reaparece al perder una vida. */
 const SPAWN = { x: Math.floor(COLS / 2), y: Math.floor(ROWS / 2) };
 
+/**
+ * Transparencia de la rejilla, que es del motor y no de la piel: la piel dice de
+ * qué color son las líneas y este 0,1 —el mismo `rgba(0,245,255,0.1)` de SPEC 10
+ * visto por su otra cara— las mantiene detrás del juego en las tres.
+ */
+const GRID_ALPHA = 0.1;
+
 export const snakeGame: GameMount = {
   world: { width: W, height: H },
   hud: ["PUNTUACION", "VIDAS", "NIVEL"],
+  skins: SKIN_IDS,
 
   mount(canvas: HTMLCanvasElement, cb: GameCallbacks): GameHandle {
     const context2d = canvas.getContext("2d");
@@ -84,6 +93,10 @@ export const snakeGame: GameMount = {
     // Un cargador por montaje, no una caché de módulo: eso sería estado mutable
     // fuera del closure. La petición ya la cachea el navegador.
     const atlas = loadFruitAtlas();
+
+    // La piel activa, también en el closure y por lo mismo: dos partidas del
+    // mismo juego compartirían color si viviera en el módulo.
+    let palette = PALETTES[DEFAULT_SKIN];
 
     let run = createRun();
     let frame: number | null = null;
@@ -239,18 +252,18 @@ export const snakeGame: GameMount = {
      * veinte píxeles del canvas, como en las otras tres máquinas. El motor solo
      * sube las tres cifras por `onState`.
      *
-     * La misma rejilla tenue de la escena archivada que hace de miniatura, con
-     * su mismo `rgba(0,245,255,0.1)`.
+     * La misma rejilla tenue de la escena archivada que hace de miniatura: con
+     * `clasico` sale exactamente su mismo `rgba(0,245,255,0.1)`.
      */
     function draw() {
       const r = run;
 
-      ctx.fillStyle = COLOR_BG;
+      ctx.fillStyle = palette.bg;
       ctx.fillRect(0, 0, W, H);
 
       // El medio píxel es lo que separa una línea de 1 px nítida de una franja
       // gris de 2 px: el canvas va escalado por `devicePixelRatio`.
-      ctx.strokeStyle = COLOR_GRID;
+      ctx.strokeStyle = tint(palette.grid, GRID_ALPHA);
       ctx.lineWidth = 1;
       ctx.beginPath();
       for (let col = 1; col < COLS; col++) {
@@ -263,8 +276,10 @@ export const snakeGame: GameMount = {
       }
       ctx.stroke();
 
-      r.fruit.draw(ctx, atlas.ready() ? atlas.image : null);
-      r.snake.draw(ctx);
+      // El atlas sólo entra si la piel lo admite: `neon` y `retro` se caen al
+      // círculo plano, que es el mismo camino que cuando la imagen no carga.
+      r.fruit.draw(ctx, palette.useAtlas && atlas.ready() ? atlas.image : null, palette);
+      r.snake.draw(ctx, palette);
     }
 
     // ── Bucle ────────────────────────────────────────────────────────────────
@@ -345,6 +360,13 @@ export const snakeGame: GameMount = {
 
       release(code) {
         input.release(code);
+      },
+
+      // Sólo cambia el color: no repinta, no reinicia y no toca el bucle. El
+      // siguiente frame ya sale con la piel nueva porque `draw()` lee `palette`
+      // cada vez.
+      setSkin(id) {
+        palette = PALETTES[id];
       },
     };
   },

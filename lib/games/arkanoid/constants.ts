@@ -14,9 +14,12 @@
  *
  * Lo que no entra: nada del spritesheet. El original no dibuja ni una primitiva
  * —paddle, bola, bloques y explosiones son recortes de un PNG—, y aquí todo se
- * redibuja con `fillRect` y `arc`. Los siete nombres de `COLOR_MAP` son los
- * siete nombres de color CSS válidos, así que la tabla se copia literal y pasa a
- * ser `fillStyle` directo.
+ * redibuja con `fillRect` y `arc`.
+ *
+ * Los colores ya no están aquí: viven en `skins.ts`, que tiene los del original
+ * —los siete nombres de color CSS de la tabla de bloques, copiados literales— y
+ * los de las otras dos pieles. Aquí sólo quedan números y el vocabulario de
+ * celdas de la rejilla, que es geometría de nivel y no color.
  */
 
 // ── Mundo ────────────────────────────────────────────────────────────────────
@@ -26,10 +29,6 @@
  * de 1,33 es aquella para la que se calibró el marco de `PlayCabinet`.
  */
 export const WORLD = { width: 800, height: 600 };
-
-/** El `#12122b` del área de juego del original. Sus bandas de letterbox no
- * entran: `GameCanvas` no deja bandas. */
-export const BACKGROUND = "#12122b";
 
 // ── Reglas ───────────────────────────────────────────────────────────────────
 
@@ -92,39 +91,31 @@ export const GAP_Y = 6;
 /** Alto de cada bloque. Con diez columnas el ancho sale 66,6 px. */
 export const BLOCK_H = 24;
 
-// ── Colores ──────────────────────────────────────────────────────────────────
+// ── Tipos de bloque ──────────────────────────────────────────────────────────
 
 /**
- * Letra de la rejilla → color. En el original era el nombre del recorte del
- * spritesheet; aquí es el `fillStyle`, porque los siete son nombres de color CSS
- * válidos y no hubo que inventar ni un hexadecimal.
+ * Las celdas con bloque que entiende la rejilla. Eran las claves de las dos
+ * tablas de color del original —`COLOR_MAP` para las letras y `HP_COLOR` para
+ * los dígitos—, y siguen siendo las mismas nueve ahora que el color se resuelve
+ * al dibujar: aquí lo que queda es el vocabulario del nivel, no su aspecto.
  *
- * El neón del vault no repinta nada: mismo criterio que dejó a Asteroids en
- * vectores blancos y a Tetris con sus siete colores. El neón lo pone el
- * gabinete, no el juego.
+ * Las seis primeras letras son bloques de un golpe, `a` el gris irrompible y los
+ * dígitos son los golpes que aguanta un bloque multi-golpe.
  */
-export const COLOR_MAP: Readonly<Record<string, string>> = {
-  r: "red",
-  y: "yellow",
-  c: "cyan",
-  m: "magenta",
-  h: "hotpink",
-  g: "green",
-  a: "gray",
-};
+export const BLOCK_KINDS = ["r", "y", "c", "m", "h", "g", "a", "2", "3"] as const;
 
-/**
- * Color exclusivo de los bloques multi-golpe, por número de golpes. El desgaste
- * se muestra con alpha; el color base es fijo por tipo. `cyan` y `magenta` no se
- * usan como bloques de un golpe en los niveles 4–10.
- */
-export const HP_COLOR: Readonly<Record<string, string>> = {
-  2: "cyan", // bloque de 2 golpes
-  3: "magenta", // bloque de 3 golpes
-};
+export type BlockKind = (typeof BLOCK_KINDS)[number];
 
-/** Letra de bloque irrompible (gris). Ya existe en `COLOR_MAP`. */
+/** Celdas multi-golpe: el dígito es el número de golpes que aguantan. */
+export const HP_KINDS: readonly BlockKind[] = ["2", "3"];
+
+/** Letra de bloque irrompible (gris). */
 export const UNBREAKABLE_LETTER = "a";
+
+/** Si una celda de la rejilla lleva bloque. `.` y cualquier otra cosa, no. */
+export function isBlockKind(cell: string): cell is BlockKind {
+  return (BLOCK_KINDS as readonly string[]).includes(cell);
+}
 
 // ── Niveles ──────────────────────────────────────────────────────────────────
 
@@ -134,9 +125,10 @@ export interface Level {
 }
 
 /**
- * Cada nivel es una rejilla. `.` = hueco, letra = bloque de un golpe
- * (`COLOR_MAP`), dígito `2`/`3` = bloque multi-golpe (`HP_COLOR`), `a` = gris
- * irrompible. Todas las filas de todos los niveles usan diez columnas.
+ * Cada nivel es una rejilla. `.` = hueco, letra = bloque de un golpe, dígito
+ * `2`/`3` = bloque multi-golpe, `a` = gris irrompible; las nueve celdas con
+ * bloque son `BLOCK_KINDS`. Todas las filas de todos los niveles usan diez
+ * columnas.
  *
  * Entran los diez: son **el** contenido. Sin ellos Arkanoid son tres pantallas
  * planas que se acaban en dos minutos.

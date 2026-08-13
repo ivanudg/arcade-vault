@@ -19,12 +19,12 @@
 
 import type { GameCallbacks, GameHandle, GameMount, GameState } from "@/lib/games/engine";
 import { createInput } from "@/lib/games/input";
+import { DEFAULT_SKIN, SKIN_IDS } from "@/lib/games/skins";
 import {
   ARR_MS,
   BLOCK,
   COLS,
   DAS_MS,
-  GRID_COLOR,
   KICKS,
   LINE_SCORES,
   LOCK_DELAY_MS,
@@ -44,6 +44,7 @@ import {
   type Board,
 } from "@/lib/games/tetris/board";
 import { randomPiece, rotateCW, type Piece } from "@/lib/games/tetris/pieces";
+import { PALETTES } from "@/lib/games/tetris/skins";
 
 /** El estado de partida entero. Una instancia por `mount()`. */
 interface Run {
@@ -73,8 +74,6 @@ const MAX_DT = 50;
 const BAND = WORLD.width - COLS * BLOCK;
 /** Alto al que empieza la caja de 4 × 4 de la pieza siguiente. */
 const NEXT_Y = 60;
-/** Gris del rótulo `SIG.`: ni compite con las piezas ni se pierde en el negro. */
-const LABEL_COLOR = "#8b8b99";
 /** La proyección de aterrizaje, translúcida como en el original. */
 const GHOST_ALPHA = 0.2;
 
@@ -86,6 +85,7 @@ function levelToDropInterval(level: number): number {
 export const tetrisGame: GameMount = {
   world: WORLD,
   hud: ["PUNTUACION", "LINEAS", "NIVEL"],
+  skins: SKIN_IDS,
 
   mount(canvas: HTMLCanvasElement, cb: GameCallbacks): GameHandle {
     const context2d = canvas.getContext("2d");
@@ -95,6 +95,13 @@ export const tetrisGame: GameMount = {
     const ctx: CanvasRenderingContext2D = context2d;
 
     const input = createInput();
+
+    /**
+     * La piel activa. Vive en el closure y en ningún otro sitio: dos partidas
+     * montadas a la vez no comparten color, igual que no comparten tablero.
+     * Cada frame la vuelve a leer, así que cambiarla no obliga a repintar.
+     */
+    let palette = PALETTES[DEFAULT_SKIN];
 
     let run = createRun();
     let frame: number | null = null;
@@ -324,7 +331,7 @@ export const tetrisGame: GameMount = {
 
     /** Las líneas interiores del tablero. Las de fuera son el borde del canvas. */
     function drawGrid() {
-      ctx.strokeStyle = GRID_COLOR;
+      ctx.strokeStyle = palette.grid;
       ctx.lineWidth = 0.5;
       for (let c = 1; c < COLS; c++) {
         ctx.beginPath();
@@ -344,7 +351,7 @@ export const tetrisGame: GameMount = {
     function drawShape(shape: Cell[][], px: number, py: number, size: number, alpha = 1) {
       for (let r = 0; r < shape.length; r++) {
         for (let c = 0; c < shape[r].length; c++) {
-          drawCell(ctx, px + c * size, py + r * size, shape[r][c], size, alpha);
+          drawCell(ctx, px + c * size, py + r * size, shape[r][c], palette, size, alpha);
         }
       }
     }
@@ -362,14 +369,14 @@ export const tetrisGame: GameMount = {
       if (!next) return;
       const bandX = COLS * BLOCK;
 
-      ctx.strokeStyle = GRID_COLOR;
+      ctx.strokeStyle = palette.grid;
       ctx.lineWidth = 1;
       ctx.beginPath();
       ctx.moveTo(bandX, 0);
       ctx.lineTo(bandX, WORLD.height);
       ctx.stroke();
 
-      ctx.fillStyle = LABEL_COLOR;
+      ctx.fillStyle = palette.label;
       ctx.font = "12px monospace";
       ctx.textAlign = "center";
       ctx.fillText("SIG.", bandX + BAND / 2, NEXT_Y - 20);
@@ -390,14 +397,14 @@ export const tetrisGame: GameMount = {
     function draw() {
       const r = run;
 
-      ctx.fillStyle = "#000";
+      ctx.fillStyle = palette.bg;
       ctx.fillRect(0, 0, WORLD.width, WORLD.height);
 
       drawGrid();
 
       for (let row = 0; row < ROWS; row++) {
         for (let col = 0; col < COLS; col++) {
-          drawCell(ctx, col * BLOCK, row * BLOCK, r.board[row][col]);
+          drawCell(ctx, col * BLOCK, row * BLOCK, r.board[row][col], palette);
         }
       }
 
@@ -493,6 +500,12 @@ export const tetrisGame: GameMount = {
 
       release(code) {
         input.release(code);
+      },
+
+      // Sólo el color: no repinta, no reinicia y no toca el bucle. El frame
+      // siguiente ya sale vestido porque `draw()` lee `palette` cada vez.
+      setSkin(id) {
+        palette = PALETTES[id];
       },
     };
   },

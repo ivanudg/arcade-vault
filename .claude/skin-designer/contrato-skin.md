@@ -8,11 +8,14 @@ Ninguna regla es una opinión: cada una sale de un archivo del repo que la impon
 día ese archivo cambia —el contrato de `lib/games/engine.ts` gana un tema, `globals.css`
 estrena un quinto neón—, cambia la regla, y las skins rechazadas por ella se pueden reabrir.
 
-**Ojo con el estado del repo: el sistema de skins no existe.** No hay tipo, ni constante, ni
-selector; `mount(canvas, cb)` recibe dos parámetros y ninguno es un tema. Una skin es hoy un
-**diseño en papel**: una tabla de colores validada y anotada, lista para que la implemente una
-spec. Ese diseño se hace igual de riguroso, porque el día que llegue la spec lo que se copie
-tiene que ser mecánico.
+**El sistema de skins existe desde el 2026-08-13**, y este párrafo decía lo contrario hasta ese
+día: `lib/games/skins.ts` tiene el vocabulario, `GameMount.skins` y `GameHandle.setSkin()` son
+dos campos **opcionales** del contrato, `lib/storage.ts` recuerda la elección por máquina y el
+gabinete pinta su selector. `mount(canvas, cb)` **no cambió de firma**: la skin viaja por el
+`GameHandle`. Que los dos campos sean opcionales es lo que permite vestir las máquinas de una en
+una, así que una skin puede seguir siendo un **diseño en papel** mientras su motor no la tenga
+escrita; lo que ya no es cierto es que no haya dónde aplicarla. El estado real de cada máquina
+se lee del código en cada invocación, nunca de aquí ni del ledger.
 
 ---
 

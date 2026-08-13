@@ -26,14 +26,9 @@
 
 import type { GameCallbacks, GameHandle, GameMount, GameState } from "@/lib/games/engine";
 import { createInput } from "@/lib/games/input";
-import {
-  BACKGROUND,
-  INITIAL_LIVES,
-  LEVELS,
-  LEVEL_CLEAR_TIME,
-  SCORE_PER_BLOCK,
-  WORLD,
-} from "./constants";
+import { DEFAULT_SKIN, SKIN_IDS } from "@/lib/games/skins";
+import { INITIAL_LIVES, LEVELS, LEVEL_CLEAR_TIME, SCORE_PER_BLOCK, WORLD } from "./constants";
+import { PALETTES } from "./skins";
 import {
   ballVsBlocks,
   ballVsPaddle,
@@ -80,6 +75,7 @@ const MAX_DT = 0.05;
 export const arkanoidGame: GameMount = {
   world: { width: WORLD.width, height: WORLD.height },
   hud: ["PUNTUACION", "VIDAS", "NIVEL"],
+  skins: SKIN_IDS,
 
   mount(canvas: HTMLCanvasElement, cb: GameCallbacks): GameHandle {
     const context2d = canvas.getContext("2d");
@@ -89,6 +85,14 @@ export const arkanoidGame: GameMount = {
     const ctx: CanvasRenderingContext2D = context2d;
 
     const input = createInput();
+
+    /**
+     * La piel activa, dentro del closure y en ningún otro sitio: en el ámbito de
+     * módulo de un motor no hay una sola variable mutable, y ésta no va a ser la
+     * primera. El frame lee `palette` cada vez, así que `setSkin()` no necesita
+     * repintar ni tocar el bucle.
+     */
+    let palette = PALETTES[DEFAULT_SKIN];
 
     let run = createRun();
     let frame: number | null = null;
@@ -252,12 +256,12 @@ export const arkanoidGame: GameMount = {
     function draw() {
       const r = run;
 
-      ctx.fillStyle = BACKGROUND;
+      ctx.fillStyle = palette.bg;
       ctx.fillRect(0, 0, WORLD.width, WORLD.height);
 
-      drawBlocks(ctx, r.blocks);
-      drawPaddle(ctx, r.paddle);
-      drawBall(ctx, r.ball);
+      drawBlocks(ctx, r.blocks, palette);
+      drawPaddle(ctx, r.paddle, palette);
+      drawBall(ctx, r.ball, palette);
     }
 
     // ── Bucle ────────────────────────────────────────────────────────────────
@@ -330,6 +334,10 @@ export const arkanoidGame: GameMount = {
         if (destroyed) return;
         destroyed = true;
         halt();
+      },
+
+      setSkin(id) {
+        palette = PALETTES[id];
       },
 
       // El mando táctil entra por la misma puerta que el teclado.
