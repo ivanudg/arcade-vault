@@ -199,7 +199,7 @@ export function PlayCabinet({ game }: { game: Game }) {
           elemento, y un ancestro con transform se convierte en bloque
           contenedor de los hijos `fixed`: dentro, un `inset-0` cubriría la
           sección en vez de la ventana. */}
-      <section className="mx-auto w-full max-w-195 animate-av-fade">
+      <section className="mx-auto w-full max-w-195 animate-av-fade handheld-wide:flex handheld-wide:h-full handheld-wide:flex-col">
         {/* Con el dedo el HUD va en una sola línea: envolver en tres empuja el
             tablero fuera de la ventana. Press Start 2P es monoespaciada y
             avanza 1em por carácter, así que lo que se recorta es lo que se
@@ -256,7 +256,7 @@ export function PlayCabinet({ game }: { game: Game }) {
         {/* El marco del gabinete es aire, y con el dedo el aire es lo primero
             que sobra: sin recortarlo, la fila de cinco botones no cabe a lo
             ancho de un teléfono y el último se va a una segunda línea. */}
-        <div className="mx-auto mt-6.5 rounded-[34px] border border-av-cyan/22 bg-[linear-gradient(#15171f,#0b0c12)] p-5.5 shadow-[0_0_46px_rgba(0,245,255,0.12),inset_0_0_0_1px_rgba(255,255,255,0.04)] handheld:mt-3 handheld:rounded-[20px] handheld:p-2.5">
+        <div className="mx-auto mt-6.5 rounded-[34px] border border-av-cyan/22 bg-[linear-gradient(#15171f,#0b0c12)] p-5.5 shadow-[0_0_46px_rgba(0,245,255,0.12),inset_0_0_0_1px_rgba(255,255,255,0.04)] handheld:mt-3 handheld:rounded-[20px] handheld:p-2.5 handheld-wide:mt-1.5 handheld-wide:flex handheld-wide:min-h-0 handheld-wide:flex-1 handheld-wide:flex-col handheld-wide:rounded-[14px] handheld-wide:p-1.5">
           {/* La pantalla llena el ancho del gabinete, salvo que su alto no
               quepa: entonces manda la altura y el ancho la sigue, para que el
               mundo del motor nunca se deforme. Sin esto, un mundo apaisado como
@@ -277,46 +277,57 @@ export function PlayCabinet({ game }: { game: Game }) {
               apaisado como el de Asteroids empezaría a encogerse en pantallas
               normales. Lo que no puede quedar fuera de la ventana es el
               tablero. */}
-          <div
-            style={{ "--av-ratio": aspectRatio } as CSSProperties}
-            className="relative mx-auto overflow-hidden rounded-[22px] bg-av-void shadow-[inset_0_0_60px_rgba(0,0,0,0.9),inset_0_0_12px_rgba(0,245,255,0.16)] [--av-chrome:16rem] max-w-[calc((100svh-var(--av-chrome))*var(--av-ratio))] handheld:[--av-chrome:13rem] handheld-wide:[--av-chrome:7rem]"
-          >
-            <GameCanvas
-              game={engine}
-              label={`Partida de ${game.title}`}
-              onState={setLive}
-              // El motor avisa con la puntuación final; el HUD ya viene
-              // cuadrado del `onState` de ese mismo frame.
-              onGameOver={() => setOver(true)}
-              onReady={(h) => {
-                handle.current = h;
-                // Al desmontar llega `null`, y entonces no hay nada que vestir.
-                if (!h) return;
-                // La piel guardada de esta máquina se aplica aquí, con el motor
-                // ya montado y antes de que `start()` pinte el primer frame: no
-                // hay ni un fotograma con el color equivocado.
-                const saved = read().skins?.[game.id];
-                if (saved && engine.skins?.includes(saved)) {
-                  h.setSkin?.(saved);
-                  setSkin(saved);
-                }
-              }}
-              // El dedo sobre el tablero es juego, no desplazamiento: sin
-              // esto, arrastrar para girar la nave arrastra la página.
-              className="block h-auto w-full touch-none"
-            />
+          {/* La fila de juego. En todas las maquetaciones menos la horizontal
+              de mano es `display: contents`, así que no existe: el marco cuelga
+              del gabinete igual que siempre. En horizontal se convierte en la
+              fila que reparte el ancho —el mando a los lados llega en el paso
+              siguiente— y da al marco un alto contra el que medirse. */}
+          <div className="contents handheld-wide:flex handheld-wide:min-h-0 handheld-wide:flex-1 handheld-wide:items-center handheld-wide:justify-center handheld-wide:gap-2">
+            <div
+              style={{ "--av-ratio": aspectRatio } as CSSProperties}
+              // En horizontal manda el alto y el ancho lo sigue: el marco llena
+              // la fila y el canvas se encarga de no deformarse, apoyado en el
+              // `aspect-ratio` que `GameCanvas` ya le pone. El tope calculado
+              // sobra ahí, porque quien acota es la altura.
+              className="relative mx-auto overflow-hidden rounded-[22px] bg-av-void shadow-[inset_0_0_60px_rgba(0,0,0,0.9),inset_0_0_12px_rgba(0,245,255,0.16)] [--av-chrome:16rem] max-w-[calc((100svh-var(--av-chrome))*var(--av-ratio))] handheld:[--av-chrome:13rem] handheld-wide:h-full handheld-wide:w-auto handheld-wide:max-w-none handheld-wide:rounded-[12px] handheld-wide:[--av-chrome:7rem]"
+            >
+              <GameCanvas
+                game={engine}
+                label={`Partida de ${game.title}`}
+                onState={setLive}
+                // El motor avisa con la puntuación final; el HUD ya viene
+                // cuadrado del `onState` de ese mismo frame.
+                onGameOver={() => setOver(true)}
+                onReady={(h) => {
+                  handle.current = h;
+                  // Al desmontar llega `null`, y entonces no hay nada que vestir.
+                  if (!h) return;
+                  // La piel guardada de esta máquina se aplica aquí, con el motor
+                  // ya montado y antes de que `start()` pinte el primer frame: no
+                  // hay ni un fotograma con el color equivocado.
+                  const saved = read().skins?.[game.id];
+                  if (saved && engine.skins?.includes(saved)) {
+                    h.setSkin?.(saved);
+                    setSkin(saved);
+                  }
+                }}
+                // El dedo sobre el tablero es juego, no desplazamiento: sin
+                // esto, arrastrar para girar la nave arrastra la página.
+                className="block h-auto w-full touch-none handheld-wide:h-full handheld-wide:w-auto"
+              />
 
-            {/* Viñeta del tubo y barrido de brillo que recorre la pantalla. */}
-            <div className="pointer-events-none absolute inset-0 rounded-[22px] bg-[radial-gradient(115%_115%_at_50%_50%,rgba(0,0,0,0)_55%,rgba(0,0,0,0.72)_100%)]" />
-            <div className="pointer-events-none absolute inset-0 h-[34%] bg-[linear-gradient(rgba(255,255,255,0)_0%,rgba(255,255,255,0.045)_55%,rgba(255,255,255,0)_100%)] animate-av-sweep" />
+              {/* Viñeta del tubo y barrido de brillo que recorre la pantalla. */}
+              <div className="pointer-events-none absolute inset-0 rounded-[22px] bg-[radial-gradient(115%_115%_at_50%_50%,rgba(0,0,0,0)_55%,rgba(0,0,0,0.72)_100%)]" />
+              <div className="pointer-events-none absolute inset-0 h-[34%] bg-[linear-gradient(rgba(255,255,255,0)_0%,rgba(255,255,255,0.045)_55%,rgba(255,255,255,0)_100%)] animate-av-sweep" />
 
-            {paused && (
-              <div className="absolute inset-0 grid place-items-center bg-[rgba(5,6,10,0.78)]">
-                <span className="font-display text-[clamp(14px,3vw,22px)] tracking-av-wider text-av-yellow [text-shadow:0_0_18px_rgba(245,255,0,0.6)]">
-                  EN PAUSA
-                </span>
-              </div>
-            )}
+              {paused && (
+                <div className="absolute inset-0 grid place-items-center bg-[rgba(5,6,10,0.78)]">
+                  <span className="font-display text-[clamp(14px,3vw,22px)] tracking-av-wider text-av-yellow [text-shadow:0_0_18px_rgba(245,255,0,0.6)]">
+                    EN PAUSA
+                  </span>
+                </div>
+              )}
+            </div>
           </div>
 
           <div className="mt-4.5 grid grid-cols-[repeat(auto-fit,minmax(60px,1fr))] gap-2.5">
