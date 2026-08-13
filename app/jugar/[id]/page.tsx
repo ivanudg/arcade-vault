@@ -5,13 +5,30 @@
  * viven todos en `PlayCabinet`: esta ruta sólo resuelve la máquina.
  */
 
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { notFound } from "next/navigation";
 import { PlayCabinet } from "@/components/play-cabinet";
 import { GAMES, getGame } from "@/lib/games";
 
 /** Sólo existe una ruta por máquina: cualquier otra es 404 sin ejecutar código. */
 export const dynamicParams = false;
+
+/**
+ * El pellizco se bloquea sólo aquí, no en `app/layout.tsx`: es una ayuda de
+ * accesibilidad real en las pantallas de texto y en las tablas del salón, y en
+ * un tablero de juego sólo estorba. Sobre iOS 10 y posteriores Safari ignora
+ * `maximum-scale` y `user-scalable`; lo que sí se corta ahí es el doble toque
+ * y el arrastre, que es lo que molesta jugando.
+ */
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
+  // Pedirlo obliga a rellenar con env(safe-area-inset-*): sin eso, el mando
+  // se mete debajo del indicador de inicio.
+  viewportFit: "cover",
+};
 
 export function generateStaticParams() {
   return GAMES.map((g) => ({ id: g.id }));
@@ -30,7 +47,10 @@ export default async function PlayPage({ params }: PageProps<"/jugar/[id]">) {
   if (!game) notFound();
 
   return (
-    <main className="flex-1 px-[clamp(14px,3vw,30px)] pt-[clamp(18px,3vw,34px)] pb-20">
+    // El margen seguro se suma al relleno de siempre, no lo sustituye: en
+    // Android y en escritorio `env(safe-area-inset-*)` vale 0 y la pantalla
+    // queda exactamente como estaba.
+    <main className="flex-1 pt-[clamp(18px,3vw,34px)] pr-[calc(clamp(14px,3vw,30px)+env(safe-area-inset-right))] pb-[calc(5rem+env(safe-area-inset-bottom))] pl-[calc(clamp(14px,3vw,30px)+env(safe-area-inset-left))]">
       <PlayCabinet game={game} />
     </main>
   );
