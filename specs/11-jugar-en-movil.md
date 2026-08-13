@@ -1,8 +1,10 @@
 # SPEC 11 — Jugar en un móvil táctil
 
-> **Estado:** Aprobado
+> **Estado:** Implementado
 > **Depende de:** SPEC 01, SPEC 05
 > **Fecha:** 2026-08-13
+> **Implementada:** 2026-08-13, en `spec-11-jugar-en-movil`. Lo que salió
+> distinto de lo planeado está en «Lo que cambió al implementarla», al final.
 > **Objetivo:** Hacer `/jugar/[id]` jugable con el dedo en un teléfono, con una maquetación propia en vertical y otra en horizontal, sin scroll ni zoom y sin tocar el contrato de los motores.
 
 ## Por qué existe esta spec
@@ -42,7 +44,8 @@ es la caja que rodea al canvas.
 - Dos maquetaciones nuevas del gabinete, **las dos por CSS**, sin detección de
   dispositivo en JavaScript y sin estado que hidratar:
   - **Vertical de mano**: HUD en una línea compacta, marco y relleno reducidos,
-    y el canvas ocupando todo el alto que sobre.
+    el canvas ocupando todo el alto que sobre y, debajo, el mando: las cuatro
+    flechas en cruz a la izquierda y `FUEGO` enfrente.
   - **Horizontal de mano**: las cuatro flechas en cruz a la izquierda del
     canvas, `FUEGO` a la derecha, HUD en una sola línea arriba.
 - Dos variantes propias en `app/globals.css` que definen qué es «de mano»,
@@ -54,8 +57,8 @@ es la caja que rodea al canvas.
   lado corto, también en horizontal.
 - La línea de `game.controls` («Flechas ← → giran · ESPACIO dispara») se oculta
   cuando el puntero es grueso.
-- La ruta de juego no se desplaza en una pantalla de mano: cabe en `100svh` y
-  el canvas lleva `touch-action: none`.
+- La ruta de juego no se desplaza en una pantalla de mano: cabe en `100svh`
+  menos lo que ocupa `PlayHeader`, y el canvas lleva `touch-action: none`.
 - Relleno por `env(safe-area-inset-*)` en la pantalla de juego, que es lo que
   exige haber pedido `viewportFit: "cover"`.
 - Los superpuestos de carga y de fin de partida caben y se manejan en horizontal
@@ -111,15 +114,21 @@ maquetación redefine, mientras la proporción sigue viniendo del motor:
 ```tsx
 // El ratio lo sabe JS —sale del `world` del motor—; el presupuesto lo sabe CSS.
 style={{ "--av-ratio": aspectRatio } as CSSProperties}
-className="[--av-chrome:16rem] handheld:[--av-chrome:13rem] handheld-wide:[--av-chrome:7rem]
+className="[--av-chrome:16rem] handheld:[--av-chrome:26rem] handheld-wide:[--av-chrome:7rem]
            max-w-[calc((100svh-var(--av-chrome))*var(--av-ratio))]"
 ```
 
-| Maquetación        | `--av-chrome` | Qué resta                                               |
-| ------------------ | ------------- | ------------------------------------------------------- |
-| Escritorio         | `16rem`       | cabecera, HUD, marco, mando, controles y `PIEL`         |
-| Vertical de mano   | `13rem`       | lo mismo sin la línea de controles y con marco reducido |
-| Horizontal de mano | `7rem`        | sólo cabecera y HUD: el mando se va a los lados         |
+| Maquetación        | `--av-chrome` | Qué resta                                                  |
+| ------------------ | ------------- | ---------------------------------------------------------- |
+| Escritorio         | `16rem`       | cabecera, HUD, marco, fila de cinco, controles y `PIEL`    |
+| Vertical de mano   | `26rem`       | lo mismo con la cruz y `FUEGO` debajo, y sin los controles |
+| Horizontal de mano | `7rem`        | sólo cabecera y HUD: el mando se va a los lados            |
+
+El `26rem` de vertical no es el `13rem` que se estimó al escribir esta spec: la
+cruz mide 156px de alto donde la fila de cinco medía 44, y el presupuesto es la
+suma real de todo lo que no es tablero en un teléfono con indicador de inicio.
+Un presupuesto corto ya no desplaza la página —recorta—, así que se calibra por
+lo alto y no por lo bajo.
 
 En horizontal de mano manda además el alto: el marco pasa a `h-full` y el canvas
 a `h-full w-auto`, apoyado en el `aspect-ratio` que `GameCanvas` ya le pone.
@@ -137,11 +146,24 @@ const PAD = [
 ] as const;
 ```
 
-En vertical se pintan los cinco en una fila, como hoy. En horizontal, los `dpad`
-van a la izquierda **en cruz** —`↑` arriba en el centro, `←` y `→` a los lados,
-`↓` abajo— y el `fire` a la derecha. La cruz y no una columna de cuatro: en
-columna, `←` y `→` quedan uno encima del otro y el pulgar tiene que buscar; en
-cruz caen donde la mano los espera. Ocupa lo mismo.
+Los `dpad` van **en cruz** —`↑` arriba en el centro, `←` y `→` a los lados,
+`↓` abajo— y el `fire` enfrente. La cruz y no una columna de cuatro: en columna,
+`←` y `→` quedan uno encima del otro y el pulgar tiene que buscar; en cruz caen
+donde la mano los espera. Ocupa lo mismo.
+
+Dónde cae cada bloque es lo que cambia con la postura: en **horizontal**, la
+cruz a la izquierda del tablero y `FUEGO` a la derecha; en **vertical**, los dos
+debajo del tablero y a lo ancho del gabinete, la cruz pegada a un borde y
+`FUEGO` al otro, para que cada pulgar tenga el suyo sin cruzar la mano. La fila
+de cinco botones de siempre se queda **sólo para ratón y teclado**: con el dedo
+no se pinta en ninguna de las dos posturas.
+
+Eso hace que los cinco botones existan **tres veces** en el DOM —fila de cinco,
+mando de vertical y mando de horizontal—, y que CSS enseñe un juego cada vez.
+Los tres salen de la misma función, así que comparten manejadores y el
+`disabled` que decide `ENGINE_KEYS`. Lo que **no** se duplica es el canvas: uno
+solo, en un único sitio del árbol, que es lo que permite girar el aparato sin
+remontar el motor.
 
 **4. El viewport de la ruta de juego**, en `app/jugar/[id]/page.tsx`:
 
@@ -177,8 +199,14 @@ que hoy no existe.
    indicador de inicio el mando queda por encima de él.
 
 3. **La pantalla de juego cabe.** En el `<main>` de esa página,
-   `handheld:h-[100svh]` y `handheld:overflow-hidden`, y bajar el `pb-20` a
-   `handheld:pb-0`. Poner `touch-none` en el `className` del `GameCanvas`.
+   `handheld:h-[calc(100svh-var(--av-play-header))]` y
+   `handheld:overflow-hidden`, y bajar el `pb-20` a
+   `handheld:pb-[env(safe-area-inset-bottom)]`. Poner `touch-none` en el
+   `className` del `GameCanvas`. `--av-play-header` es una variable nueva en
+   `:root` —`3.5rem`, y `2.75rem` en horizontal— que `PlayHeader` fija como su
+   altura con el dedo: la cabecera es un hermano anterior del `<main>`, así que
+   sin restarla la página se desplaza justo su alto. El relleno inferior no baja
+   a cero del todo porque el margen seguro del paso 2 tiene que quedarse.
    _Prueba:_ arrastrar el dedo por el tablero ya no desplaza la página, y no hay
    nada que se salga por abajo.
 
@@ -191,13 +219,18 @@ que hoy no existe.
 
 5. **HUD en una línea.** En `handheld`, bajar el `gap-5.5` y el tamaño de las
    cuatro celdas para que `PUNTUACION`, `VIDAS`, `NIVEL` y `JUGADOR` quepan sin
-   envolver, con `PAUSA` a la derecha en la misma fila.
+   envolver, con `PAUSA` a la derecha en la misma fila. Sale `text-[6px]` sin
+   tracking: Press Start 2P avanza 1em por carácter y las cuatro celdas suman
+   más de cuarenta. La de `JUGADOR` lleva `truncate` —es la única que crece sin
+   techo, entre los dígitos de la puntuación y los doce caracteres del nombre—,
+   así que si la línea no da se corta el nombre por el final en vez de mandar el
+   HUD a una segunda fila.
    _Prueba:_ en un teléfono de 390px el bloque del HUD ocupa una sola línea y
    `PAUSA` sigue pulsándose sin apuntar.
 
 6. **El mando gana `side` y área táctil.** Añadir el campo `side` a las cinco
    entradas de `PAD` y una altura mínima de 44px a los botones. La rejilla de
-   cinco en fila no cambia: en vertical se sigue pintando igual.
+   cinco en fila no cambia todavía.
    _Prueba:_ nada se mueve de sitio; los botones son más altos y
    `npx tsc --noEmit` pasa.
 
@@ -214,6 +247,11 @@ que hoy no existe.
    deshabilitados, también aquí.
    _Prueba:_ en Asteroids se gira con el pulgar izquierdo y se dispara con el
    derecho sin soltar; en Arkanoid, `↑` y `↓` salen apagados.
+
+   Y el mismo mando en vertical, que es lo que se decidió al probarlo en un
+   teléfono: la cruz y `FUEGO` bajan enteros bajo el tablero y la fila de cinco
+   se apaga con el dedo. Sube con ello `--av-chrome` de vertical, porque la cruz
+   ocupa 112px más de alto que la fila.
 
 9. **La cabecera se comprime.** En `handheld-wide`, bajar el relleno vertical de
    `PlayHeader` y ocultar el título de la máquina, que ya está en la ficha.
@@ -238,19 +276,25 @@ Se firman **en un teléfono real** sobre `http://192.168.x.x:3000`, anotando
 modelo y navegador. Las cuatro máquinas —`asteroids`, `tetris`, `arkanoid` y
 `snake`— se comprueban en las dos posturas.
 
+Verificado el 13/08/2026 en un **iPhone con Safari**, sobre
+`http://192.168.100.39:3000`, con Arkanoid en vertical y en horizontal; de ahí
+salió el cambio del mando de vertical. Las casillas de herramientas van marcadas
+porque se corrieron en el repo; el repaso máquina por máquina queda por
+completar.
+
 **No se rompe nada de lo que ya funciona**
 
-- [ ] `npx tsc --noEmit` pasa.
-- [ ] `npm run lint` pasa.
-- [ ] `npm run build` pasa.
+- [x] `npx tsc --noEmit` pasa.
+- [x] `npm run lint` pasa.
+- [x] `npm run build` pasa.
 - [ ] En un escritorio de 1440×900, las cuatro máquinas se ven idénticas a como
       se veían antes de esta spec.
 - [ ] En escritorio se sigue jugando con el teclado y con el mando en pantalla.
 
 **La ventana**
 
-- [ ] En vertical, la pantalla de juego entra entera en la ventana: HUD, tablero
-      y los cinco botones se ven a la vez, sin desplazar la página.
+- [ ] En vertical, la pantalla de juego entra entera en la ventana: HUD, tablero,
+      la cruz, `FUEGO` y `PIEL` se ven a la vez, sin desplazar la página.
 - [ ] En horizontal, lo mismo: cabecera, HUD, tablero, cruz y `FUEGO` a la vez.
 - [ ] Arrastrar el dedo sobre el tablero no desplaza la página en ninguna de las
       dos posturas.
@@ -272,6 +316,8 @@ modelo y navegador. Las cuatro máquinas —`asteroids`, `tetris`, `arkanoid` y
 
 - [ ] En horizontal, las cuatro flechas están a la izquierda del tablero en cruz
       y `FUEGO` a la derecha.
+- [ ] En vertical, la cruz y `FUEGO` están debajo del tablero, uno a cada lado
+      del gabinete.
 - [ ] Mantener `←` con el pulgar izquierdo y pulsar `FUEGO` con el derecho gira
       y dispara a la vez en Asteroids.
 - [ ] Soltar un botón deslizando el dedo fuera de él suelta la tecla: la nave no
@@ -363,3 +409,46 @@ modelo y navegador. Las cuatro máquinas —`asteroids`, `tetris`, `arkanoid` y
 - Cualquier cambio en el contrato de los motores o en el mundo de una máquina.
 
 Cada una de ellas, si llega, va en su propia spec.
+
+## Lo que cambió al implementarla
+
+Ocho cosas salieron distintas de lo escrito arriba. El cuerpo de la spec ya está
+corregido; aquí queda por qué, para que se lea como decisiones y no como
+descuidos.
+
+1. **El mando de vertical es la cruz, no la fila de cinco.** Era lo único que la
+   spec dejaba igual con el dedo, y al probarlo en un teléfono se vio que cinco
+   rectángulos en fila no se juegan: el pulgar los busca. La cruz ya existía
+   para horizontal, así que vertical la reaprovecha con `FUEGO` enfrente. La
+   fila de cinco no se borra —es la de ratón y teclado— pero se apaga en las dos
+   posturas de mano. Con esto, los botones se pintan tres veces en el DOM y no
+   dos.
+2. **`--av-chrome` de vertical es `26rem`, no `13rem`.** Consecuencia de lo
+   anterior: la cruz mide 156px de alto donde la fila medía 44.
+3. **El `<main>` mide `100svh` menos la cabecera**, no `100svh`. `PlayHeader` es
+   un hermano anterior y `sticky` ocupa sitio en el flujo, así que con `100svh`
+   la página seguía desplazándose justo su alto. Se resuelve con
+   `--av-play-header`, una variable en `:root` que la cabecera fija como altura
+   y el `<main>` resta: van en la raíz porque son hermanos y sólo comparten lo
+   que herede de arriba. En horizontal esa misma variable baja de `3.5rem` a
+   `2.75rem`, que es como se comprime la cabecera del paso 9.
+4. **El relleno inferior no baja a `pb-0`** sino al margen seguro. Bajarlo del
+   todo metía el último control debajo del indicador de inicio, contra el
+   criterio y contra la decisión de esta misma spec de que `viewportFit` y
+   `env(safe-area-inset-*)` van juntos. En Android y en escritorio la diferencia
+   es cero.
+5. **El margen seguro llega también a `PlayHeader` y a los dos superpuestos.**
+   El paso 2 sólo lo ponía en el `<main>`, pero en horizontal la muesca cae a un
+   lado y sin esto `ARCADE VAULT` o `SALIR` acaban debajo.
+6. **La fila de juego es un `<div>` nuevo con `display: contents`.** En
+   escritorio y en vertical no existe para el layout —el marco cuelga del
+   gabinete igual que siempre— y en horizontal es la fila que reparte el ancho.
+   La alternativa era duplicar el marcado del marco por postura, que remontaría
+   el canvas al girar y reiniciaría la partida.
+7. **Se recortaron rellenos que la spec no nombraba**: los laterales del
+   `<main>` en vertical, y el margen, el radio y el relleno del gabinete. Sin
+   eso la fila de cinco no cabía a lo ancho de un teléfono de 390px, que era
+   justo lo que el paso 6 quería evitar.
+8. **Se tocó un comentario de `lib/games/snake/constants.ts`**, que nombraba
+   `CABINET_CHROME`. Es la única línea de un motor que cambió, no es código, y
+   dejarla habría contradicho lo que ahora dice `CLAUDE.md`.

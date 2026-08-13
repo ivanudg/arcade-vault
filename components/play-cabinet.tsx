@@ -355,7 +355,7 @@ export function PlayCabinet({ game }: { game: Game }) {
               // la fila y el canvas se encarga de no deformarse, apoyado en el
               // `aspect-ratio` que `GameCanvas` ya le pone. El tope calculado
               // sobra ahí, porque quien acota es la altura.
-              className="relative mx-auto overflow-hidden rounded-[22px] bg-av-void shadow-[inset_0_0_60px_rgba(0,0,0,0.9),inset_0_0_12px_rgba(0,245,255,0.16)] [--av-chrome:16rem] max-w-[calc((100svh-var(--av-chrome))*var(--av-ratio))] handheld:[--av-chrome:13rem] handheld-wide:h-full handheld-wide:w-auto handheld-wide:max-w-none handheld-wide:rounded-[12px] handheld-wide:[--av-chrome:7rem]"
+              className="relative mx-auto overflow-hidden rounded-[22px] bg-av-void shadow-[inset_0_0_60px_rgba(0,0,0,0.9),inset_0_0_12px_rgba(0,245,255,0.16)] [--av-chrome:16rem] max-w-[calc((100svh-var(--av-chrome))*var(--av-ratio))] handheld:[--av-chrome:26rem] handheld-wide:h-full handheld-wide:w-auto handheld-wide:max-w-none handheld-wide:rounded-[12px] handheld-wide:[--av-chrome:7rem]"
             >
               <GameCanvas
                 game={engine}
@@ -404,10 +404,25 @@ export function PlayCabinet({ game }: { game: Game }) {
             </div>
           </div>
 
-          {/* La fila de cinco de siempre. En horizontal de mano se apaga: ahí
-              el mando está repartido a los lados del tablero. */}
-          <div className="mt-4.5 grid grid-cols-[repeat(auto-fit,minmax(60px,1fr))] gap-2.5 handheld-wide:hidden">
+          {/* La fila de cinco de siempre, la de ratón y teclado. Con el dedo se
+              apaga en las dos posturas: un pulgar no busca botones en fila. */}
+          <div className="mt-4.5 grid grid-cols-[repeat(auto-fit,minmax(60px,1fr))] gap-2.5 handheld:hidden">
             {PAD.map((entry) => padKey(entry))}
+          </div>
+
+          {/* El mando de vertical: la misma cruz de horizontal, con el fuego
+              enfrente. Cae bajo el tablero y a lo ancho del gabinete, así que
+              cada pulgar tiene el suyo sin cruzar la mano. En horizontal esto
+              se apaga, porque allí los dos bloques están a los lados. */}
+          <div className="mt-3 hidden items-center justify-between gap-3 handheld:flex handheld-wide:hidden">
+            <div className="grid shrink-0 grid-cols-3 grid-rows-3 gap-1.5">
+              {PAD.filter((k) => k.side === "dpad").map((entry) =>
+                padKey(entry, `size-12 px-0 py-0 ${CROSS_CELL[entry.code]}`),
+              )}
+            </div>
+            {PAD.filter((k) => k.side === "fire").map((entry) =>
+              padKey(entry, "h-16 w-24 shrink-0 px-0 py-0"),
+            )}
           </div>
 
           {/* Los controles que describe esta línea son los del teclado, y con

@@ -240,17 +240,19 @@ máquina, se actualiza también esa tabla.
   | Maquetación                          | `--av-chrome` | Qué cambia                                                                      |
   | ------------------------------------ | ------------- | ------------------------------------------------------------------------------- |
   | Escritorio                           | `16rem`       | la de siempre: HUD, gabinete, fila de cinco botones, controles y `PIEL`         |
-  | Vertical de mano (`handheld`)        | `13rem`       | HUD en una línea, marco y rellenos reducidos, sin la línea de controles         |
+  | Vertical de mano (`handheld`)        | `26rem`       | HUD en una línea, cruz de flechas y `FUEGO` bajo el tablero, sin los controles  |
   | Horizontal de mano (`handheld-wide`) | `7rem`        | gabinete en fila: cruz de flechas, tablero a `h-full` y `FUEGO`; cabecera corta |
 
   Sólo `/jugar/[id]` declara `viewport` propio —escala fija y `viewportFit:
 "cover"`—, así que el pellizco se pierde ahí y se conserva en las otras siete
   pantallas; a cambio, esa ruta rellena con `env(safe-area-inset-*)`. El
   `<main>` mide `100svh` menos `--av-play-header`, que es lo que ocupa
-  `PlayHeader` con el dedo, y no se desplaza. Los cinco botones del mando se
-  pintan **dos veces** en el DOM —la fila de cinco y el mando repartido— y CSS
-  enseña una u otra; el canvas, en cambio, se pinta una sola vez, y por eso
-  girar el aparato no remonta el motor ni reinicia la partida.
+  `PlayHeader` con el dedo, y no se desplaza. La fila de cinco botones es sólo de ratón y
+  teclado: con el dedo, en las dos posturas, el mando es una cruz de cuatro
+  flechas y un `FUEGO` enfrente —bajo el tablero en vertical, a los lados en
+  horizontal—. Los botones se pintan por eso **tres veces** en el DOM y CSS
+  enseña un juego cada vez; el canvas, en cambio, se pinta una sola vez, y por
+  eso girar el aparato no remonta el motor ni reinicia la partida.
 
 - `references/started-games/`, `references/source-assets/` y
   `references/templates/` son material de referencia: se leen, no se editan. Lo
