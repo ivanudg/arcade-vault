@@ -16,7 +16,13 @@
  */
 
 import Link from "next/link";
-import { type CSSProperties, useEffect, useRef, useState } from "react";
+import {
+  type CSSProperties,
+  type PointerEvent as ReactPointerEvent,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
 import { saveScore } from "@/app/jugar/[id]/actions";
 import { GameCanvas } from "@/components/game-canvas";
 import type { GameHandle, GameState } from "@/lib/games/engine";
@@ -96,6 +102,66 @@ export function PlayCabinet({ game }: { game: Game }) {
   const loadTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
   const typer = useRef<ReturnType<typeof setInterval>>(undefined);
   const handle = useRef<GameHandle | null>(null);
+  /**
+   * Cuántos botones tienen pulsada cada tecla ahora mismo. Una tecla puede
+   * llegar desde dos botones a la vez —`↑` empuja en Asteroids desde la cruz y
+   * desde el botón de acción—, y sin contar, soltar uno mataría el propulsor
+   * con el otro dedo todavía apretando. Va en una `ref` y no en un estado
+   * porque nadie lo pinta: es la puerta hacia el motor, no algo que se vea.
+   */
+  const held = useRef(new Map<string, number>());
+  /**
+   * Qué tecla tiene tomada cada dedo. Un contador exige que cada `press` tenga
+   * exactamente un `release`, y los botones sueltan en tres eventos distintos
+   * —al levantar, al salirse y al cancelarse el gesto—: levantar el dedo dentro
+   * del botón dispara `pointerup` y `pointerleave` seguidos, que sin esto
+   * contarían dos veces y bajarían la tecla que otro pulgar sigue pulsando.
+   * Cada dedo es un `pointerId` distinto y sólo puede estar sobre un botón, así
+   * que esto es lo que hace simétrica la cuenta.
+   */
+  const owners = useRef(new Map<number, string>());
+
+  // La puerta hacia el motor: todo botón del mando entra por aquí, también los
+  // de escritorio. Van antes que los efectos porque la pausa vacía la cuenta.
+
+  /** Baja la tecla en el motor con el primer dedo que la pide. */
+  function pressKey(code: string) {
+    const n = (held.current.get(code) ?? 0) + 1;
+    held.current.set(code, n);
+    if (n === 1) handle.current?.press(code);
+  }
+
+  /** La suelta con el último que la deja. */
+  function releaseKey(code: string) {
+    const n = (held.current.get(code) ?? 1) - 1;
+    held.current.set(code, Math.max(0, n));
+    if (n <= 0) handle.current?.release(code);
+  }
+
+  /** Un dedo que llega a un botón: sólo cuenta la primera vez. */
+  function pressFrom(pointerId: number, code: string) {
+    if (owners.current.has(pointerId)) return;
+    owners.current.set(pointerId, code);
+    pressKey(code);
+  }
+
+  /** Y que lo deja: sólo cuenta si era él quien tenía esa tecla. */
+  function releaseFrom(pointerId: number, code: string) {
+    if (owners.current.get(pointerId) !== code) return;
+    owners.current.delete(pointerId);
+    releaseKey(code);
+  }
+
+  /**
+   * Suelta todo lo que quedara pulsado y vacía la cuenta. Un `pointerup` que se
+   * pierde deja una tecla colgada; que la partida no arranque nunca con una
+   * heredada es lo que hace que ese descuadre no dure más que la partida.
+   */
+  function clearHeld() {
+    for (const [code, n] of held.current) if (n > 0) handle.current?.release(code);
+    held.current.clear();
+    owners.current.clear();
+  }
 
   useEffect(() => {
     // `loading` ya arranca en `true`, así que aquí sólo se programa su final.
@@ -119,7 +185,13 @@ export function PlayCabinet({ game }: { game: Game }) {
     if (loading) return;
     const h = handle.current;
     if (!h) return;
-    if (paused) h.pause();
+    // Pausar suelta el teclado dentro del motor, así que la cuenta de aquí se
+    // vacía con él: si no, un dedo que siguiera encima dejaría su tecla contada
+    // para siempre y ningún `release` volvería a bajarla.
+    if (paused) {
+      h.pause();
+      clearHeld();
+    }
     // Terminada la partida el bucle está parado a propósito: reanudarlo aquí
     // resucitaría una nave muerta detrás del superpuesto.
     else if (!over) h.resume();
@@ -197,8 +269,9 @@ export function PlayCabinet({ game }: { game: Game }) {
     const inert = !!padKeys && !usable;
     // `pointerup` fuera del botón nunca llega, así que soltar también al salir
     // el puntero o al cancelarse el gesto: si no, la nave se queda girando
-    // sola.
-    const release = () => handle.current?.release(code);
+    // sola. Los tres pasan por `releaseFrom`, que sólo atiende al dedo que
+    // tenía esta tecla: llegan más de una vez y la cuenta baja una sola.
+    const release = (e: ReactPointerEvent) => releaseFrom(e.pointerId, code);
     return (
       <button
         key={label}
@@ -210,7 +283,7 @@ export function PlayCabinet({ game }: { game: Game }) {
             ? (e) => {
                 // Sin foco en el botón, `ESPACIO` no lo re-dispara.
                 e.preventDefault();
-                handle.current?.press(code);
+                pressFrom(e.pointerId, code);
               }
             : undefined
         }
@@ -232,6 +305,9 @@ export function PlayCabinet({ game }: { game: Game }) {
 
   function replay() {
     clearInterval(typer.current);
+    // La partida nueva empieza con el mando en reposo: una tecla que se quedó
+    // contada al morir no arrastra la nave siguiente.
+    clearHeld();
     setOver(false);
     setSaved(false);
     setSavedText("");
@@ -362,8 +438,13 @@ export function PlayCabinet({ game }: { game: Game }) {
                 label={`Partida de ${game.title}`}
                 onState={setLive}
                 // El motor avisa con la puntuación final; el HUD ya viene
-                // cuadrado del `onState` de ese mismo frame.
-                onGameOver={() => setOver(true)}
+                // cuadrado del `onState` de ese mismo frame. El superpuesto
+                // tapa el mando, así que los dedos que estuvieran encima no
+                // van a soltar nunca: la cuenta se vacía aquí.
+                onGameOver={() => {
+                  clearHeld();
+                  setOver(true);
+                }}
                 onReady={(h) => {
                   handle.current = h;
                   // Al desmontar llega `null`, y entonces no hay nada que vestir.
