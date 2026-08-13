@@ -43,6 +43,19 @@ const PAD = [
 ] as const;
 
 /**
+ * Dónde cae cada flecha en la cruz de horizontal: `↑` arriba en el centro,
+ * `←` y `→` a los lados y `↓` abajo. En cruz y no en columna de cuatro porque
+ * en columna `←` y `→` quedan uno encima del otro y el pulgar tiene que
+ * buscar; ocupa lo mismo.
+ */
+const CROSS_CELL: Record<string, string> = {
+  ArrowUp: "col-start-2 row-start-1",
+  ArrowLeft: "col-start-1 row-start-2",
+  ArrowRight: "col-start-3 row-start-2",
+  ArrowDown: "col-start-2 row-start-3",
+};
+
+/**
  * Qué botones del mando sirven en cada máquina con motor. Los que no están se
  * pintan deshabilitados: Asteroids no usa `↓`, y esconderlo descuadraría la
  * rejilla de cinco botones del gabinete.
@@ -172,6 +185,51 @@ export function PlayCabinet({ game }: { game: Game }) {
     persist({ skins: { ...read().skins, [game.id]: id } });
   }
 
+  /**
+   * Un botón del mando. Se pinta en dos sitios —la fila de cinco de siempre y
+   * el mando repartido de horizontal—, y CSS enseña uno u otro: nunca los dos
+   * a la vez, así que no hay dos botones `FUEGO` que un lector de pantalla
+   * pueda anunciar. Duplicar aquí es barato; lo que no se puede duplicar es el
+   * canvas, que remontaría la partida al girar el teléfono.
+   */
+  function padKey({ label, code, aria }: (typeof PAD)[number], className = "") {
+    const usable = padKeys ? padKeys.includes(code) : true;
+    const inert = !!padKeys && !usable;
+    // `pointerup` fuera del botón nunca llega, así que soltar también al salir
+    // el puntero o al cancelarse el gesto: si no, la nave se queda girando
+    // sola.
+    const release = () => handle.current?.release(code);
+    return (
+      <button
+        key={label}
+        type="button"
+        aria-label={aria}
+        disabled={inert}
+        onPointerDown={
+          padKeys && usable
+            ? (e) => {
+                // Sin foco en el botón, `ESPACIO` no lo re-dispara.
+                e.preventDefault();
+                handle.current?.press(code);
+              }
+            : undefined
+        }
+        onPointerUp={padKeys && usable ? release : undefined}
+        onPointerCancel={padKeys && usable ? release : undefined}
+        onPointerLeave={padKeys && usable ? release : undefined}
+        // 44px de lado corto es el mínimo que un pulgar acierta sin apuntar;
+        // con el relleno de siempre se quedaban en 40.
+        className={`min-h-11 touch-none border border-av-cyan/30 bg-av-panel px-1.5 py-3.75 font-display text-[10px] text-av-cyan ${
+          inert
+            ? "cursor-not-allowed opacity-35"
+            : "cursor-pointer active:bg-av-cyan active:text-av-bg"
+        } ${className}`}
+      >
+        {label}
+      </button>
+    );
+  }
+
   function replay() {
     clearInterval(typer.current);
     setOver(false);
@@ -283,6 +341,14 @@ export function PlayCabinet({ game }: { game: Game }) {
               fila que reparte el ancho —el mando a los lados llega en el paso
               siguiente— y da al marco un alto contra el que medirse. */}
           <div className="contents handheld-wide:flex handheld-wide:min-h-0 handheld-wide:flex-1 handheld-wide:items-center handheld-wide:justify-center handheld-wide:gap-2">
+            {/* Las cuatro flechas, donde cae el pulgar izquierdo. Sólo existen
+                en horizontal: en vertical las pinta la fila de cinco. */}
+            <div className="hidden shrink-0 grid-cols-3 grid-rows-3 gap-1.5 handheld-wide:grid">
+              {PAD.filter((k) => k.side === "dpad").map((entry) =>
+                padKey(entry, `size-12 px-0 py-0 ${CROSS_CELL[entry.code]}`),
+              )}
+            </div>
+
             <div
               style={{ "--av-ratio": aspectRatio } as CSSProperties}
               // En horizontal manda el alto y el ancho lo sigue: el marco llena
@@ -328,46 +394,20 @@ export function PlayCabinet({ game }: { game: Game }) {
                 </div>
               )}
             </div>
+
+            {/* Y el fuego, donde cae el derecho. Más alto que ancho porque el
+                pulgar lo busca de arriba abajo, no de lado a lado. */}
+            <div className="hidden shrink-0 items-center handheld-wide:flex">
+              {PAD.filter((k) => k.side === "fire").map((entry) =>
+                padKey(entry, "h-24 w-16 px-0 py-0"),
+              )}
+            </div>
           </div>
 
-          <div className="mt-4.5 grid grid-cols-[repeat(auto-fit,minmax(60px,1fr))] gap-2.5">
-            {PAD.map(({ label, code, aria }) => {
-              const usable = padKeys ? padKeys.includes(code) : true;
-              const inert = !!padKeys && !usable;
-              // `pointerup` fuera del botón nunca llega, así que soltar también
-              // al salir el puntero o al cancelarse el gesto: si no, la nave se
-              // queda girando sola.
-              const release = () => handle.current?.release(code);
-              return (
-                <button
-                  key={label}
-                  type="button"
-                  aria-label={aria}
-                  disabled={inert}
-                  onPointerDown={
-                    padKeys && usable
-                      ? (e) => {
-                          // Sin foco en el botón, `ESPACIO` no lo re-dispara.
-                          e.preventDefault();
-                          handle.current?.press(code);
-                        }
-                      : undefined
-                  }
-                  onPointerUp={padKeys && usable ? release : undefined}
-                  onPointerCancel={padKeys && usable ? release : undefined}
-                  onPointerLeave={padKeys && usable ? release : undefined}
-                  // 44px de lado corto es el mínimo que un pulgar acierta sin
-                  // apuntar; con el relleno de siempre se quedaban en 40.
-                  className={`min-h-11 touch-none border border-av-cyan/30 bg-av-panel px-1.5 py-3.75 font-display text-[10px] text-av-cyan ${
-                    inert
-                      ? "cursor-not-allowed opacity-35"
-                      : "cursor-pointer active:bg-av-cyan active:text-av-bg"
-                  }`}
-                >
-                  {label}
-                </button>
-              );
-            })}
+          {/* La fila de cinco de siempre. En horizontal de mano se apaga: ahí
+              el mando está repartido a los lados del tablero. */}
+          <div className="mt-4.5 grid grid-cols-[repeat(auto-fit,minmax(60px,1fr))] gap-2.5 handheld-wide:hidden">
+            {PAD.map((entry) => padKey(entry))}
           </div>
 
           {/* Los controles que describe esta línea son los del teclado, y con
@@ -381,7 +421,7 @@ export function PlayCabinet({ game }: { game: Game }) {
               motor y cualquier cosa dentro lo descuadra. Los tres botones se
               pintan deshabilitados si la máquina aún no está vestida, igual que
               hace el mando con las teclas que no usa. */}
-          <div className="mt-4.5 flex flex-wrap items-center justify-center gap-2.5 border-t border-av-cyan/15 pt-4">
+          <div className="mt-4.5 flex flex-wrap items-center justify-center gap-2.5 border-t border-av-cyan/15 pt-4 handheld-wide:mt-1.5 handheld-wide:gap-1.5 handheld-wide:pt-1.5">
             <span className="font-display text-[9px] tracking-av text-av-text-faint">PIEL</span>
             {SKIN_IDS.map((id) => {
               const dressed = !!engine.skins?.includes(id);
