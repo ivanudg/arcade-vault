@@ -27,13 +27,19 @@ import { formatScore } from "@/lib/scores";
 import { useSession } from "@/lib/session";
 import { deviceId, persist, read } from "@/lib/storage";
 
-/** Las cinco teclas del mando, en el orden del prototipo. */
+/**
+ * Las cinco teclas del mando, en el orden del prototipo. `side` es de qué lado
+ * cae cada una cuando el mando se reparte —las flechas a la izquierda del
+ * tablero y el fuego a la derecha, que es como caen los dos pulgares al
+ * sostener el teléfono en horizontal—. En vertical no se mira: los cinco van
+ * en una fila, como siempre.
+ */
 const PAD = [
-  { label: "←", code: "ArrowLeft", aria: "Mover ←" },
-  { label: "↑", code: "ArrowUp", aria: "Mover ↑" },
-  { label: "↓", code: "ArrowDown", aria: "Mover ↓" },
-  { label: "→", code: "ArrowRight", aria: "Mover →" },
-  { label: "FUEGO", code: "Space", aria: "Fuego" },
+  { label: "←", code: "ArrowLeft", aria: "Mover ←", side: "dpad" },
+  { label: "↑", code: "ArrowUp", aria: "Mover ↑", side: "dpad" },
+  { label: "↓", code: "ArrowDown", aria: "Mover ↓", side: "dpad" },
+  { label: "→", code: "ArrowRight", aria: "Mover →", side: "dpad" },
+  { label: "FUEGO", code: "Space", aria: "Fuego", side: "fire" },
 ] as const;
 
 /**
@@ -247,7 +253,10 @@ export function PlayCabinet({ game }: { game: Game }) {
           </button>
         </div>
 
-        <div className="mx-auto mt-6.5 rounded-[34px] border border-av-cyan/22 bg-[linear-gradient(#15171f,#0b0c12)] p-5.5 shadow-[0_0_46px_rgba(0,245,255,0.12),inset_0_0_0_1px_rgba(255,255,255,0.04)]">
+        {/* El marco del gabinete es aire, y con el dedo el aire es lo primero
+            que sobra: sin recortarlo, la fila de cinco botones no cabe a lo
+            ancho de un teléfono y el último se va a una segunda línea. */}
+        <div className="mx-auto mt-6.5 rounded-[34px] border border-av-cyan/22 bg-[linear-gradient(#15171f,#0b0c12)] p-5.5 shadow-[0_0_46px_rgba(0,245,255,0.12),inset_0_0_0_1px_rgba(255,255,255,0.04)] handheld:mt-3 handheld:rounded-[20px] handheld:p-2.5">
           {/* La pantalla llena el ancho del gabinete, salvo que su alto no
               quepa: entonces manda la altura y el ancho la sigue, para que el
               mundo del motor nunca se deforme. Sin esto, un mundo apaisado como
@@ -336,7 +345,9 @@ export function PlayCabinet({ game }: { game: Game }) {
                   onPointerUp={padKeys && usable ? release : undefined}
                   onPointerCancel={padKeys && usable ? release : undefined}
                   onPointerLeave={padKeys && usable ? release : undefined}
-                  className={`touch-none border border-av-cyan/30 bg-av-panel px-1.5 py-3.75 font-display text-[10px] text-av-cyan ${
+                  // 44px de lado corto es el mínimo que un pulgar acierta sin
+                  // apuntar; con el relleno de siempre se quedaban en 40.
+                  className={`min-h-11 touch-none border border-av-cyan/30 bg-av-panel px-1.5 py-3.75 font-display text-[10px] text-av-cyan ${
                     inert
                       ? "cursor-not-allowed opacity-35"
                       : "cursor-pointer active:bg-av-cyan active:text-av-bg"
