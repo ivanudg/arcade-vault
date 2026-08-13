@@ -1,6 +1,6 @@
 # SPEC 12 — Mando de consola en el móvil
 
-> **Estado:** Borrador
+> **Estado:** Aceptado
 > **Depende de:** SPEC 05, SPEC 11
 > **Fecha:** 2026-08-13
 > **Objetivo:** Convertir el mando táctil de `/jugar/[id]` en un mando de consola —cruz, `B` y `A` con la acción que toque en cada máquina, y `PAUSA` y `SALIR` en el centro—, sólo cuando se juega con el dedo y sin tocar el contrato de los motores.
