@@ -81,8 +81,15 @@ contradiría al marcador compartido—, o esperar a un servidor.
 
 ## Pasada ponderada — C8 a C12
 
-Cero, uno, dos o tres puntos cada uno. **Máximo 12.** La nota va a la columna `encaje` de
-`memoria.md`, y sirve sobre todo para comparar candidatos entre sí dentro de una misma ronda.
+Cero, uno, dos o tres puntos cada uno. Cinco criterios de hasta 3, o sea **máximo 15**. La nota
+va a la columna `encaje` de `memoria.md`, y sirve sobre todo para comparar candidatos entre sí
+dentro de una misma ronda.
+
+Este tope decía **12** hasta el 2026-08-12, y no cuadraba con la aritmética. Se corrigió el tope
+y no los pesos: las notas ya anotadas en `memoria.md` estaban todas sumadas sobre 15, así que
+tocar el peso de un criterio habría invalidado el ledger entero. Ojo con las notas de C9: dos
+candidatos pueden tener 3 por reutilizar **la misma** escena archivada, y sólo una la puede
+llevarse. Al comparar, réstalo antes de decidir.
 
 ### C8 · El hueco del catálogo
 
