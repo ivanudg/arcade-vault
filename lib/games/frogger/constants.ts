@@ -86,6 +86,7 @@ export const DEATH_MS = 800; // la fase `"dead"` antes de reaparecer, en miliseg
 /** Ciclos de la fauna, en segundos. */
 export const DIVE_CYCLE = 4.0; // ciclo completo de una tortuga
 export const DIVE_DOWN = 1.2; // cuánto pasa sumergida al final del ciclo
+export const DIVE_WARN = 0.5; // transparencia previa que la delata: sin aviso es una trampa
 export const GATOR_CYCLE = 10.0; // ciclo del cocodrilo de las casas
 export const GATOR_OPEN = 4.0; // cuánto asoma dentro de ese ciclo
 export const FLY_EVERY = 12.0; // cada cuánto sale la mosca
