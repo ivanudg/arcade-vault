@@ -88,13 +88,26 @@ const ENGINE_PAD: Partial<Record<GameId, { a: PadAction; b: PadAction | null }>>
 };
 
 /**
- * Los botones del centro del mando, los de partida. Redondos y del mínimo que
- * un pulgar acierta, 44px, porque son los tres bloques del mando los que se
- * reparten el ancho de un teléfono: en uno de 360px quedan 328 útiles y la
- * cuenta sale justa —144 la cruz, 44 el centro y 120 las dos acciones—. No se
- * pulsan en caliente, así que aquí el círculo pequeño no cuesta partidas.
+ * Los dos botones de partida, los del centro del mando. Píldoras de 48 × 44:
+ * 44px es el lado corto y el mínimo que un pulgar acierta sin apuntar, y el
+ * ancho va **fijo** para que `PAUSA` y `SEGUIR` no cambien de tamaño al
+ * alternar y muevan el bloque de sitio.
+ *
+ * Los 48 de ancho salen de la cuenta del teléfono estrecho, que es la que manda
+ * aquí: en uno de 360px el gabinete deja 328 útiles y el mando pide 322 —144 la
+ * cruz, 48 el centro, 120 las dos acciones, 8 de relleno y 2 de bordes—.
+ *
+ * Llevan el relieve del resto del mando en vez del aro hueco que tenían: son
+ * del chasis, no de la pantalla. Y aquí `active:` sí vale, al revés que en las
+ * teclas: no hay dos botones que puedan pedir lo mismo a la vez.
  */
-const CENTER_KEY = "size-11 touch-none rounded-full px-0 text-[6px]";
+const PILL_BASE =
+  "flex h-11 w-12 shrink-0 cursor-pointer touch-none items-center justify-center rounded-full border bg-linear-to-b from-av-pad-face-top to-av-pad-face-bottom font-display text-[6px] transition duration-100";
+
+const PILL: Record<"pause" | "exit", string> = {
+  pause: `${PILL_BASE} border-av-yellow/45 text-av-yellow shadow-[0_3px_0_var(--av-pad-edge),inset_0_1px_0_rgba(255,255,255,0.06)] hover:border-av-yellow hover:text-white active:translate-y-0.5 active:shadow-[0_1px_0_var(--av-pad-edge),inset_0_0_12px_rgba(245,255,0,0.35)]`,
+  exit: `${PILL_BASE} border-av-magenta/45 text-av-magenta shadow-[0_3px_0_var(--av-pad-edge),inset_0_1px_0_rgba(255,255,255,0.06)] hover:border-av-magenta hover:text-white active:translate-y-0.5 active:shadow-[0_1px_0_var(--av-pad-edge),inset_0_0_12px_rgba(255,0,110,0.35)]`,
+};
 
 /**
  * Las pieles de un botón de tecla, cada una con sus cuatro estados. `row` es la
@@ -212,13 +225,13 @@ const PAD_SHELL_BASE =
  * borde interior abierto por ese lado: los dos se leen como un mando partido y
  * no como dos cajas sueltas.
  *
- * El relleno lateral de `full` es de 6px y no los 22 del prototipo porque el
+ * El relleno lateral de `full` es de 4px y no los 22 del prototipo porque el
  * ancho ahí está contado: en un teléfono de 360px el gabinete deja 328 útiles y
- * los tres bloques ya suman 308. En horizontal sobra ancho y lo que escasea es
+ * los tres bloques ya suman 312. En horizontal sobra ancho y lo que escasea es
  * el alto, así que el relleno es parejo y corto.
  */
 const PAD_SHELL: Record<PadSide, string> = {
-  full: `${PAD_SHELL_BASE} rounded-[22px] px-1.5 pt-2.5 pb-2 before:inset-1 before:rounded-[18px]`,
+  full: `${PAD_SHELL_BASE} rounded-[22px] px-1 pt-2.5 pb-2 before:inset-1 before:rounded-[18px]`,
   left: `${PAD_SHELL_BASE} rounded-l-[22px] px-2 py-2 before:inset-y-1 before:right-0 before:left-1 before:rounded-l-[18px] before:border-r-0`,
   right: `${PAD_SHELL_BASE} rounded-r-[22px] px-2 py-2 before:inset-y-1 before:right-1 before:left-0 before:rounded-r-[18px] before:border-l-0`,
 };
@@ -439,7 +452,7 @@ export function GamePad({
         type="button"
         onClick={onPause}
         aria-pressed={paused}
-        className={`cursor-pointer border border-av-yellow/45 bg-transparent font-display text-av-yellow active:scale-94 hover:bg-av-yellow/16 hover:text-white ${CENTER_KEY}`}
+        className={PILL.pause}
       >
         {paused ? "SEGUIR" : "PAUSA"}
       </button>
@@ -457,7 +470,7 @@ export function GamePad({
       <button
         type="button"
         onClick={onExit}
-        className={`cursor-pointer border border-av-magenta/45 bg-transparent font-display text-av-magenta active:scale-94 hover:bg-av-magenta/16 hover:text-white ${CENTER_KEY}`}
+        className={PILL.exit}
       >
         SALIR
       </button>
@@ -498,8 +511,8 @@ export function GamePad({
   return (
     <div className={`mt-3 hidden ${PAD_SHELL.full} handheld:block handheld-wide:hidden`}>
       {/* Los tres bloques, por encima de la trama del chasis, como el `.gp-body`
-          del prototipo. Sin hueco propio: a 360px de ancho los tres suman 308
-          de los 314 que deja el chasis, y lo que sobra lo reparte
+          del prototipo. Sin hueco propio: a 360px de ancho los tres suman 312
+          de los 318 que deja el chasis, y lo que sobra lo reparte
           `justify-between`. El hueco es lo que cede; 44px de botón es suelo. */}
       <div className="relative z-1 flex items-center justify-between">
         {cross("grid shrink-0 grid-cols-3 grid-rows-3 gap-1.5")}
