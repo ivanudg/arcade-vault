@@ -132,26 +132,31 @@ const PAD_SKIN: Record<PadSkinId, PadSkin> = {
     // El canto duro de abajo es lo que da el relieve, y al pulsar la cara baja
     // 3px y el canto se queda en 1: el botón se hunde contra el chasis en vez
     // de limitarse a cambiar de color.
+    //
+    // Y lo que la máquina no usa se dibuja metido en el chasis: sin canto, con
+    // el degradado del revés —la luz viene de arriba, así que un hueco tiene la
+    // parte alta en sombra— y una sombra interior en lugar del relieve. El
+    // `opacity-35` a secas dejaba un botón que parecía pulsable pero pálido.
     base: "flex items-center justify-center rounded-[10px] border transition duration-100",
     rest: "cursor-pointer border-white/5 bg-linear-to-b from-av-pad-face-top to-av-pad-face-bottom text-av-text-dim shadow-[0_4px_0_var(--av-pad-edge),inset_0_1px_0_rgba(255,255,255,0.06),inset_0_-2px_4px_rgba(0,0,0,0.6)] hover:border-av-cyan/35 hover:text-av-cyan",
     on: "cursor-pointer translate-y-0.75 border-av-cyan bg-linear-to-b from-[#08161e] to-[#030a0e] text-av-cyan shadow-[0_1px_0_var(--av-pad-edge),inset_0_0_16px_rgba(0,245,255,0.45),0_0_16px_rgba(0,245,255,0.5)] [&_svg]:[filter:drop-shadow(0_0_6px_var(--av-cyan))_drop-shadow(0_0_12px_var(--av-cyan))]",
-    dead: "cursor-not-allowed border-white/5 bg-linear-to-b from-av-pad-face-top to-av-pad-face-bottom text-av-text-dim opacity-35 shadow-[0_4px_0_var(--av-pad-edge),inset_0_1px_0_rgba(255,255,255,0.06),inset_0_-2px_4px_rgba(0,0,0,0.6)]",
+    dead: "cursor-not-allowed translate-y-0.75 border-black/40 bg-linear-to-b from-av-pad-face-bottom to-av-pad-face-top text-av-text-faint opacity-35 shadow-[inset_0_2px_6px_rgba(0,0,0,0.85),inset_0_-1px_0_rgba(255,255,255,0.04)]",
   },
   // Los dos redondos. El color del botón es el del acento —lo llevan el borde
   // de 2px y el aro punteado, los dos por `currentColor`—, y la letra va blanca
   // encima con el halo de ese mismo acento. `A` es magenta y `B` cian, como en
   // el prototipo. El relieve aquí es de 6px y no de 4: son más grandes.
   actionA: {
-    base: "relative flex items-center justify-center rounded-full border-2 border-current p-0 font-display text-[13px] text-av-magenta transition duration-100 bg-[radial-gradient(circle_at_32%_26%,rgba(255,255,255,0.25),transparent_50%),radial-gradient(circle_at_50%_55%,rgba(255,0,110,0.7),rgba(110,0,40,0.95)_75%)]",
-    rest: "cursor-pointer shadow-[0_6px_0_var(--av-pad-edge),0_0_22px_rgba(255,0,110,0.4),inset_0_1px_0_rgba(255,255,255,0.18),inset_0_-4px_8px_rgba(0,0,0,0.4)] hover:[&>span:first-child]:opacity-45",
-    on: "cursor-pointer translate-y-1 scale-97 shadow-[0_1px_0_var(--av-pad-edge),0_0_36px_rgba(255,0,110,0.4),inset_0_0_18px_rgba(0,0,0,0.5)] [&>span:first-child]:scale-108 [&>span:first-child]:opacity-100",
-    dead: "cursor-not-allowed opacity-35 shadow-[0_6px_0_var(--av-pad-edge),inset_0_1px_0_rgba(255,255,255,0.18),inset_0_-4px_8px_rgba(0,0,0,0.4)]",
+    base: "relative flex items-center justify-center rounded-full border-2 border-current p-0 font-display text-[13px] text-av-magenta transition duration-100",
+    rest: "cursor-pointer bg-[radial-gradient(circle_at_32%_26%,rgba(255,255,255,0.25),transparent_50%),radial-gradient(circle_at_50%_55%,rgba(255,0,110,0.7),rgba(110,0,40,0.95)_75%)] shadow-[0_6px_0_var(--av-pad-edge),0_0_22px_rgba(255,0,110,0.4),inset_0_1px_0_rgba(255,255,255,0.18),inset_0_-4px_8px_rgba(0,0,0,0.4)] hover:[&>span:first-child]:opacity-45",
+    on: "cursor-pointer translate-y-1 scale-97 bg-[radial-gradient(circle_at_32%_26%,rgba(255,255,255,0.25),transparent_50%),radial-gradient(circle_at_50%_55%,rgba(255,0,110,0.7),rgba(110,0,40,0.95)_75%)] shadow-[0_1px_0_var(--av-pad-edge),0_0_36px_rgba(255,0,110,0.4),inset_0_0_18px_rgba(0,0,0,0.5)] [&>span:first-child]:scale-108 [&>span:first-child]:opacity-100",
+    dead: "cursor-not-allowed translate-y-1 border-black/40 bg-linear-to-b from-av-pad-face-bottom to-av-pad-face-top text-av-text-faint opacity-35 shadow-[inset_0_3px_8px_rgba(0,0,0,0.85),inset_0_-1px_0_rgba(255,255,255,0.04)] [&>span:last-child]:text-av-text-faint [&>span:last-child]:[text-shadow:none]",
   },
   actionB: {
-    base: "relative flex items-center justify-center rounded-full border-2 border-current p-0 font-display text-[13px] text-av-cyan transition duration-100 bg-[radial-gradient(circle_at_32%_26%,rgba(255,255,255,0.25),transparent_50%),radial-gradient(circle_at_50%_55%,rgba(0,200,230,0.7),rgba(0,50,70,0.95)_75%)]",
-    rest: "cursor-pointer shadow-[0_6px_0_var(--av-pad-edge),0_0_22px_rgba(0,245,255,0.4),inset_0_1px_0_rgba(255,255,255,0.18),inset_0_-4px_8px_rgba(0,0,0,0.4)] hover:[&>span:first-child]:opacity-45",
-    on: "cursor-pointer translate-y-1 scale-97 shadow-[0_1px_0_var(--av-pad-edge),0_0_36px_rgba(0,245,255,0.4),inset_0_0_18px_rgba(0,0,0,0.5)] [&>span:first-child]:scale-108 [&>span:first-child]:opacity-100",
-    dead: "cursor-not-allowed opacity-35 shadow-[0_6px_0_var(--av-pad-edge),inset_0_1px_0_rgba(255,255,255,0.18),inset_0_-4px_8px_rgba(0,0,0,0.4)]",
+    base: "relative flex items-center justify-center rounded-full border-2 border-current p-0 font-display text-[13px] text-av-cyan transition duration-100",
+    rest: "cursor-pointer bg-[radial-gradient(circle_at_32%_26%,rgba(255,255,255,0.25),transparent_50%),radial-gradient(circle_at_50%_55%,rgba(0,200,230,0.7),rgba(0,50,70,0.95)_75%)] shadow-[0_6px_0_var(--av-pad-edge),0_0_22px_rgba(0,245,255,0.4),inset_0_1px_0_rgba(255,255,255,0.18),inset_0_-4px_8px_rgba(0,0,0,0.4)] hover:[&>span:first-child]:opacity-45",
+    on: "cursor-pointer translate-y-1 scale-97 bg-[radial-gradient(circle_at_32%_26%,rgba(255,255,255,0.25),transparent_50%),radial-gradient(circle_at_50%_55%,rgba(0,200,230,0.7),rgba(0,50,70,0.95)_75%)] shadow-[0_1px_0_var(--av-pad-edge),0_0_36px_rgba(0,245,255,0.4),inset_0_0_18px_rgba(0,0,0,0.5)] [&>span:first-child]:scale-108 [&>span:first-child]:opacity-100",
+    dead: "cursor-not-allowed translate-y-1 border-black/40 bg-linear-to-b from-av-pad-face-bottom to-av-pad-face-top text-av-text-faint opacity-35 shadow-[inset_0_3px_8px_rgba(0,0,0,0.85),inset_0_-1px_0_rgba(255,255,255,0.04)] [&>span:last-child]:text-av-text-faint [&>span:last-child]:[text-shadow:none]",
   },
 };
 
