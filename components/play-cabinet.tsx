@@ -512,6 +512,21 @@ export function PlayCabinet({ game }: { game: Game }) {
               horizontal, sólo cabecera y HUD, porque el mando se va a los
               lados.
 
+              El de escritorio son 28rem y están medidos, no estimados: de
+              arriba abajo, 67 de cabecera, 34 del relleno de arriba del
+              `<main>`, 68 de HUD, 26 de margen, 44 del marco del gabinete, 65
+              de la fila de cinco botones, 32 de la línea de controles, 69 de
+              PIEL y 32 del relleno de abajo. Salen 437px y el presupuesto
+              reserva 448. Los dos clamp que hay ahí —la cabecera y el relleno
+              de arriba— ya están en su tope a partir de 1140px de ancho, así
+              que 437 es el techo y no crece con la ventana. Estuvo en 16rem
+              desde SPEC 05, cuando el gabinete no tenía ni PIEL ni la fila de
+              cinco botones de hoy: con ese presupuesto la pantalla se salía de
+              la ventana casi 230px y había que desplazarse para ver el tablero
+              entero. Encoger es lo correcto —lo que no puede quedar fuera de la
+              ventana es el tablero—, y en una ventana holgada no encoge nada,
+              porque ahí quien acota sigue siendo el ancho del gabinete.
+
               El de vertical bajó de 26rem a 24rem al llegar SPEC 12, aunque el
               mando ganara botones: PAUSA se fue del HUD, que adelgaza a la
               altura de sus cifras, y la cruz pasó a 44px para dejarle sitio al
@@ -521,11 +536,7 @@ export function PlayCabinet({ game }: { game: Game }) {
               del mando con su margen, 65 de PIEL y el margen seguro de abajo.
               Salen unos 366px y el presupuesto reserva 384: lo que sobra es el
               margen, y el paso siguiente cuando algo crezca es subirlo, no
-              recortar PIEL. El de escritorio está calibrado por lo bajo a propósito:
-              con más presupuesto cabría también el mando, pero un mundo
-              apaisado como el de Asteroids empezaría a encogerse en pantallas
-              normales. Lo que no puede quedar fuera de la ventana es el
-              tablero. */}
+              recortar PIEL. */}
           {/* La fila de juego. En todas las maquetaciones menos la horizontal
               de mano es `display: contents`, así que no existe: el marco cuelga
               del gabinete igual que siempre. En horizontal se convierte en la
@@ -551,7 +562,7 @@ export function PlayCabinet({ game }: { game: Game }) {
               // la fila y el canvas se encarga de no deformarse, apoyado en el
               // `aspect-ratio` que `GameCanvas` ya le pone. El tope calculado
               // sobra ahí, porque quien acota es la altura.
-              className="relative mx-auto overflow-hidden rounded-[22px] bg-av-void shadow-[inset_0_0_60px_rgba(0,0,0,0.9),inset_0_0_12px_rgba(0,245,255,0.16)] [--av-chrome:16rem] max-w-[calc((100svh-var(--av-chrome))*var(--av-ratio))] handheld:[--av-chrome:24rem] handheld-wide:h-full handheld-wide:w-auto handheld-wide:max-w-none handheld-wide:rounded-xl handheld-wide:[--av-chrome:7rem]"
+              className="relative mx-auto overflow-hidden rounded-[22px] bg-av-void shadow-[inset_0_0_60px_rgba(0,0,0,0.9),inset_0_0_12px_rgba(0,245,255,0.16)] [--av-chrome:28rem] max-w-[calc((100svh-var(--av-chrome))*var(--av-ratio))] handheld:[--av-chrome:24rem] handheld-wide:h-full handheld-wide:w-auto handheld-wide:max-w-none handheld-wide:rounded-xl handheld-wide:[--av-chrome:7rem]"
             >
               <GameCanvas
                 game={engine}

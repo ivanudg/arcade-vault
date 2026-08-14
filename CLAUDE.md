@@ -233,6 +233,15 @@ máquina, se actualiza también esa tabla.
   porque sale del `world` del motor y viaja en un `style` en línea; el
   presupuesto lo sabe CSS, porque cambia con la maquetación y un `style` en
   línea no entiende de `@media`. La constante `CABINET_CHROME` ya no existe.
+  Los tres presupuestos están **medidos** contra la pantalla real, no
+  estimados: el de escritorio arrastraba desde SPEC 05 los 16rem de cuando el
+  gabinete no tenía ni `PIEL` ni fila de cinco botones, y con eso la pantalla
+  se salía de la ventana unos 230px. Al cambiar algo de alto en esa columna
+  —una fila más en el HUD, otro bloque bajo el gabinete, el relleno del
+  `<main>` de `/jugar/[id]`— se vuelve a medir el presupuesto de la
+  maquetación que lo tenga. Ojo con el relleno de abajo en escritorio: en una
+  pantalla que ya no se desplaza, el aire del final no se ve pero lo paga el
+  tablero, y por eso son 2rem y no los 5rem del resto del sitio.
 - **La pantalla de juego tiene tres maquetaciones**, y las tres son sólo CSS:
   no hay detección de dispositivo en JavaScript ni estado que hidratar, y
   ningún motor se entera de que se está jugando con el dedo. `--av-chrome` es
@@ -240,7 +249,7 @@ máquina, se actualiza también esa tabla.
 
   | Maquetación                          | `--av-chrome` | Qué cambia                                                                                  |
   | ------------------------------------ | ------------- | ------------------------------------------------------------------------------------------- |
-  | Escritorio                           | `16rem`       | la de siempre: HUD con `PAUSA`, gabinete, fila de cinco botones, controles y `PIEL`         |
+  | Escritorio                           | `28rem`       | la de siempre: HUD con `PAUSA`, gabinete, fila de cinco botones, controles y `PIEL`         |
   | Vertical de mano (`handheld`)        | `24rem`       | HUD en una línea y sin `PAUSA`, mando de consola bajo el tablero, sin los controles         |
   | Horizontal de mano (`handheld-wide`) | `7rem`        | gabinete en fila: cruz con `PAUSA`, tablero a `h-full`, `B`/`A` con `SALIR`; cabecera corta |
 
