@@ -16,102 +16,17 @@
  */
 
 import Link from "next/link";
-import {
-  type CSSProperties,
-  type PointerEvent as ReactPointerEvent,
-  useEffect,
-  useRef,
-  useState,
-} from "react";
+import { type CSSProperties, useEffect, useRef, useState } from "react";
 import { saveScore } from "@/app/jugar/[id]/actions";
 import { GameCanvas } from "@/components/game-canvas";
+import { ENGINE_KEYS, GamePad, PAD, PadKey } from "@/components/game-pad";
 import type { GameHandle, GameState } from "@/lib/games/engine";
 import { ENGINES } from "@/lib/games/engines";
 import { DEFAULT_SKIN, SKIN_IDS, SKIN_LABELS, type SkinId } from "@/lib/games/skins";
-import type { Game, GameId } from "@/lib/games";
+import type { Game } from "@/lib/games";
 import { formatScore } from "@/lib/scores";
 import { useSession } from "@/lib/session";
 import { deviceId, persist, read } from "@/lib/storage";
-
-/**
- * Las cinco teclas del mando de ratón y teclado, en el orden del prototipo, y
- * la fuente de las cuatro flechas de la cruz: `side` marca cuáles van a ella.
- * Su `FUEGO` sólo se pinta en la fila de cinco, la de escritorio; con el dedo
- * quien manda `ESPACIO` es el botón de acción que diga `ENGINE_PAD`, que no
- * tiene por qué ser el mismo en cada máquina.
- */
-const PAD = [
-  { label: "←", code: "ArrowLeft", aria: "Mover ←", side: "dpad" },
-  { label: "↑", code: "ArrowUp", aria: "Mover ↑", side: "dpad" },
-  { label: "↓", code: "ArrowDown", aria: "Mover ↓", side: "dpad" },
-  { label: "→", code: "ArrowRight", aria: "Mover →", side: "dpad" },
-  { label: "FUEGO", code: "Space", aria: "Fuego", side: "fire" },
-] as const;
-
-/**
- * Dónde cae cada flecha en la cruz de horizontal: `↑` arriba en el centro,
- * `←` y `→` a los lados y `↓` abajo. En cruz y no en columna de cuatro porque
- * en columna `←` y `→` quedan uno encima del otro y el pulgar tiene que
- * buscar; ocupa lo mismo.
- */
-const CROSS_CELL: Record<string, string> = {
-  ArrowUp: "col-start-2 row-start-1",
-  ArrowLeft: "col-start-1 row-start-2",
-  ArrowRight: "col-start-3 row-start-2",
-  ArrowDown: "col-start-2 row-start-3",
-};
-
-/**
- * Qué botones del mando sirven en cada máquina con motor. Los que no están se
- * pintan deshabilitados: Asteroids no usa `↓`, y esconderlo descuadraría la
- * rejilla de cinco botones del gabinete.
- */
-const ENGINE_KEYS: Partial<Record<GameId, readonly string[]>> = {
-  asteroids: ["ArrowLeft", "ArrowUp", "ArrowRight", "Space"],
-  tetris: ["ArrowLeft", "ArrowUp", "ArrowRight", "ArrowDown", "Space"],
-  arkanoid: ["ArrowLeft", "ArrowRight", "Space"],
-  // La primera del vault que usa el mando entero: las cuatro flechas giran y
-  // `ESPACIO` arranca la serpiente.
-  snake: ["ArrowLeft", "ArrowUp", "ArrowRight", "ArrowDown", "Space"],
-};
-
-/** Un botón de acción: la tecla que inyecta y cómo se anuncia. */
-type PadAction = { code: string; aria: string };
-
-/**
- * Qué manda cada botón de acción en cada máquina, con el dedo. `A` es la acción
- * principal —la que más se pulsa— y cae a la derecha, bajo el pulgar; `B` es la
- * secundaria, y `null` cuando la máquina no tiene ninguna: entonces se pinta
- * apagado, como ya hace la cruz con las flechas que sobran.
- *
- * Las teclas son las mismas cinco de siempre: aquí sólo se reparten, y por eso
- * la tabla vive junto a `ENGINE_KEYS` y no en `GameMount`. Ningún motor la
- * conoce ni se entera de que existe un mando; lo que hace cada tecla sale de
- * leer su código: en Asteroids `ESPACIO` dispara y `↑` empuja, en Tetris `↑`
- * rota y `ESPACIO` es el `hardDrop`, en Arkanoid `ESPACIO` lanza la bola desde
- * la paleta y en Snake arranca la partida.
- */
-const ENGINE_PAD: Partial<Record<GameId, { a: PadAction; b: PadAction | null }>> = {
-  asteroids: {
-    a: { code: "Space", aria: "Disparar" },
-    b: { code: "ArrowUp", aria: "Propulsor" },
-  },
-  tetris: {
-    a: { code: "ArrowUp", aria: "Rotar" },
-    b: { code: "Space", aria: "Soltar de golpe" },
-  },
-  arkanoid: { a: { code: "Space", aria: "Lanzar la bola" }, b: null },
-  snake: { a: { code: "Space", aria: "Arrancar" }, b: null },
-};
-
-/**
- * Los botones del centro del mando, los de partida. Redondos y del mínimo que
- * un pulgar acierta, 44px, porque son los tres bloques del mando los que se
- * reparten el ancho de un teléfono: en uno de 360px quedan 328 útiles y la
- * cuenta sale justa —144 la cruz, 44 el centro y 120 las dos acciones—. No se
- * pulsan en caliente, así que aquí el círculo pequeño no cuesta partidas.
- */
-const CENTER_KEY = "size-11 touch-none rounded-full px-0 text-[6px]";
 
 const SAVED_MESSAGE = "PUNTUACION GUARDADA";
 /** Lo que enseña el HUD antes del primer `onState`. */
@@ -256,6 +171,23 @@ export function PlayCabinet({ game }: { game: Game }) {
   const playerName = ready && user ? user.name : "INVITADO";
   /** Teclas vivas del mando: las que no están se pintan deshabilitadas. */
   const padKeys = ENGINE_KEYS[game.id];
+  /**
+   * Lo que el mando de dedo necesita del gabinete, igual en las tres veces que
+   * se monta. La cuenta de teclas se queda aquí: el mando sólo avisa del dedo
+   * que llega y del que se va, y quién baja la tecla en el motor lo sigue
+   * decidiendo `pressFrom` / `releaseFrom`.
+   */
+  const padProps = {
+    gameId: game.id,
+    onPress: pressFrom,
+    onRelease: releaseFrom,
+    paused,
+    onPause: () => setPaused((p) => !p),
+    onExit: () => {
+      setPaused(true);
+      setLeaving(true);
+    },
+  };
 
   async function save() {
     setSaving(true);
@@ -298,84 +230,10 @@ export function PlayCabinet({ game }: { game: Game }) {
   }
 
   /**
-   * Un botón del mando. Se pinta en dos sitios —la fila de cinco de siempre y
-   * el mando repartido de horizontal—, y CSS enseña uno u otro: nunca los dos
-   * a la vez, así que no hay dos botones `FUEGO` que un lector de pantalla
-   * pueda anunciar. Duplicar aquí es barato; lo que no se puede duplicar es el
-   * canvas, que remontaría la partida al girar el teléfono.
-   */
-  function padKey(
-    { label, code, aria }: { label: string; code: string; aria: string },
-    className = "",
-    forceInert = false,
-  ) {
-    const usable = !forceInert && (padKeys ? padKeys.includes(code) : true);
-    const inert = forceInert || (!!padKeys && !usable);
-    // `pointerup` fuera del botón nunca llega, así que soltar también al salir
-    // el puntero o al cancelarse el gesto: si no, la nave se queda girando
-    // sola. Los tres pasan por `releaseFrom`, que sólo atiende al dedo que
-    // tenía esta tecla: llegan más de una vez y la cuenta baja una sola.
-    const release = (e: ReactPointerEvent) => releaseFrom(e.pointerId, code);
-    return (
-      <button
-        key={label}
-        type="button"
-        aria-label={aria}
-        disabled={inert}
-        onPointerDown={
-          padKeys && usable
-            ? (e) => {
-                // Sin foco en el botón, `ESPACIO` no lo re-dispara.
-                e.preventDefault();
-                // El dedo que nace en un botón se queda capturado en él, y con
-                // la captura puesta salirse no dispara `pointerleave`: la tecla
-                // seguiría abajo hasta levantar el dedo, aunque el pulgar ya
-                // esté fuera. Soltarla devuelve los eventos de frontera. Con
-                // ratón no hay captura que soltar y esto no hace nada.
-                if (e.currentTarget.hasPointerCapture(e.pointerId))
-                  e.currentTarget.releasePointerCapture(e.pointerId);
-                pressFrom(e.pointerId, code);
-              }
-            : undefined
-        }
-        onPointerUp={padKeys && usable ? release : undefined}
-        onPointerCancel={padKeys && usable ? release : undefined}
-        onPointerLeave={padKeys && usable ? release : undefined}
-        // 44px de lado corto es el mínimo que un pulgar acierta sin apuntar;
-        // con el relleno de siempre se quedaban en 40.
-        className={`min-h-11 touch-none border border-av-cyan/30 bg-av-panel px-1.5 py-3.75 font-display text-[10px] text-av-cyan ${
-          inert
-            ? "cursor-not-allowed opacity-35"
-            : "cursor-pointer active:bg-av-cyan active:text-av-bg"
-        } ${className}`}
-      >
-        {label}
-      </button>
-    );
-  }
-
-  /**
-   * Uno de los dos botones de acción del mando de mano, `B` o `A`, redondo
-   * porque eso es lo que hace que el bloque se lea como un mando. Es el mismo
-   * botón de siempre —la misma cuenta, los mismos tres eventos de soltar— con
-   * la tecla que le toca a esta máquina; cuando no le toca ninguna se pinta
-   * apagado en vez de esconderse, como ya hace la cruz con las flechas que
-   * sobran, para que el mando no cambie de forma según la máquina.
-   */
-  function actionKey(slot: "a" | "b", className = "") {
-    const label = slot.toUpperCase();
-    const action = ENGINE_PAD[game.id]?.[slot] ?? null;
-    const round = `rounded-full text-[13px] px-0 py-0 ${className}`;
-    return action
-      ? padKey({ label, code: action.code, aria: action.aria }, round)
-      : padKey({ label, code: "", aria: `${label}, sin acción en esta máquina` }, round, true);
-  }
-
-  /**
-   * PAUSA / SEGUIR. Se pinta tres veces —en el HUD, que es donde vive con ratón
-   * y teclado, y en el centro del mando en las dos posturas de mano—, y CSS
-   * enseña una sola: es la misma regla que ya siguen los botones del mando, y
-   * el estado es uno solo, así que las tres dicen lo mismo.
+   * PAUSA / SEGUIR del HUD, el de ratón y teclado. Con el dedo el botón lo
+   * pinta el mando, en el centro y con su propia piel, y éste se apaga: es la
+   * misma regla que siguen los botones de tecla, y el estado es uno solo, así
+   * que los que se ven a la vez dicen lo mismo.
    */
   function pauseButton(className = "") {
     return (
@@ -386,27 +244,6 @@ export function PlayCabinet({ game }: { game: Game }) {
         className={`cursor-pointer border border-av-yellow/45 bg-transparent font-display text-av-yellow active:scale-94 hover:bg-av-yellow/16 hover:text-white ${className}`}
       >
         {paused ? "SEGUIR" : "PAUSA"}
-      </button>
-    );
-  }
-
-  /**
-   * SALIR, sólo del mando de mano. Es un botón y no el enlace de la cabecera
-   * porque aquí queda entre los dos pulgares: no saca de la partida de un
-   * toque, pausa y pregunta. Pausar primero es lo que hace que preguntar no
-   * cueste vidas.
-   */
-  function exitButton(className = "") {
-    return (
-      <button
-        type="button"
-        onClick={() => {
-          setPaused(true);
-          setLeaving(true);
-        }}
-        className={`cursor-pointer border border-av-magenta/45 bg-transparent font-display text-av-magenta active:scale-94 hover:bg-av-magenta/16 hover:text-white ${className}`}
-      >
-        SALIR
       </button>
     );
   }
@@ -544,17 +381,10 @@ export function PlayCabinet({ game }: { game: Game }) {
               tablero y el de la derecha, y da al marco un alto contra el que
               medirse. */}
           <div className="contents handheld-wide:flex handheld-wide:min-h-0 handheld-wide:flex-1 handheld-wide:items-center handheld-wide:justify-center handheld-wide:gap-2">
-            {/* Las cuatro flechas, donde cae el pulgar izquierdo, con PAUSA
-                debajo. Sólo existen en horizontal: en vertical las pinta el
-                mando de abajo. */}
-            <div className="hidden shrink-0 flex-col items-center gap-2 handheld-wide:flex">
-              <div className="grid grid-cols-3 grid-rows-3 gap-1.5">
-                {PAD.filter((k) => k.side === "dpad").map((entry) =>
-                  padKey(entry, `size-12 px-0 py-0 ${CROSS_CELL[entry.code]}`),
-                )}
-              </div>
-              {pauseButton(CENTER_KEY)}
-            </div>
+            {/* El medio-mando de la izquierda: las cuatro flechas, donde cae el
+                pulgar izquierdo, con PAUSA debajo. Sólo existe en horizontal;
+                en vertical los tres bloques van juntos bajo el tablero. */}
+            <GamePad {...padProps} layout="horizontal" side="left" />
 
             <div
               style={{ "--av-ratio": aspectRatio } as CSSProperties}
@@ -611,47 +441,35 @@ export function PlayCabinet({ game }: { game: Game }) {
               )}
             </div>
 
-            {/* Y las dos acciones, donde cae el derecho: `B` y `A` en ese
-                orden, con `A` la principal a la derecha del todo, que es donde
-                el pulgar llega sin estirarse, y SALIR debajo. El centro del
-                mando se reparte en horizontal: PAUSA bajo la cruz y SALIR
-                aquí, que es el hueco que deja cada bloque. */}
-            <div className="hidden shrink-0 flex-col items-center gap-2 handheld-wide:flex">
-              <div className="flex items-center gap-2">
-                {actionKey("b", "size-14")}
-                {actionKey("a", "size-14")}
-              </div>
-              {exitButton(CENTER_KEY)}
-            </div>
+            {/* Y el de la derecha: las dos acciones, donde cae ese pulgar, con
+                SALIR debajo. El centro del mando se reparte en horizontal,
+                PAUSA a un lado y SALIR al otro, que es el hueco que deja cada
+                bloque. */}
+            <GamePad {...padProps} layout="horizontal" side="right" />
           </div>
 
           {/* La fila de cinco de siempre, la de ratón y teclado. Con el dedo se
               apaga en las dos posturas: un pulgar no busca botones en fila. */}
           <div className="mt-4.5 grid grid-cols-[repeat(auto-fit,minmax(60px,1fr))] gap-2.5 handheld:hidden">
-            {PAD.map((entry) => padKey(entry))}
+            {PAD.map((entry) => (
+              <PadKey
+                key={entry.label}
+                label={entry.label}
+                code={entry.code}
+                aria={entry.aria}
+                keys={padKeys}
+                onPress={pressFrom}
+                onRelease={releaseFrom}
+              />
+            ))}
           </div>
 
-          {/* El mando de vertical: la misma cruz de horizontal, con las dos
-              acciones enfrente. Cae bajo el tablero y a lo ancho del gabinete,
-              así que cada pulgar tiene el suyo sin cruzar la mano. En
-              horizontal esto se apaga, porque allí los dos bloques están a los
-              lados. */}
-          <div className="mt-3 hidden items-center justify-between gap-2 handheld:flex handheld-wide:hidden">
-            <div className="grid shrink-0 grid-cols-3 grid-rows-3 gap-1.5">
-              {PAD.filter((k) => k.side === "dpad").map((entry) =>
-                padKey(entry, `size-11 px-0 py-0 ${CROSS_CELL[entry.code]}`),
-              )}
-            </div>
-            {/* El centro, entre los dos pulgares: los botones de partida. */}
-            <div className="flex shrink-0 flex-col items-center gap-2">
-              {pauseButton(CENTER_KEY)}
-              {exitButton(CENTER_KEY)}
-            </div>
-            <div className="flex shrink-0 items-center gap-2">
-              {actionKey("b", "size-14")}
-              {actionKey("a", "size-14")}
-            </div>
-          </div>
+          {/* El mando de vertical, entero: la misma cruz de horizontal, con las
+              dos acciones enfrente y los botones de partida en medio. Cae bajo
+              el tablero y a lo ancho del gabinete, así que cada pulgar tiene el
+              suyo sin cruzar la mano. En horizontal esto se apaga, porque allí
+              los dos bloques están a los lados. */}
+          <GamePad {...padProps} layout="vertical" />
 
           {/* Los controles que describe esta línea son los del teclado, y con
               el dedo no hay teclado: en un puntero grueso sobra. */}
