@@ -14,7 +14,7 @@
  * cinco de siempre, repartidas entre la cruz y los dos botones de acción.
  */
 
-import type { PointerEvent as ReactPointerEvent } from "react";
+import type { PointerEvent as ReactPointerEvent, ReactNode } from "react";
 import type { GameId } from "@/lib/games";
 
 /**
@@ -96,6 +96,68 @@ const ENGINE_PAD: Partial<Record<GameId, { a: PadAction; b: PadAction | null }>>
  */
 const CENTER_KEY = "size-11 touch-none rounded-full px-0 text-[6px]";
 
+/**
+ * Las pieles de un botón de tecla, cada una con sus cuatro estados. `row` es la
+ * fila de cinco de ratón y teclado y no cambia desde SPEC 11; `cross` es la
+ * celda de la cruz del mando de dedo, con la geometría del prototipo de
+ * `references/gamepad-assets/`.
+ *
+ * Van escritas enteras y no compuestas porque Tailwind sólo ve las cadenas
+ * completas: una clase interpolada no llega a la hoja.
+ */
+type PadSkinId = "row" | "cross";
+
+type PadSkin = {
+  /** Lo de siempre, pulsado o no. */
+  base: string;
+  /** Usable y en reposo. */
+  rest: string;
+  /** Su tecla está abajo. */
+  on: string;
+  /** La máquina no usa esta tecla. */
+  dead: string;
+};
+
+const PAD_SKIN: Record<PadSkinId, PadSkin> = {
+  row: {
+    base: "min-h-11 border border-av-cyan/30 px-1.5 py-3.75 font-display text-[10px]",
+    rest: "cursor-pointer bg-av-panel text-av-cyan",
+    on: "cursor-pointer bg-av-cyan text-av-bg",
+    dead: "cursor-not-allowed bg-av-panel text-av-cyan opacity-35",
+  },
+  cross: {
+    // El canto duro de abajo es lo que da el relieve, y al pulsar la cara baja
+    // 3px y el canto se queda en 1: el botón se hunde contra el chasis en vez
+    // de limitarse a cambiar de color.
+    base: "flex items-center justify-center rounded-[10px] border transition duration-100",
+    rest: "cursor-pointer border-white/5 bg-linear-to-b from-av-pad-face-top to-av-pad-face-bottom text-av-text-dim shadow-[0_4px_0_var(--av-pad-edge),inset_0_1px_0_rgba(255,255,255,0.06),inset_0_-2px_4px_rgba(0,0,0,0.6)] hover:border-av-cyan/35 hover:text-av-cyan",
+    on: "cursor-pointer translate-y-0.75 border-av-cyan bg-linear-to-b from-[#08161e] to-[#030a0e] text-av-cyan shadow-[0_1px_0_var(--av-pad-edge),inset_0_0_16px_rgba(0,245,255,0.45),0_0_16px_rgba(0,245,255,0.5)] [&_svg]:[filter:drop-shadow(0_0_6px_var(--av-cyan))_drop-shadow(0_0_12px_var(--av-cyan))]",
+    dead: "cursor-not-allowed border-white/5 bg-linear-to-b from-av-pad-face-top to-av-pad-face-bottom text-av-text-dim opacity-35 shadow-[0_4px_0_var(--av-pad-edge),inset_0_1px_0_rgba(255,255,255,0.06),inset_0_-2px_4px_rgba(0,0,0,0.6)]",
+  },
+};
+
+/**
+ * Las cuatro flechas de la cruz, copiadas del prototipo: triángulos rellenos
+ * con `currentColor`, para que el color y el `drop-shadow` de encender los
+ * ponga la piel del botón. Los caracteres `←↑↓→` se quedan en la fila de cinco
+ * de escritorio, donde no hay relieve al que acompañar.
+ */
+const ARROW_PATH: Record<string, string> = {
+  ArrowUp: "M12 4 L20 16 L4 16 Z",
+  ArrowRight: "M8 4 L20 12 L8 20 Z",
+  ArrowDown: "M4 8 L20 8 L12 20 Z",
+  ArrowLeft: "M16 4 L16 20 L4 12 Z",
+};
+
+/** El triángulo de una flecha. `aria-hidden`: quien lo dice es el `aria-label`. */
+function Arrow({ code }: { code: string }) {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden className="size-5 transition duration-100">
+      <path d={ARROW_PATH[code]} fill="currentColor" />
+    </svg>
+  );
+}
+
 /** Las dos posturas de mano. No hay una tercera: escritorio no monta esto. */
 export type PadLayout = "vertical" | "horizontal";
 
@@ -123,6 +185,10 @@ type PadKeyProps = {
   aria: string;
   className?: string;
   forceInert?: boolean;
+  /** Qué piel viste este botón. Por defecto la fila de cinco de escritorio. */
+  skin?: PadSkinId;
+  /** Lo que se pinta dentro. Sin esto, el rótulo. */
+  children?: ReactNode;
   /** Las teclas vivas de esta máquina, de `ENGINE_KEYS`. */
   keys: readonly string[] | undefined;
   /** Teclas hundidas ahora mismo. */
@@ -144,11 +210,14 @@ export function PadKey({
   aria,
   className = "",
   forceInert = false,
+  skin = "row",
+  children,
   keys,
   down,
   onPress,
   onRelease,
 }: PadKeyProps) {
+  const face = PAD_SKIN[skin];
   const usable = !forceInert && (keys ? keys.includes(code) : true);
   const inert = forceInert || (!!keys && !usable);
   // Hundido cuando lo está **su tecla**, no cuando el dedo cae encima de este
@@ -187,14 +256,14 @@ export function PadKey({
       onPointerLeave={keys && usable ? release : undefined}
       // 44px de lado corto es el mínimo que un pulgar acierta sin apuntar;
       // con el relleno de siempre se quedaban en 40.
-      // El color de pulsado va en la misma rama que el de reposo y no encima:
-      // dos utilidades de fondo en el mismo atributo las resuelve el orden de
-      // la hoja de Tailwind, no el que se escriban aquí.
-      className={`min-h-11 touch-none border border-av-cyan/30 px-1.5 py-3.75 font-display text-[10px] ${
-        inert ? "cursor-not-allowed opacity-35" : "cursor-pointer"
-      } ${on ? "bg-av-cyan text-av-bg" : "bg-av-panel text-av-cyan"} ${className}`}
+      // Los tres estados son ramas excluyentes de la piel y no capas que se
+      // pisan: dos utilidades de fondo en el mismo atributo las resuelve el
+      // orden de la hoja de Tailwind, no el que se escriban aquí.
+      className={`touch-none ${face.base} ${
+        inert ? face.dead : on ? face.on : face.rest
+      } ${className}`}
     >
-      {label}
+      {children ?? label}
     </button>
   );
 }
@@ -230,12 +299,15 @@ export function GamePad({
             label={entry.label}
             code={entry.code}
             aria={entry.aria}
-            className={`${cell} px-0 py-0 ${CROSS_CELL[entry.code]}`}
+            skin="cross"
+            className={`${cell} ${CROSS_CELL[entry.code]}`}
             keys={keys}
             down={down}
             onPress={onPress}
             onRelease={onRelease}
-          />
+          >
+            <Arrow code={entry.code} />
+          </PadKey>
         ))}
       </div>
     );
