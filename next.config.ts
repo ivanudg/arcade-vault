@@ -6,7 +6,7 @@ const nextConfig: NextConfig = {
     // Turbopack lo toma como raíz del workspace y avisa en cada build.
     root: import.meta.dirname,
   },
-  allowedDevOrigins: ["192.168.100.212"],
+  allowedDevOrigins: ["192.168.100.157"],
 };
 
 export default nextConfig;
