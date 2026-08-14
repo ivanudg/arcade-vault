@@ -16,7 +16,7 @@
  */
 
 import Link from "next/link";
-import { type CSSProperties, useEffect, useRef, useState } from "react";
+import { type CSSProperties, useCallback, useEffect, useRef, useState } from "react";
 import { saveScore } from "@/app/jugar/[id]/actions";
 import { GameCanvas } from "@/components/game-canvas";
 import { ENGINE_KEYS, GamePad, PAD, PadKey } from "@/components/game-pad";
@@ -48,6 +48,9 @@ export function PlayCabinet({ game }: { game: Game }) {
   const [saveError, setSaveError] = useState<string | null>(null);
   /** Las tres cifras de la partida real. `null` hasta el primer `onState`. */
   const [live, setLive] = useState<GameState | null>(null);
+  /** Teclas pulsadas ahora mismo, sea desde el botón que sea. Espeja `held`
+      para que el mando pueda dibujarlas hundidas. */
+  const [down, setDown] = useState<ReadonlySet<string>>(new Set());
   /** Piel activa de esta máquina. Arranca en la de siempre y no en la guardada:
       `localStorage` no existe en el servidor y leerlo aquí desajustaría la
       hidratación. La guardada se aplica al recibir el handle. */
@@ -61,8 +64,8 @@ export function PlayCabinet({ game }: { game: Game }) {
    * Cuántos botones tienen pulsada cada tecla ahora mismo. Una tecla puede
    * llegar desde dos botones a la vez —`↑` empuja en Asteroids desde la cruz y
    * desde el botón de acción—, y sin contar, soltar uno mataría el propulsor
-   * con el otro dedo todavía apretando. Va en una `ref` y no en un estado
-   * porque nadie lo pinta: es la puerta hacia el motor, no algo que se vea.
+   * con el otro dedo todavía apretando. Sigue siendo la fuente: es quien
+   * cuenta, y `down` sólo la espeja para que el mando pueda pintarla.
    */
   const held = useRef(new Map<string, number>());
   /**
@@ -79,18 +82,33 @@ export function PlayCabinet({ game }: { game: Game }) {
   // La puerta hacia el motor: todo botón del mando entra por aquí, también los
   // de escritorio. Van antes que los efectos porque la pausa vacía la cuenta.
 
+  // El espejo se toca sólo cuando una tecla cruza el cero, no en cada dedo:
+  // eso son unos pocos renders por segundo, del orden de los que ya provoca
+  // `onState`, y nunca uno por frame.
+
   /** Baja la tecla en el motor con el primer dedo que la pide. */
   function pressKey(code: string) {
     const n = (held.current.get(code) ?? 0) + 1;
     held.current.set(code, n);
-    if (n === 1) handle.current?.press(code);
+    if (n === 1) {
+      handle.current?.press(code);
+      setDown((d) => new Set(d).add(code));
+    }
   }
 
   /** La suelta con el último que la deja. */
   function releaseKey(code: string) {
     const n = (held.current.get(code) ?? 1) - 1;
     held.current.set(code, Math.max(0, n));
-    if (n <= 0) handle.current?.release(code);
+    if (n <= 0) {
+      handle.current?.release(code);
+      setDown((d) => {
+        if (!d.has(code)) return d;
+        const next = new Set(d);
+        next.delete(code);
+        return next;
+      });
+    }
   }
 
   /** Un dedo que llega a un botón: sólo cuenta la primera vez. */
@@ -112,10 +130,31 @@ export function PlayCabinet({ game }: { game: Game }) {
    * pierde deja una tecla colgada; que la partida no arranque nunca con una
    * heredada es lo que hace que ese descuadre no dure más que la partida.
    */
-  function clearHeld() {
+  const clearHeld = useCallback(() => {
     for (const [code, n] of held.current) if (n > 0) handle.current?.release(code);
     held.current.clear();
     owners.current.clear();
+    // Y con la cuenta se vacía el espejo: ningún botón se queda dibujado
+    // hundido con la partida en pausa o muerta.
+    setDown((d) => (d.size ? new Set() : d));
+  }, []);
+
+  /**
+   * El único camino a la pausa, y por eso soltar lo pulsado vive aquí y no en
+   * el efecto que habla con el motor: desde que la cuenta tiene espejo, vaciarla
+   * es cambiar estado, y hacerlo en el cuerpo de un efecto encadena renders. Un
+   * dedo que siguiera encima al pausar dejaría su tecla contada para siempre,
+   * porque ningún `release` volvería a bajarla.
+   */
+  const pauseRun = useCallback(() => {
+    clearHeld();
+    setPaused(true);
+  }, [clearHeld]);
+
+  /** PAUSA / SEGUIR: al pausar suelta, al reanudar no hay nada que soltar. */
+  function togglePause() {
+    if (!paused) clearHeld();
+    setPaused((p) => !p);
   }
 
   useEffect(() => {
@@ -134,37 +173,35 @@ export function PlayCabinet({ game }: { game: Game }) {
     handle.current?.start();
   }, [loading]);
 
-  // PAUSA / SEGUIR y las dos pausas automáticas acaban todas aquí: el botón
-  // sólo mueve `paused` y este efecto se encarga del motor.
+  // PAUSA / SEGUIR y las dos pausas automáticas acaban todas aquí: quien pausa
+  // sólo mueve `paused` y este efecto se encarga del motor. Lo que ya no hace
+  // es soltar las teclas: eso pasó a `pauseRun()` y `togglePause()`.
   useEffect(() => {
     if (loading) return;
     const h = handle.current;
     if (!h) return;
-    // Pausar suelta el teclado dentro del motor, así que la cuenta de aquí se
-    // vacía con él: si no, un dedo que siguiera encima dejaría su tecla contada
-    // para siempre y ningún `release` volvería a bajarla.
-    if (paused) {
-      h.pause();
-      clearHeld();
-    }
+    if (paused) h.pause();
     // Terminada la partida el bucle está parado a propósito: reanudarlo aquí
     // resucitaría una nave muerta detrás del superpuesto.
     else if (!over) h.resume();
   }, [loading, paused, over]);
 
   // Volver a la pestaña con quince segundos de asteroides encima no es jugar.
+  // El listener es un evento del navegador, no el cuerpo del efecto: aquí
+  // `pauseRun()` puede soltar lo pulsado como en los dos botones.
   useEffect(() => {
-    const pause = () => setPaused(true);
     const onVisibility = () => {
-      if (document.hidden) pause();
+      if (document.hidden) pauseRun();
     };
     document.addEventListener("visibilitychange", onVisibility);
-    window.addEventListener("blur", pause);
+    window.addEventListener("blur", pauseRun);
     return () => {
       document.removeEventListener("visibilitychange", onVisibility);
-      window.removeEventListener("blur", pause);
+      window.removeEventListener("blur", pauseRun);
     };
-  }, []);
+    // `pauseRun` sólo toca refs y setters, así que es estable y esto se
+    // suscribe una vez, como cuando el listener era un `setPaused` suelto.
+  }, [pauseRun]);
 
   /** Las tres cifras del HUD, de la partida en curso. */
   const run = live ?? FRESH_RUN;
@@ -179,12 +216,13 @@ export function PlayCabinet({ game }: { game: Game }) {
    */
   const padProps = {
     gameId: game.id,
+    down,
     onPress: pressFrom,
     onRelease: releaseFrom,
     paused,
-    onPause: () => setPaused((p) => !p),
+    onPause: togglePause,
     onExit: () => {
-      setPaused(true);
+      pauseRun();
       setLeaving(true);
     },
   };
@@ -239,7 +277,7 @@ export function PlayCabinet({ game }: { game: Game }) {
     return (
       <button
         type="button"
-        onClick={() => setPaused((p) => !p)}
+        onClick={togglePause}
         aria-pressed={paused}
         className={`cursor-pointer border border-av-yellow/45 bg-transparent font-display text-av-yellow active:scale-94 hover:bg-av-yellow/16 hover:text-white ${className}`}
       >
@@ -458,6 +496,7 @@ export function PlayCabinet({ game }: { game: Game }) {
                 code={entry.code}
                 aria={entry.aria}
                 keys={padKeys}
+                down={down}
                 onPress={pressFrom}
                 onRelease={releaseFrom}
               />

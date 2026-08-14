@@ -107,6 +107,8 @@ type GamePadProps = {
   layout: PadLayout;
   /** `left` lleva cruz y PAUSA; `right`, `B`/`A` y SALIR; `full`, los tres. */
   side?: PadSide;
+  /** Teclas hundidas ahora mismo. */
+  down: ReadonlySet<string>;
   /** El dedo que llega y el que se va. El gabinete sigue llevando la cuenta. */
   onPress: (pointerId: number, code: string) => void;
   onRelease: (pointerId: number, code: string) => void;
@@ -123,6 +125,8 @@ type PadKeyProps = {
   forceInert?: boolean;
   /** Las teclas vivas de esta máquina, de `ENGINE_KEYS`. */
   keys: readonly string[] | undefined;
+  /** Teclas hundidas ahora mismo. */
+  down: ReadonlySet<string>;
   onPress: (pointerId: number, code: string) => void;
   onRelease: (pointerId: number, code: string) => void;
 };
@@ -141,11 +145,17 @@ export function PadKey({
   className = "",
   forceInert = false,
   keys,
+  down,
   onPress,
   onRelease,
 }: PadKeyProps) {
   const usable = !forceInert && (keys ? keys.includes(code) : true);
   const inert = forceInert || (!!keys && !usable);
+  // Hundido cuando lo está **su tecla**, no cuando el dedo cae encima de este
+  // botón concreto: en Asteroids `↑` llega desde la cruz y desde `B`, y con el
+  // `:active` de CSS apretar `B` dejaba la flecha apagada con el propulsor
+  // encendido. Un mando que no dice la verdad es peor que uno feo.
+  const on = !inert && down.has(code);
   // `pointerup` fuera del botón nunca llega, así que soltar también al salir
   // el puntero o al cancelarse el gesto: si no, la nave se queda girando
   // sola. Los tres pasan por `onRelease`, que sólo atiende al dedo que
@@ -177,11 +187,12 @@ export function PadKey({
       onPointerLeave={keys && usable ? release : undefined}
       // 44px de lado corto es el mínimo que un pulgar acierta sin apuntar;
       // con el relleno de siempre se quedaban en 40.
-      className={`min-h-11 touch-none border border-av-cyan/30 bg-av-panel px-1.5 py-3.75 font-display text-[10px] text-av-cyan ${
-        inert
-          ? "cursor-not-allowed opacity-35"
-          : "cursor-pointer active:bg-av-cyan active:text-av-bg"
-      } ${className}`}
+      // El color de pulsado va en la misma rama que el de reposo y no encima:
+      // dos utilidades de fondo en el mismo atributo las resuelve el orden de
+      // la hoja de Tailwind, no el que se escriban aquí.
+      className={`min-h-11 touch-none border border-av-cyan/30 px-1.5 py-3.75 font-display text-[10px] ${
+        inert ? "cursor-not-allowed opacity-35" : "cursor-pointer"
+      } ${on ? "bg-av-cyan text-av-bg" : "bg-av-panel text-av-cyan"} ${className}`}
     >
       {label}
     </button>
@@ -197,6 +208,7 @@ export function GamePad({
   gameId,
   layout,
   side = "full",
+  down,
   onPress,
   onRelease,
   paused,
@@ -220,6 +232,7 @@ export function GamePad({
             aria={entry.aria}
             className={`${cell} px-0 py-0 ${CROSS_CELL[entry.code]}`}
             keys={keys}
+            down={down}
             onPress={onPress}
             onRelease={onRelease}
           />
@@ -248,6 +261,7 @@ export function GamePad({
         className={round}
         forceInert={!entry}
         keys={keys}
+        down={down}
         onPress={onPress}
         onRelease={onRelease}
       />
