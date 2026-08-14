@@ -25,8 +25,8 @@ tocando**. Por eso el cambio es aditivo —una variable nueva en `:root`, una va
 un valor base que se conserva— y nunca una reescritura.
 
 De `app/globals.css` **sólo se toca `:root`, y sólo para añadir**. Ni las dos `@custom-variant`
-de `:178-179`, ni `--av-play-header` de `:49`, ni el `html { overflow-x: hidden }` de
-`:159-161`, que está ahí para contener la rejilla del fondo y quitarlo la desnuda.
+de `:195-196`, ni `--av-play-header` de `:59`, ni el `html { overflow-x: hidden }` de
+`:176-178`, que está ahí para contener la rejilla del fondo y quitarlo la desnuda.
 
 Y `app/not-found.tsx` es una trampa conocida: **monta `SiteHeader` y `SiteFooter` por su
 cuenta** (`:22` y `:46`) porque vive fuera del grupo `(vault)`. Un arreglo de
@@ -109,12 +109,18 @@ es de una clase y el aspecto de escritorio no cambia. Cuando el elemento es un `
 `grid`, suele hacer falta `items-center` para que el contenido no se quede arriba; cuando es un
 `<a>` en línea, `inline-flex items-center`.
 
-El precedente está en `components/play-cabinet.tsx:344-346` con su comentario, y ya hay uno
-fuera de la pantalla de juego: los campos de `contact-form.tsx` llevan `h-11`.
+El precedente está en `components/game-pad.tsx:335-336` con su comentario —ahí se mudó en la
+SPEC 13, ya no está en `play-cabinet.tsx`—, y ya hay uno fuera de la pantalla de juego: los
+campos de `contact-form.tsx` llevan `h-11`.
+
+**Y cuando el `min-h-11` deja la fila sin sitio, lo que cede es el hueco.** Es lo que hizo la
+SPEC 13 en un teléfono de 360px: `justify-evenly` en vez de `between` y el relleno lateral del
+chasis de 22px a 4, con el tamaño de los botones intacto (`game-pad.tsx:513`). El orden es
+`gap` → relleno → nunca el objetivo táctil; si con los tres no cabe, es un M3 y se aplica P1.1.
 
 ### P1.6 · Una letra por debajo de su suelo → la escala del tema
 
-Para M5. Los seis tokens `--text-av-*` del `@theme inline` (`app/globals.css:87-92`) son el
+Para M5. Los seis tokens `--text-av-*` del `@theme inline` (`app/globals.css:103-108`) son el
 mecanismo. Un `clamp()` nuevo se escribe **ahí**, no en línea, y sólo si ninguno de los seis
 sirve.
 
@@ -125,7 +131,7 @@ una decisión de diseño: por debajo de 16 el navegador amplía y no devuelve.
 
 ### P1.7 · Un alto de barra a mano → una variable en `:root`
 
-Para M6. La forma es la de `--av-play-header` en `app/globals.css:49`: la variable se declara en
+Para M6. La forma es la de `--av-play-header` en `app/globals.css:59`: la variable se declara en
 `:root`, el elemento que la mide se la fija como su altura, y el hermano se la resta.
 
 ```css
@@ -149,7 +155,7 @@ Unidades: `svh` sí, `vh` no, `dvh` no para un `min-h`. Está razonado en M6.
 
 ### P1.8 · Un borde de pantalla → sumar el inset, nunca sustituir
 
-Para M7. La forma es la de `app/jugar/[id]/page.tsx:60`:
+Para M7. La forma es la de `app/jugar/[id]/page.tsx:69`:
 
 ```tsx
 pb-[calc(2rem+env(safe-area-inset-bottom))]
@@ -165,7 +171,7 @@ Los tres sitios que hoy lo necesitan: `site-header.tsx:84` (arriba y los dos lad
 
 ---
 
-## P2 · Las siete reglas de la aplicación
+## P2 · Las ocho reglas de la aplicación
 
 1. **Una pantalla por ronda.** Con una excepción: `SiteHeader` y `SiteFooter` se arreglan en la
    ronda de la primera pantalla que los necesite, porque son el chrome de todas y aplazarlos
@@ -176,12 +182,19 @@ Los tres sitios que hoy lo necesitan: `site-header.tsx:84` (arriba y los dos lad
 3. **Nunca se interpola un nombre de clase.** Tailwind sólo ve las cadenas escritas enteras, y
    por eso cada componente declara su `Record<Accent, string>` con las clases completas. Una
    variante construida con una plantilla no existe en el CSS generado.
-4. **El texto editorial no se toca.** Vive en `lib/landing.ts`, `lib/about.ts` y `lib/games.ts`.
+4. **Una utilidad no se anula con otra puesta después: quien decide es el orden de la hoja de
+   Tailwind, no el del `className`.** Lo pagó la SPEC 13 en su repaso final —`before:border-r-0`
+   no le gana a `before:border`, y el borde interior del chasis se quedó cerrado por el lado que
+   no debía— y lo dice también el comentario de `game-pad.tsx:337-339`. **Se declara lo que se
+   quiere, no se resta lo que sobra**: `before:border-y before:border-l` en vez de
+   `before:border before:border-r-0`; `px-3 pt-2 pb-0` en vez de `p-3 pb-0`. Y si dos ramas son
+   excluyentes, son un ternario, no dos clases superpuestas.
+5. **El texto editorial no se toca.** Vive en `lib/landing.ts`, `lib/about.ts` y `lib/games.ts`.
    Acortar una etiqueta para que quepa es editar copia, y eso es otra decisión y otra persona.
-5. **MAYÚSCULAS y sin tildes** en lo que se pinte en Press Start 2P; los cuerpos en Courier
+6. **MAYÚSCULAS y sin tildes** en lo que se pinte en Press Start 2P; los cuerpos en Courier
    Prime sí llevan su acentuación. El único no-ASCII admitido es `·`.
-6. **El ancho máximo va dentro y el relleno fuera.**
-7. **Si un defecto no cabe en las doce reglas ni en los ocho patrones, paras y lo cuentas.** Una
+7. **El ancho máximo va dentro y el relleno fuera.**
+8. **Si un defecto no cabe en las doce reglas ni en los ocho patrones, paras y lo cuentas.** Una
    forma nueva es una decisión, y las decisiones no se toman a mitad de un `Edit`.
 
 ---
@@ -205,9 +218,16 @@ hasta que dé **exactamente 390 y exactamente 360**. A 32px de diferencia, la co
 salón pasa de 32px a 2px: el error de medida se come el hallazgo.
 
 **V3 · El desbordamiento, medido y no mirado.** El paso más importante, y el que una captura no
-puede dar porque `globals.css:159-161` lo esconde. Un `javascript_tool` por ancho que recorra el
+puede dar porque `globals.css:176-178` lo esconde. Un `javascript_tool` por ancho que recorra el
 DOM y devuelva cada nodo con `getBoundingClientRect().right > innerWidth` o `.left < 0`, con su
 etiqueta, sus clases y su rect. **Esa lista es la evidencia de M1 y M2. No hay otra.**
+
+En el mismo paso, `documentElement.scrollWidth` contra `clientWidth` —el desbordamiento del
+conjunto, que a veces no tiene un nodo culpable— y, si la pantalla ató algo a `100svh`,
+`scrollHeight` contra `innerHeight`. Lo segundo lo enseñó la SPEC 13: el `<main>` de
+`/jugar/[id]` declaraba su altura y **se desplazaba casi mil píxeles igual**, porque un `flex-1`
+por encima la ganaba. Una altura escrita no es una altura aplicada, y la diferencia sólo la dice
+el número.
 
 **V4 · Los objetivos táctiles, computados.** Otro `javascript_tool`: `a, button, input, select,
 textarea, [role=button]`, visibles, filtrados por `Math.min(width, height) < 44`, imprimiendo el

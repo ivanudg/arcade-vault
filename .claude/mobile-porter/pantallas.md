@@ -16,8 +16,9 @@ las specs.
 fuente de verdad de lo que se pinta hoy. Aquí sólo se recuerda lo **medido y lo decidido**.
 Cuando las dos cosas no coincidan, se corrige la tabla, nunca el código.
 
-**El alcance son nueve piezas**, y `/jugar/[id]` no está entre ellas: la portaron la SPEC 11 y
-la SPEC 12, y este agente sólo la lee para copiar patrones. Tampoco entra nada de PWA,
+**El alcance son nueve piezas**, y `/jugar/[id]` no está entre ellas: la portaron la SPEC 11, la
+SPEC 12 y la SPEC 13, y este agente sólo la lee para copiar patrones —desde la SPEC 13, también
+`components/game-pad.tsx`, que es el mando de dedo y tampoco se toca—. Tampoco entra nada de PWA,
 manifiesto ni service worker: el alcance es el navegador de un teléfono y nada más.
 
 ## Cómo se leen las tablas
@@ -93,21 +94,21 @@ queda ningún defecto **de los que el agente sabe ver**.
 
 Se cruza en la Fase 2, y **el código manda siempre**.
 
-| Señal en el código                                                           | Efecto sobre la fila                                                                         |
-| ---------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------- |
-| La `cadena` sigue en el archivo y la fila dice `resuelto`                    | `reabierto`. **El codigo manda**                                                             |
-| La `cadena` ya no esta y la fila dice `abierto`                              | `resuelto`, con nota: lo cerro otra ronda                                                    |
-| El archivo del `ancla` ya no existe                                          | `caducado`. **La fila no se borra**                                                          |
-| Una de las nueve piezas sin fila en Pantallas                                | Se **anade**, en `sin-auditar`, con `alta` de hoy                                            |
-| Un `grid-cols-[` con una pista en `px` en una de las nueve, sin fila         | Alta en `abierto`, regla M2                                                                  |
-| Un `min-[` o `max-[` nuevo fuera de `acerca-de/page.tsx`                     | Alta en `abierto`, regla M8                                                                  |
-| **Un `handheld` fuera de `app/jugar/`, `components/play-*` y `globals.css`** | Alta en `abierto`, regla M8. **Es el error mas probable de este agente**                     |
-| Un numero de px restado a `100svh`, `100vh` o `100dvh` que no sea variable   | Alta en `abierto`, regla M6                                                                  |
-| Un `export const viewport` nuevo fuera de `app/jugar/[id]/page.tsx`          | Todas las filas de M7 a `reabierto`: el `env()` deja de valer cero                           |
-| Un componente nuevo bajo `components/` que monta una de las siete            | Esa pantalla a `en-curso`, con nota: llego un archivo sin auditar                            |
-| Una fila de Pantallas dice `adaptada` y tiene defectos `abierto`             | `desincronizada`                                                                             |
-| `app/globals.css` estrena una `@custom-variant` o un breakpoint del tema     | Todas las filas quedan pendientes de revisar: cambio el vocabulario de M8                    |
-| **`app/(vault)/layout.tsx` cambia el chrome y `app/not-found.tsx` no**       | `404` a `desincronizada`. Monta el chrome por su cuenta y un arreglo del layout no llega ahi |
+| Señal en el código                                                                                      | Efecto sobre la fila                                                                         |
+| ------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------- |
+| La `cadena` sigue en el archivo y la fila dice `resuelto`                                               | `reabierto`. **El codigo manda**                                                             |
+| La `cadena` ya no esta y la fila dice `abierto`                                                         | `resuelto`, con nota: lo cerro otra ronda                                                    |
+| El archivo del `ancla` ya no existe                                                                     | `caducado`. **La fila no se borra**                                                          |
+| Una de las nueve piezas sin fila en Pantallas                                                           | Se **anade**, en `sin-auditar`, con `alta` de hoy                                            |
+| Un `grid-cols-[` con una pista en `px` en una de las nueve, sin fila                                    | Alta en `abierto`, regla M2                                                                  |
+| Un `min-[` o `max-[` nuevo fuera de `acerca-de/page.tsx`                                                | Alta en `abierto`, regla M8                                                                  |
+| **Un `handheld` fuera de `app/jugar/`, `components/play-*`, `components/game-pad.tsx` y `globals.css`** | Alta en `abierto`, regla M8. **Es el error mas probable de este agente**                     |
+| Un numero de px restado a `100svh`, `100vh` o `100dvh` que no sea variable                              | Alta en `abierto`, regla M6                                                                  |
+| Un `export const viewport` nuevo fuera de `app/jugar/[id]/page.tsx`                                     | Todas las filas de M7 a `reabierto`: el `env()` deja de valer cero                           |
+| Un componente nuevo bajo `components/` que monta una de las siete                                       | Esa pantalla a `en-curso`, con nota: llego un archivo sin auditar                            |
+| Una fila de Pantallas dice `adaptada` y tiene defectos `abierto`                                        | `desincronizada`                                                                             |
+| `app/globals.css` estrena una `@custom-variant` o un breakpoint del tema                                | Todas las filas quedan pendientes de revisar: cambio el vocabulario de M8                    |
+| **`app/(vault)/layout.tsx` cambia el chrome y `app/not-found.tsx` no**                                  | `404` a `desincronizada`. Monta el chrome por su cuenta y un arreglo del layout no llega ahi |
 
 Esa última fila es una trampa real: `app/not-found.tsx` vive **fuera** del grupo `(vault)` y
 monta `SiteHeader` y `SiteFooter` en `:22` y `:46` por su cuenta.
@@ -186,3 +187,30 @@ cadena de `game-card.tsx`, que es el mismo defecto en dos botones y se resuelve 
 `404` entra en `sin-auditar` a propósito: no se le ha medido nada. Lo que sí se sabe de ella es
 que monta `SiteHeader` y `SiteFooter` por su cuenta, así que hereda lo que se arregle del chrome
 sin heredar lo que se arregle de `app/(vault)/layout.tsx`.
+
+### 2026-08-14 · La SPEC 13 y el reanclado
+
+La SPEC 13 vistió el mando de dedo de `/jugar/[id]`. **No tocó ninguna de las nueve piezas ni
+`:root`**, así que las dieciocho filas de Defectos siguen exactamente donde estaban: ni una se
+reconcilia por esto.
+
+Lo que sí cambió es el **perímetro y las anclas de las reglas**, y va aquí para que la próxima
+ronda no lo redescubra:
+
+- **`components/game-pad.tsx` es nuevo y es intocable**, como `play-cabinet.tsx`. Salió de él
+  —896 líneas pasaron a 770— y **el comodín `play-*` no lo caza**, así que está nombrado aparte
+  en M11, en las hard rules y en la tabla de señales de arriba.
+- **`app/globals.css` creció por arriba**: cinco tokens `--av-pad-*` en `:49-53` y una animación.
+  Todo lo que estaba por debajo se movió unas dieciséis líneas, y las anclas de
+  `reglas-movil.md` y `portar-pantalla.md` se reanclaron en bloque. Los `--av-pad-*` **no son de
+  este agente**.
+- **Los 44px se mudaron con el mando**: el comentario que los justifica está ahora en
+  `game-pad.tsx:335-336` y `:92-95`, no en `play-cabinet.tsx`. Con él llegó la mitad que le
+  faltaba a M4: **lo que cede es el hueco, después el relleno, y el objetivo táctil nunca.**
+- **Dos hallazgos de método que valen para tus nueve piezas**: una altura escrita no es una
+  altura aplicada si un `flex-1` de más arriba le gana (M6, y ahora se mide en V3), y una
+  utilidad no se anula con otra puesta después, porque decide el orden de la hoja de Tailwind
+  (P2.4).
+- **`handheld` sí se puede medir** desde que la SPEC 13 inventó cómo. M8 sigue prohibiéndolo en
+  tus pantallas, pero **por la razón de fondo y no por imposibilidad**: tus nueve se maquetan por
+  ancho.
