@@ -9,7 +9,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 **Arcade Vault**: plataforma para jugar online y competir por la mayor cantidad de
 puntos. Ya no es el scaffold de `create-next-app`: hoy son **siete pantallas**, cuatro
 máquinas jugables con motor propio y un marcador compartido en Supabase. Lo construido
-llega hasta **SPEC 11**.
+llega hasta **SPEC 12**.
 
 El flujo de trabajo del proyecto es **Spec Driven Design** vía las skills `/spec` y `/spec-impl` de [Klerith/fernando-skills](https://github.com/Klerith/fernando-skills) (`npx skills@latest add Klerith/fernando-skills`). Antes de implementar una feature nueva, espera/produce la spec correspondiente en lugar de escribir código directamente.
 
@@ -37,6 +37,7 @@ historial cuenta el producto mejor que el código:
 | 09   | Arkanoid, puerto sin spritesheet                                                           |
 | 10   | Snake, escrita desde cero, con `public/snake/fruits.png`                                   |
 | 11   | `/jugar/[id]` jugable con el dedo: maquetación vertical y horizontal de mano               |
+| 12   | El mando de mano se vuelve de consola: cruz, `B`/`A` y `PAUSA`/`SALIR` en el centro        |
 
 Ojo: la spec 02 sigue marcada como `Aprobado` aunque la portada está implementada; el
 estado del encabezado no siempre se actualizó al cerrar.
@@ -237,22 +238,55 @@ máquina, se actualiza también esa tabla.
   ningún motor se entera de que se está jugando con el dedo. `--av-chrome` es
   lo que cada una le resta a la ventana.
 
-  | Maquetación                          | `--av-chrome` | Qué cambia                                                                      |
-  | ------------------------------------ | ------------- | ------------------------------------------------------------------------------- |
-  | Escritorio                           | `16rem`       | la de siempre: HUD, gabinete, fila de cinco botones, controles y `PIEL`         |
-  | Vertical de mano (`handheld`)        | `26rem`       | HUD en una línea, cruz de flechas y `FUEGO` bajo el tablero, sin los controles  |
-  | Horizontal de mano (`handheld-wide`) | `7rem`        | gabinete en fila: cruz de flechas, tablero a `h-full` y `FUEGO`; cabecera corta |
+  | Maquetación                          | `--av-chrome` | Qué cambia                                                                                  |
+  | ------------------------------------ | ------------- | ------------------------------------------------------------------------------------------- |
+  | Escritorio                           | `16rem`       | la de siempre: HUD con `PAUSA`, gabinete, fila de cinco botones, controles y `PIEL`         |
+  | Vertical de mano (`handheld`)        | `24rem`       | HUD en una línea y sin `PAUSA`, mando de consola bajo el tablero, sin los controles         |
+  | Horizontal de mano (`handheld-wide`) | `7rem`        | gabinete en fila: cruz con `PAUSA`, tablero a `h-full`, `B`/`A` con `SALIR`; cabecera corta |
 
   Sólo `/jugar/[id]` declara `viewport` propio —escala fija y `viewportFit:
 "cover"`—, así que el pellizco se pierde ahí y se conserva en las otras siete
   pantallas; a cambio, esa ruta rellena con `env(safe-area-inset-*)`. El
   `<main>` mide `100svh` menos `--av-play-header`, que es lo que ocupa
   `PlayHeader` con el dedo, y no se desplaza. La fila de cinco botones es sólo de ratón y
-  teclado: con el dedo, en las dos posturas, el mando es una cruz de cuatro
-  flechas y un `FUEGO` enfrente —bajo el tablero en vertical, a los lados en
-  horizontal—. Los botones se pintan por eso **tres veces** en el DOM y CSS
+  teclado: con el dedo, en las dos posturas, el mando es el de una consola. Los
+  botones se pintan por eso **tres veces** en el DOM y CSS
   enseña un juego cada vez; el canvas, en cambio, se pinta una sola vez, y por
   eso girar el aparato no remonta el motor ni reinicia la partida.
+
+- **Con el dedo el mando tiene tres bloques y ningún motor se entera**, que es
+  lo que trajo SPEC 12: la cruz de cuatro flechas a la izquierda, `B` y `A`
+  redondos a la derecha —`A` es la principal y va la última, bajo el pulgar— y
+  en medio los dos botones de partida, `PAUSA` y `SALIR`, que con el dedo dejan
+  de estar en el HUD y en `PlayHeader`. En vertical el centro va entre los otros
+  dos bloques; en horizontal se reparte, `PAUSA` bajo la cruz y `SALIR` bajo
+  `B`/`A`. `SALIR` no es un enlace ahí: pausa y abre `ExitOverlay`, el tercer
+  superpuesto de la pantalla, porque en el centro del mando una salida
+  accidental tira una partida y su marca.
+
+  Qué manda cada botón de acción lo dice **`ENGINE_PAD`**, en
+  `components/play-cabinet.tsx` y junto a `ENGINE_KEYS`. No hay teclas nuevas:
+  son las cinco de siempre, repartidas.
+
+  | Máquina     | `B`                       | `A`                      |
+  | ----------- | ------------------------- | ------------------------ |
+  | `asteroids` | `↑` propulsor             | `ESPACIO` disparar       |
+  | `tetris`    | `ESPACIO` soltar de golpe | `↑` rotar                |
+  | `arkanoid`  | — apagado                 | `ESPACIO` lanzar la bola |
+  | `snake`     | — apagado                 | `ESPACIO` arrancar       |
+
+  La tabla vive en el gabinete y **no en `GameMount`** a propósito: qué hace
+  cada tecla es del motor, pero cuál cae bajo qué pulgar es de interfaz, y
+  llevarla al contrato obligaría a tocar las cuatro máquinas. `lib/games/` no
+  cambió ni una línea.
+
+  Que la cruz conserve la flecha que también manda `B` es lo que obliga a
+  **contar pulsaciones por tecla** en `PlayCabinet`: `↑` llega desde dos sitios
+  a la vez y sólo se suelta cuando se levanta el último dedo. La cuenta se vacía
+  al pausar, al terminar la partida y al reiniciar, para que ninguna tecla se
+  quede pegada. Por eso todos los botones del mando —también los de
+  escritorio— entran por `pressKey()` / `releaseKey()` y ninguno llama al
+  `GameHandle` directamente.
 
 - `references/started-games/`, `references/source-assets/` y
   `references/templates/` son material de referencia: se leen, no se editan. Lo
