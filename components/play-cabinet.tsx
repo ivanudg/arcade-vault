@@ -510,7 +510,18 @@ export function PlayCabinet({ game }: { game: Game }) {
               escritorio, cabecera, HUD, marco, mando, controles y PIEL; en
               vertical de mano, lo mismo sin la línea de controles; en
               horizontal, sólo cabecera y HUD, porque el mando se va a los
-              lados. El de escritorio está calibrado por lo bajo a propósito:
+              lados.
+
+              El de vertical bajó de 26rem a 24rem al llegar SPEC 12, aunque el
+              mando ganara botones: PAUSA se fue del HUD, que adelgaza a la
+              altura de sus cifras, y la cruz pasó a 44px para dejarle sitio al
+              centro, así que el bloque entero mide menos que antes. La cuenta
+              en un teléfono de 390px, de arriba abajo: 44 de cabecera, 10 de
+              aire, 23 de HUD, 34 entre el margen y el marco del gabinete, 156
+              del mando con su margen, 65 de PIEL y el margen seguro de abajo.
+              Salen unos 366px y el presupuesto reserva 384: lo que sobra es el
+              margen, y el paso siguiente cuando algo crezca es subirlo, no
+              recortar PIEL. El de escritorio está calibrado por lo bajo a propósito:
               con más presupuesto cabría también el mando, pero un mundo
               apaisado como el de Asteroids empezaría a encogerse en pantallas
               normales. Lo que no puede quedar fuera de la ventana es el
@@ -540,7 +551,7 @@ export function PlayCabinet({ game }: { game: Game }) {
               // la fila y el canvas se encarga de no deformarse, apoyado en el
               // `aspect-ratio` que `GameCanvas` ya le pone. El tope calculado
               // sobra ahí, porque quien acota es la altura.
-              className="relative mx-auto overflow-hidden rounded-[22px] bg-av-void shadow-[inset_0_0_60px_rgba(0,0,0,0.9),inset_0_0_12px_rgba(0,245,255,0.16)] [--av-chrome:16rem] max-w-[calc((100svh-var(--av-chrome))*var(--av-ratio))] handheld:[--av-chrome:26rem] handheld-wide:h-full handheld-wide:w-auto handheld-wide:max-w-none handheld-wide:rounded-[12px] handheld-wide:[--av-chrome:7rem]"
+              className="relative mx-auto overflow-hidden rounded-[22px] bg-av-void shadow-[inset_0_0_60px_rgba(0,0,0,0.9),inset_0_0_12px_rgba(0,245,255,0.16)] [--av-chrome:16rem] max-w-[calc((100svh-var(--av-chrome))*var(--av-ratio))] handheld:[--av-chrome:24rem] handheld-wide:h-full handheld-wide:w-auto handheld-wide:max-w-none handheld-wide:rounded-[12px] handheld-wide:[--av-chrome:7rem]"
             >
               <GameCanvas
                 game={engine}
