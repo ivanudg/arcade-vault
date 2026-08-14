@@ -51,9 +51,13 @@ export default async function PlayPage({ params }: PageProps<"/jugar/[id]">) {
     // Android y en escritorio `env(safe-area-inset-*)` vale 0 y la pantalla
     // queda exactamente como estaba.
     // Con el dedo la pantalla de juego es la ventana entera menos la cabecera,
-    // y no se desplaza: lo que no quepa se recorta. Los 5rem de abajo eran
-    // aire de escritorio; en un teléfono sólo queda el margen seguro.
-    <main className="flex-1 pt-[clamp(18px,3vw,34px)] pr-[calc(clamp(14px,3vw,30px)+env(safe-area-inset-right))] pb-[calc(5rem+env(safe-area-inset-bottom))] pl-[calc(clamp(14px,3vw,30px)+env(safe-area-inset-left))] handheld:h-[calc(100svh-var(--av-play-header))] handheld:overflow-hidden handheld:pt-2.5 handheld:pr-[calc(6px+env(safe-area-inset-right))] handheld:pb-[env(safe-area-inset-bottom)] handheld:pl-[calc(6px+env(safe-area-inset-left))]">
+    // y no se desplaza: lo que no quepa se recorta. Los 2rem de abajo son aire
+    // de escritorio; en un teléfono sólo queda el margen seguro.
+    // Eran 5rem, y en una pantalla que ya no se desplaza ese aire no se ve: lo
+    // paga el tablero, porque entra entero en el presupuesto `--av-chrome` de
+    // `PlayCabinet`. Recortarlo a 2rem son 48px que vuelven al juego, y por eso
+    // los dos números van juntos: si esto cambia, se vuelve a medir aquél.
+    <main className="flex-1 pt-[clamp(18px,3vw,34px)] pr-[calc(clamp(14px,3vw,30px)+env(safe-area-inset-right))] pb-[calc(2rem+env(safe-area-inset-bottom))] pl-[calc(clamp(14px,3vw,30px)+env(safe-area-inset-left))] handheld:h-[calc(100svh-var(--av-play-header))] handheld:overflow-hidden handheld:pt-2.5 handheld:pr-[calc(6px+env(safe-area-inset-right))] handheld:pb-[env(safe-area-inset-bottom)] handheld:pl-[calc(6px+env(safe-area-inset-left))]">
       <PlayCabinet game={game} />
     </main>
   );

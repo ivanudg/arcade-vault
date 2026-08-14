@@ -15,7 +15,7 @@ export function PlayHeader({ game }: { game: Game }) {
     // Con el dedo la cabecera mide exactamente `--av-play-header`: es lo que
     // el `<main>` de la pantalla de juego le resta a la ventana para caber sin
     // desplazar la página. El relleno vertical sobra con la altura fija.
-    <header className="sticky top-0 z-40 flex items-center justify-between gap-3.5 border-b border-av-cyan/24 bg-[rgba(10,10,15,0.9)] px-[clamp(14px,3vw,40px)] py-3.5 handheld:h-[var(--av-play-header)] handheld:py-0 handheld:pr-[calc(14px+env(safe-area-inset-right))] handheld:pl-[calc(14px+env(safe-area-inset-left))]">
+    <header className="sticky top-0 z-40 flex items-center justify-between gap-3.5 border-b border-av-cyan/24 bg-[rgba(10,10,15,0.9)] px-[clamp(14px,3vw,40px)] py-3.5 handheld:h-(--av-play-header) handheld:py-0 handheld:pr-[calc(14px+env(safe-area-inset-right))] handheld:pl-[calc(14px+env(safe-area-inset-left))]">
       <Link
         href="/"
         className="font-display text-[clamp(10px,2vw,13px)] tracking-av text-av-cyan [text-shadow:0_0_8px_rgba(0,245,255,0.9)]"
@@ -32,10 +32,12 @@ export function PlayHeader({ game }: { game: Game }) {
       </span>
 
       {/* Salir devuelve a la ficha de la máquina, no a la biblioteca: es de
-          donde se llega a jugar. */}
+          donde se llega a jugar. Con el dedo no está aquí: desde SPEC 12 baja
+          al centro del mando —donde llega el pulgar, y preguntando antes—, y
+          esta cabecera se queda con la marca y el título. */}
       <Link
         href={`/juego/${game.id}`}
-        className="shrink-0 border border-av-magenta/45 px-3.25 py-2.75 font-display text-[9px] tracking-av text-av-magenta hover:bg-av-magenta/16 hover:text-white handheld-wide:py-2"
+        className="shrink-0 border border-av-magenta/45 px-3.25 py-2.75 font-display text-[9px] tracking-av text-av-magenta hover:bg-av-magenta/16 hover:text-white handheld:hidden handheld-wide:py-2"
       >
         SALIR
       </Link>

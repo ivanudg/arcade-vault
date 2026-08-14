@@ -64,6 +64,8 @@ es la caja que rodea al canvas.
 - Los superpuestos de carga y de fin de partida caben y se manejan en horizontal
   de mano, con desplazamiento propio si el alto no da.
 - `PlayHeader` se comprime en horizontal de mano: `SALIR` no desaparece nunca.
+  **Corregido por SPEC 12**: con el dedo `SALIR` ya no está en la cabecera, sino
+  en el centro del mando y preguntando antes de salir.
 - Se verifican en un teléfono real dos comportamientos que ya existen y nadie ha
   probado con el dedo: pulsar dos botones a la vez, y que tocar el mando no
   dispare la pausa automática por `blur`.
@@ -128,7 +130,9 @@ El `26rem` de vertical no es el `13rem` que se estimó al escribir esta spec: la
 cruz mide 156px de alto donde la fila de cinco medía 44, y el presupuesto es la
 suma real de todo lo que no es tablero en un teléfono con indicador de inicio.
 Un presupuesto corto ya no desplaza la página —recorta—, así que se calibra por
-lo alto y no por lo bajo.
+lo alto y no por lo bajo. **Corregido por SPEC 12**: hoy vertical reserva
+`24rem`, porque `PAUSA` se fue del HUD y la cruz bajó a 44px para dejarle sitio
+al centro del mando.
 
 En horizontal de mano manda además el alto: el marco pasa a `h-full` y el canvas
 a `h-full w-auto`, apoyado en el `aspect-ratio` que `GameCanvas` ya le pone.
@@ -227,6 +231,8 @@ que hoy no existe.
    HUD a una segunda fila.
    _Prueba:_ en un teléfono de 390px el bloque del HUD ocupa una sola línea y
    `PAUSA` sigue pulsándose sin apuntar.
+   **Corregido por SPEC 12**: con el dedo el HUD se queda con sus cuatro celdas
+   y `PAUSA` baja al centro del mando. En escritorio sigue en la misma fila.
 
 6. **El mando gana `side` y área táctil.** Añadir el campo `side` a las cinco
    entradas de `PAD` y una altura mínima de 44px a los botones. La rejilla de
@@ -353,7 +359,8 @@ cabecera y los dos superpuestos.
       posturas, y cambiar de piel no reinicia la partida.
 - [x] El HUD ocupa una sola línea en un teléfono de 390px de ancho.
 - [x] `PAUSA` / `SEGUIR` funciona en las dos posturas.
-- [x] `SALIR` es visible y pulsable en las dos posturas.
+- [x] `SALIR` es visible y pulsable en las dos posturas. _Firmado con `SALIR` en
+      la cabecera; desde SPEC 12 está en el centro del mando._
 - [x] Cambiar de aplicación y volver deja la partida en pausa, no muerta.
 - [x] `CARGANDO CARTUCHO...` se ve entero en horizontal.
 - [x] Al perder, el superpuesto de fin de partida se lee entero en horizontal y
