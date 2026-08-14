@@ -309,6 +309,17 @@ export function GamePad({
             <Arrow code={entry.code} />
           </PadKey>
         ))}
+        {/* La celda del medio, que estaba vacía: es lo que hace que las cuatro
+            flechas se lean como una cruz y no como cuatro botones sueltos. No
+            es un botón —no manda ninguna tecla—, así que ni se tabula ni se
+            anuncia. */}
+        <div
+          aria-hidden
+          className={`${cell} col-start-2 row-start-2 flex items-center justify-center rounded-md border border-av-cyan/15 bg-[radial-gradient(circle_at_50%_50%,#181822_0%,#08080d_80%)] shadow-[inset_0_0_12px_rgba(0,0,0,0.8),inset_0_1px_0_rgba(255,255,255,0.04)]`}
+        >
+          {/* La gema: un rombo recortado del cuadrado, latiendo como un LED. */}
+          <span className="size-3 bg-av-cyan shadow-[0_0_10px_var(--av-cyan),inset_0_0_4px_rgba(0,0,0,0.5)] [clip-path:polygon(50%_0,100%_50%,50%_100%,0_50%)] animate-av-led" />
+        </div>
       </div>
     );
   }
