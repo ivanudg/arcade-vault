@@ -32,10 +32,12 @@ export function PlayHeader({ game }: { game: Game }) {
       </span>
 
       {/* Salir devuelve a la ficha de la máquina, no a la biblioteca: es de
-          donde se llega a jugar. */}
+          donde se llega a jugar. Con el dedo no está aquí: desde SPEC 12 baja
+          al centro del mando —donde llega el pulgar, y preguntando antes—, y
+          esta cabecera se queda con la marca y el título. */}
       <Link
         href={`/juego/${game.id}`}
-        className="shrink-0 border border-av-magenta/45 px-3.25 py-2.75 font-display text-[9px] tracking-av text-av-magenta hover:bg-av-magenta/16 hover:text-white handheld-wide:py-2"
+        className="shrink-0 border border-av-magenta/45 px-3.25 py-2.75 font-display text-[9px] tracking-av text-av-magenta hover:bg-av-magenta/16 hover:text-white handheld:hidden handheld-wide:py-2"
       >
         SALIR
       </Link>
