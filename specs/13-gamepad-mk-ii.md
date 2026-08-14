@@ -1,6 +1,6 @@
 # SPEC 13 — Gamepad MK-II
 
-> **Estado:** Borrador
+> **Estado:** Aceptado
 > **Depende de:** SPEC 11, SPEC 12
 > **Fecha:** 2026-08-14
 > **Objetivo:** Vestir el mando táctil de `/jugar/[id]` con el gamepad MK-II de `references/gamepad-assets/` —chasis propio, cruz con flechas SVG y hub, `B`/`A` redondos con relieve y las dos píldoras de partida— sin tocar ninguna tecla ni la maquetación de escritorio.
