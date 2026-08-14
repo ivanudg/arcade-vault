@@ -97,16 +97,22 @@ const ENGINE_PAD: Partial<Record<GameId, { a: PadAction; b: PadAction | null }>>
  * aquí: en uno de 360px el gabinete deja 328 útiles y el mando pide 322 —144 la
  * cruz, 48 el centro, 120 las dos acciones, 8 de relleno y 2 de bordes—.
  *
- * Llevan el relieve del resto del mando en vez del aro hueco que tenían: son
- * del chasis, no de la pantalla. Y aquí `active:` sí vale, al revés que en las
- * teclas: no hay dos botones que puedan pedir lo mismo a la vez.
+ * Son **de plástico**, como el START y el SELECT de un mando de consola: cuerpo
+ * sólido en el tono apagado de su acento, canto duro debajo y la etiqueta
+ * encendida encima. Con el borde de color sobre fondo oscuro que tenían antes
+ * se leían como dos aros de neón sueltos —cosa de la pantalla— y no como dos
+ * teclas del chasis. Inclinadas estilo NES no: la inclinación cuesta área
+ * táctil en la esquina y aquí el ancho está contado.
+ *
+ * Y aquí `active:` sí vale, al revés que en las teclas: no hay dos botones que
+ * puedan pedir lo mismo a la vez.
  */
 const PILL_BASE =
-  "flex h-11 w-12 shrink-0 cursor-pointer touch-none items-center justify-center rounded-full border bg-linear-to-b from-av-pad-face-top to-av-pad-face-bottom font-display text-[6px] transition duration-100";
+  "flex h-11 w-12 shrink-0 cursor-pointer touch-none items-center justify-center rounded-full border border-black/50 font-display text-[6px] transition duration-100";
 
 const PILL: Record<"pause" | "exit", string> = {
-  pause: `${PILL_BASE} border-av-yellow/45 text-av-yellow shadow-[0_3px_0_var(--av-pad-edge),inset_0_1px_0_rgba(255,255,255,0.06)] hover:border-av-yellow hover:text-white active:translate-y-0.5 active:shadow-[0_1px_0_var(--av-pad-edge),inset_0_0_12px_rgba(245,255,0,0.35)]`,
-  exit: `${PILL_BASE} border-av-magenta/45 text-av-magenta shadow-[0_3px_0_var(--av-pad-edge),inset_0_1px_0_rgba(255,255,255,0.06)] hover:border-av-magenta hover:text-white active:translate-y-0.5 active:shadow-[0_1px_0_var(--av-pad-edge),inset_0_0_12px_rgba(255,0,110,0.35)]`,
+  pause: `${PILL_BASE} bg-linear-to-b from-[#3f4116] to-[#1e1f08] text-av-yellow shadow-[0_3px_0_var(--av-pad-edge),inset_0_1px_0_rgba(245,255,0,0.18),inset_0_-3px_6px_rgba(0,0,0,0.55)] [text-shadow:0_0_6px_rgba(245,255,0,0.55)] hover:text-white active:translate-y-0.5 active:shadow-[0_1px_0_var(--av-pad-edge),inset_0_0_14px_rgba(245,255,0,0.4)]`,
+  exit: `${PILL_BASE} bg-linear-to-b from-[#4b1327] to-[#250912] text-av-magenta shadow-[0_3px_0_var(--av-pad-edge),inset_0_1px_0_rgba(255,0,110,0.18),inset_0_-3px_6px_rgba(0,0,0,0.55)] [text-shadow:0_0_6px_rgba(255,0,110,0.55)] hover:text-white active:translate-y-0.5 active:shadow-[0_1px_0_var(--av-pad-edge),inset_0_0_14px_rgba(255,0,110,0.4)]`,
 };
 
 /**
@@ -448,12 +454,7 @@ export function GamePad({
    */
   function pauseKey() {
     return (
-      <button
-        type="button"
-        onClick={onPause}
-        aria-pressed={paused}
-        className={PILL.pause}
-      >
+      <button type="button" onClick={onPause} aria-pressed={paused} className={PILL.pause}>
         {paused ? "SEGUIR" : "PAUSA"}
       </button>
     );
@@ -467,11 +468,7 @@ export function GamePad({
    */
   function exitKey() {
     return (
-      <button
-        type="button"
-        onClick={onExit}
-        className={PILL.exit}
-      >
+      <button type="button" onClick={onExit} className={PILL.exit}>
         SALIR
       </button>
     );
@@ -513,8 +510,14 @@ export function GamePad({
       {/* Los tres bloques, por encima de la trama del chasis, como el `.gp-body`
           del prototipo. Sin hueco propio: a 360px de ancho los tres suman 312
           de los 318 que deja el chasis, y lo que sobra lo reparte
-          `justify-between`. El hueco es lo que cede; 44px de botón es suelo. */}
-      <div className="relative z-1 flex items-center justify-between">
+          `justify-evenly`. El hueco es lo que cede; 44px de botón es suelo.
+
+          `evenly` y no `between` porque `between` pega la cruz y `A` contra el
+          borde del chasis y le da todo el aire al centro: en un teléfono de
+          390px eso son 18px entre bloques y 4 hasta el canto, y el halo de `A`
+          se sale del panel. Repartido en cuatro huecos iguales son 9 a cada
+          lado, y el mando se lee centrado. */}
+      <div className="relative z-1 flex items-center justify-evenly">
         {cross("grid shrink-0 grid-cols-3 grid-rows-3 gap-1.5")}
         {/* El centro, entre los dos pulgares: los botones de partida. */}
         <div className="flex shrink-0 flex-col items-center gap-2">
