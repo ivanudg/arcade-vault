@@ -28,8 +28,9 @@ Motores registrados:
 Migraciones aplicadas:
 !`ls supabase/migrations/`
 
-La plantilla canónica de `/spec`, que se lee en la Fase 5:
-!`ls ~/.claude/skills/spec/ || ls ~/.agents/skills/spec/ || echo "NO instalada — usa specs/05-asteroids-motor-de-juego.md como plantilla"`
+La plantilla canónica de `/spec` **no se resuelve aquí**: vive fuera del repo, y los bloques de
+esta sección corren acotados al directorio de trabajo, así que un `ls` a `~` los bloquea y
+cancela la invocación entera antes de empezar. Se resuelve en la Fase 5, con `Read`.
 
 ---
 
@@ -66,9 +67,9 @@ que todavía no se usa.
 - `contact-points.md` — al empezar la **Fase 4**. Los diez puntos de contacto, quién avisa si
   falta cada uno, y la regla de agrupación del plan.
 - **La skill `/spec`** — al empezar la **Fase 5**, antes de redactar. Su `template.md` define qué
-  es una spec en este flujo y su `SKILL.md` fija las reglas de redacción. La ruta sale del Session
-  context de arriba; normalmente es `~/.claude/skills/spec/`, que puede ser un enlace a
-  `~/.agents/skills/spec/`.
+  es una spec en este flujo y su `SKILL.md` fija las reglas de redacción. Vive fuera del repo, en
+  `~/.claude/skills/spec/`, que puede ser un enlace a `~/.agents/skills/spec/`; se abre con
+  `Read`, no con `ls`.
 
 ---
 
@@ -307,13 +308,16 @@ skill solo la especializa. Dos archivos, en este orden:
    documento.
 2. `SKILL.md` — sus reglas de redacción y su filosofía, que esta skill hereda.
 
-La ruta la resuelve el Session context de arriba. Si ahí no apareció ninguna, búscala:
+Está fuera del repo, así que **ábrela con `Read`, nunca con `ls` ni con otro comando de shell**:
+un `ls` a `~` sale del directorio de trabajo y queda bloqueado. Prueba estas rutas por orden y
+quédate con la primera que abra:
 
 ```
-ls ~/.claude/skills/spec/ || ls ~/.agents/skills/spec/
+~/.claude/skills/spec/template.md
+~/.agents/skills/spec/template.md
 ```
 
-Si no existe en ninguna de las dos —la skill no está instalada en esta máquina—, **dilo en una
+Si ninguna de las dos abre —la skill no está instalada en esta máquina—, **dilo en una
 línea y sigue**: `specs/05-asteroids-motor-de-juego.md` es la plantilla viva del repo y basta
 para redactar. No inventes una estructura propia ni des la fase por bloqueada.
 
