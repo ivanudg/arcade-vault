@@ -57,7 +57,16 @@ export default async function PlayPage({ params }: PageProps<"/jugar/[id]">) {
     // paga el tablero, porque entra entero en el presupuesto `--av-chrome` de
     // `PlayCabinet`. Recortarlo a 2rem son 48px que vuelven al juego, y por eso
     // los dos números van juntos: si esto cambia, se vuelve a medir aquél.
-    <main className="flex-1 pt-[clamp(18px,3vw,34px)] pr-[calc(clamp(14px,3vw,30px)+env(safe-area-inset-right))] pb-[calc(2rem+env(safe-area-inset-bottom))] pl-[calc(clamp(14px,3vw,30px)+env(safe-area-inset-left))] handheld:h-[calc(100svh-var(--av-play-header))] handheld:overflow-hidden handheld:pt-2.5 handheld:pr-[calc(6px+env(safe-area-inset-right))] handheld:pb-[env(safe-area-inset-bottom)] handheld:pl-[calc(6px+env(safe-area-inset-left))]">
+    // Y con el dedo el `flex-1` se apaga, que si no el alto de al lado no vale
+    // nada: `body` sólo declara `min-h-full` sobre un `html` de altura
+    // automática, así que la cadena llega aquí indefinida, `flex-basis: 0%` se
+    // resuelve por contenido y el crecer gana al `height`. En vertical no se
+    // notaba —el tablero lo acota su `max-w`, que lee `100svh` directamente—,
+    // pero en horizontal el marco se queda sin nada contra lo que medir su
+    // `h-full`, el canvas toma su tamaño natural y la página se desplaza casi
+    // mil píxeles. Con `flex-none` manda la altura declarada y la cadena se
+    // cierra. En escritorio no cambia nada: ahí sigue mandando `flex-1`.
+    <main className="flex-1 pt-[clamp(18px,3vw,34px)] pr-[calc(clamp(14px,3vw,30px)+env(safe-area-inset-right))] pb-[calc(2rem+env(safe-area-inset-bottom))] pl-[calc(clamp(14px,3vw,30px)+env(safe-area-inset-left))] handheld:h-[calc(100svh-var(--av-play-header))] handheld:flex-none handheld:overflow-hidden handheld:pt-2.5 handheld:pr-[calc(6px+env(safe-area-inset-right))] handheld:pb-[env(safe-area-inset-bottom)] handheld:pl-[calc(6px+env(safe-area-inset-left))]">
       <PlayCabinet game={game} />
     </main>
   );

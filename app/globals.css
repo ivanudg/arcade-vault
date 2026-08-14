@@ -42,6 +42,16 @@
   --av-header-bg: rgba(10, 10, 15, 0.88);
   --av-scrim: rgba(5, 5, 10, 0.72);
 
+  /* --- Mando de dedo: las caras que se repiten en el chasis y los botones ---
+     Salen del prototipo de references/gamepad-assets/gamepad.html. Aquí sólo
+     está lo que aparece más de una vez; los degradados, halos y rgba de una
+     sola aparición se quedan como valor arbitrario en `components/game-pad.tsx`. */
+  --av-pad-shell-top: #1c1c28; /* cara alta del chasis */
+  --av-pad-shell-bottom: #0c0c14; /* cara baja del chasis */
+  --av-pad-face-top: #1a1a25; /* cara alta de un botón en reposo */
+  --av-pad-face-bottom: #0a0a12; /* cara baja */
+  --av-pad-edge: #050507; /* el canto duro de debajo, el relieve */
+
   /* Alto de la cabecera de la pantalla de juego cuando se juega con el dedo.
      Sólo lo usan `PlayHeader`, que lo fija como su altura, y el `<main>` de
      `/jugar/[id]`, que lo resta a `100svh`: la cabecera es un hermano anterior
@@ -78,6 +88,12 @@
   --color-av-line: var(--av-line);
   --color-av-line-strong: var(--av-line-strong);
 
+  --color-av-pad-shell-top: var(--av-pad-shell-top);
+  --color-av-pad-shell-bottom: var(--av-pad-shell-bottom);
+  --color-av-pad-face-top: var(--av-pad-face-top);
+  --color-av-pad-face-bottom: var(--av-pad-face-bottom);
+  --color-av-pad-edge: var(--av-pad-edge);
+
   /* --- Tipografía: display de píxel + cuerpo monoespaciado --- */
   --font-display: var(--font-press-start), "Press Start 2P", monospace;
   --font-mono: var(--font-courier-prime), "Courier Prime", monospace;
@@ -111,6 +127,7 @@
   --animate-av-bounce: av-bounce 1.6s ease-in-out infinite;
   --animate-av-px: av-px 2.4s steps(2) infinite;
   --animate-av-shake: av-shake 0.4s;
+  --animate-av-led: av-led 2s ease-in-out infinite;
 }
 
 /* ============================================================
@@ -406,6 +423,14 @@
   }
   80% {
     transform: translateX(4px);
+  }
+}
+
+/* La gema del hub de la cruz: un LED que respira sin llegar a apagarse. */
+@keyframes av-led {
+  50% {
+    opacity: 0.35;
+    transform: scale(0.85);
   }
 }
 

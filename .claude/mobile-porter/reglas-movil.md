@@ -13,8 +13,17 @@ rechazadas por ella se pueden reabrir.
 worker, ni envoltorio nativo: eso es otro producto y merece su propia spec.
 
 Y son **nueve piezas**: `/`, `/biblioteca`, `/juego/[id]`, `/salon`, `/cuenta`, `/acerca-de`,
-`/not-found`, `SiteHeader` y `SiteFooter`. `/jugar/[id]` **no está**: la portaron la SPEC 11 y
-la SPEC 12, y aquí sólo es fuente de patrones, en sólo lectura.
+`/not-found`, `SiteHeader` y `SiteFooter`. `/jugar/[id]` **no está**: la portaron la SPEC 11, la
+SPEC 12 y la SPEC 13, y aquí sólo es fuente de patrones, en sólo lectura. Desde la SPEC 13 esa
+cantera son **cuatro** archivos y no tres: `app/jugar/[id]/page.tsx`, `components/play-header.tsx`,
+`components/play-cabinet.tsx` y `components/game-pad.tsx`, que es el mando de dedo y se llevó
+consigo el precedente de los 44px.
+
+**Ojo con las líneas de este archivo.** Todas las anclas de aquí se reanclaron el 2026-08-14, tras
+la SPEC 13: `game-pad.tsx` salió de `play-cabinet.tsx` —que pasó de 896 líneas a 770— y
+`globals.css` estrenó cinco tokens `--av-pad-*` y una animación, así que **todo lo de debajo de
+`:49` se movió unas dieciséis líneas**. Como en el ledger, lo que manda es la **cadena**, no el
+número: si un ancla no cuadra, se busca el texto y se corrige la regla, no al revés.
 
 ---
 
@@ -32,7 +41,7 @@ estados no son el mismo y la distancia entre ellos está medida en «Qué firma 
 
 **Un defecto se mide en el navegador, no se deduce del código.** Es la diferencia con una
 ranura de color, que se lee con un `Grep`: un ancho es un **valor computado**, y
-`@layer base { html { overflow-x: hidden } }` de `app/globals.css:159-161` garantiza que además
+`@layer base { html { overflow-x: hidden } }` de `app/globals.css:176-178` garantiza que además
 es un valor **invisible**. Mirar la pantalla no basta.
 
 ## Los dos umbrales
@@ -81,7 +90,7 @@ Los cinco bloques que siguen sólo ordenan la lectura. No puntúan.
 window.innerWidth` ni `.left < 0`, **medido con JavaScript y no mirado en una captura**.
 **Falla si** hay uno, aunque la captura salga perfecta.
 
-Ese «aunque» es la regla entera. `app/globals.css:159-161` mete `html { overflow-x: hidden }`
+Ese «aunque» es la regla entera. `app/globals.css:176-178` mete `html { overflow-x: hidden }`
 para contener la rejilla en perspectiva del fondo, y el efecto colateral es que **en este repo
 un desbordamiento no da scroll lateral: da recorte silencioso**. La insignia `TU MEJOR MARCA`
 de `components/hall-of-fame.tsx:116` mide unos 112px con `flex-none` y vive dentro de una celda
@@ -142,11 +151,22 @@ visible mide **44px o más en su lado corto**, medido con `getBoundingClientRect
 **Falla si** hay uno por debajo. Y no vale deducirlo del relleno: `py-2.5` no dice nada del alto
 real, porque el alto es relleno **más** la caja de línea de Press Start 2P.
 
-El 44 no viene de fuera. `components/play-cabinet.tsx:344-346` lo escribe —«44px de lado corto
-es el mínimo que un pulgar acierta sin apuntar»— y lo aplica con `min-h-11`; su `CENTER_KEY` es
-`size-11`; y la SPEC 12 tiene un criterio firmado que dice «Ningún botón del mando mide menos
-de 44px en su lado corto». Ya hay además un precedente **fuera** de la pantalla de juego: los
-campos de `components/contact-form.tsx` llevan `h-11`, que son 44 exactos.
+El 44 no viene de fuera. Desde la SPEC 13 quien lo escribe es **`components/game-pad.tsx`**, no
+`play-cabinet.tsx`: el comentario está en `:335-336` —«44px de lado corto es el mínimo que un
+pulgar acierta sin apuntar; con el relleno de siempre se quedaban en 40»— y otra vez en `:92-95`,
+sobre las píldoras de partida. Se aplica con `min-h-11` en la fila de escritorio (`:145`) y con
+`size-11` en la celda de la cruz (`:367`, que sube a `size-12` en horizontal, donde sobra ancho).
+La SPEC 12 tiene un criterio firmado que dice «Ningún botón del mando mide menos de 44px en su
+lado corto», y la SPEC 13 lo repitió incluyendo las dos píldoras nuevas. Ya hay además un
+precedente **fuera** de la pantalla de juego: los campos de `components/contact-form.tsx` llevan
+`h-11`, que son 44 exactos.
+
+**Y la SPEC 13 dejó escrito qué cede cuando algo no cabe, que es la mitad que faltaba de esta
+regla.** En un teléfono de 360px el mando pide 312 de los 318 que le deja el chasis, y la salida
+no fue encoger un botón: fue `justify-evenly` y bajar el relleno lateral del chasis de 22px a 4
+(`game-pad.tsx:513`, «el hueco es lo que cede; 44px de botón es suelo»). **En tus nueve piezas
+vale igual: primero cede el `gap`, después el relleno, y el objetivo táctil nunca.** Si con las
+tres cosas no cabe, es un M3 y se reordena.
 
 Lo que falla hoy, medido: `components/top-players.tsx:44` (`VER SALON`, ~25px),
 `components/library-browser.tsx:60` (chips, ~30px), `components/hall-of-fame.tsx:69` (pestañas,
@@ -170,7 +190,7 @@ ganar ancho: eso es M3 por la puerta de atrás.
 7 y 8px —`components/game-card.tsx:47,59`, `hall-of-fame.tsx:69`, `library-browser.tsx:60`,
 `juego/[id]/page.tsx:92`— se quedan como están. Son la voz de las plantillas, repiten
 información que está al lado, y `--text-av-label: clamp(9px,1.7vw,13px)` de
-`app/globals.css:92` fija el suelo del propio tema en 9px. **Gana el archivo.** Cambiarlos es un
+`app/globals.css:108` fija el suelo del propio tema en 9px. **Gana el archivo.** Cambiarlos es un
 rediseño y pide una spec, no un porte.
 
 **Lo que sí entra y hoy falla:** `components/auth-panel.tsx:16`, con `text-[14px]` en los tres
@@ -194,7 +214,7 @@ píxeles medido una vez y pegado.
 marca y botón envuelven a dos líneas, que es lo que hace hoy. El comentario de al lado acierta
 con `svh` y falla con el 61.
 
-El precedente correcto está a la vista: `--av-play-header` vive en `app/globals.css:49` **y no
+El precedente correcto está a la vista: `--av-play-header` vive en `app/globals.css:59` **y no
 en un `className`**, y el comentario de ahí explica por qué —`PlayHeader` y el `<main>` de
 `/jugar/[id]` son hermanos y sólo comparten lo que herede la raíz—. Aquí pasa lo mismo:
 `SiteHeader` y el `<main>` de `/` son hermanos en `app/(vault)/layout.tsx:16-17`. La salida es
@@ -206,6 +226,16 @@ Y las tres unidades, decididas: **`svh` sí**, que es lo que ya hay escrito y es
 `min-h`**, porque cambia mientras la barra se retrae y hace que la sección crezca y encoja bajo
 el pulgar mientras se desplaza.
 
+**Y una trampa que la SPEC 13 pagó y conviene no volver a pagar: escribir la altura no basta si
+el elemento vive dentro de un `flex` que le da `flex-1`.** El `<main>` de `/jugar/[id]` declaraba
+`h-[calc(100svh-var(--av-play-header))]` **y se desplazaba mil píxeles igual**, porque `body`
+lleva `min-h-full` sobre un `html` de altura automática: la cadena de alturas llega ahí
+indefinida, `flex-basis: 0%` se resuelve por contenido y **crecer le gana al `height`**. La
+salida fue apagar el `flex-1` (`app/jugar/[id]/page.tsx:69`, `handheld:flex-none`). Tu caso es el
+mismo en cuanto una de las siete meta un `min-h-[calc(100svh-…)]` dentro de la columna flex de
+`app/(vault)/layout.tsx`: **la altura se comprueba midiendo `scrollHeight` contra `innerHeight`
+en V3, no leyendo la clase.**
+
 ### M7 · Lo que toca el borde de la pantalla suma `env(safe-area-inset-*)`
 
 **Pasa si** cada elemento que llega a un borde de la ventana suma el inset con `calc()`:
@@ -214,12 +244,13 @@ el pulgar mientras se desplaza.
 `site-header.tsx:176`, que es `inset-y-0 right-0` y necesita los cuatro. **Falla si** falta
 alguno.
 
-El patrón está escrito cuatro veces en el repo: `components/play-header.tsx:18` y
-`components/play-cabinet.tsx:731,766,822`. Se suma al relleno existente, nunca lo sustituye.
+El patrón está escrito seis veces en el repo: `components/play-header.tsx:18`,
+`app/jugar/[id]/page.tsx:69` y `components/play-cabinet.tsx:606,641,697`. Se suma al relleno
+existente, nunca lo sustituye.
 
 **Y aquí va la advertencia sin la cual la regla es un engaño:** las siete pantallas **no
 declaran `viewportFit: "cover"`** —el único `export const viewport` del repo está en
-`app/jugar/[id]/page.tsx:23-30`, y `app/layout.tsx` no exporta ninguno—, así que hoy el
+`app/jugar/[id]/page.tsx:23-31`, y `app/layout.tsx` no exporta ninguno—, así que hoy el
 navegador inserta el área segura por su cuenta y **`env()` resuelve a `0`**. Escribir el
 `calc()` hoy no arregla nada visible: es gratis, es inofensivo, y es lo correcto el día que
 alguien ponga `cover`. La regla se cumple escribiéndola; **no se puede firmar sin un teléfono
@@ -237,23 +268,33 @@ aparece un `min-[Npx]:` o un `max-[Npx]:` nuevo, o si un `max-*:` se usa para de
 base escrito pensando en escritorio.
 
 **`handheld` y `handheld-wide` no entran aquí, y no es por gusto.** Las dos llevan
-`(pointer: coarse)` (`app/globals.css:178-179`), que un Chrome de escritorio no cumple nunca. La
+`(pointer: coarse)` (`app/globals.css:195-196`), que un Chrome de escritorio no cumple nunca. La
 SPEC 12 lo pagó y lo dejó escrito en su «Validación»: «las variantes `handheld` piden
 `(pointer: coarse)`, que un Chrome de escritorio no cumple, así que la maquetación de mano no
-llegó a pintarse ni una vez». Una regla escrita bajo `handheld` es una regla que **este agente
-no puede verificar con el procedimiento que tiene**, y se publicaría sin haberse pintado jamás.
+llegó a pintarse ni una vez».
 
-Y el 480 es además el umbral equivocado para estas pantallas: la tabla del salón y la rejilla de
-la ficha empiezan a doler a 640, no a 480, así que `handheld` dejaría roto todo el tramo
-481-639. Las dos variantes se quedan donde `globals.css:174-176` ya dice que están: **sólo en la
-pantalla de juego**.
+**La SPEC 13 encontró la salida, y por eso este párrafo cambió de argumento.** Montó la pantalla
+en un iframe del tamaño exacto del teléfono —donde las media queries y `100svh` se evalúan contra
+ese tamaño— y le **re-emitió sus propias reglas CSS de `handheld`** quitándoles sólo la condición
+de puntero: las mismas declaraciones, no una imitación, y comprobó que el iframe da las mismas
+cifras al píxel que la ventana real. Así que **`handheld` sí se puede medir**, y decir lo
+contrario a partir de hoy es falso. Lo que sigue en pie es que **cuesta un montaje aparte que tú
+no tienes en la Fase 4**, y sobre todo la razón de fondo, que nunca fue de método:
+
+Y el 480 es el umbral equivocado para estas pantallas: la tabla del salón y la rejilla de la
+ficha empiezan a doler a 640, no a 480, así que `handheld` dejaría roto todo el tramo 481-639.
+Y lo que le cambia a una de tus nueve piezas en un teléfono es **cuánto sitio hay**, que se mide
+en píxeles; lo que le cambia a la pantalla de juego es **con qué se juega**, que se mide en
+puntero. Las dos variantes se quedan donde `globals.css:181-193` ya dice que están: **sólo en la
+pantalla de juego**. `CLAUDE.md` lo recoge desde que existes: eso «es una regla y no una
+observación», y la regla es ésta.
 
 En una frase: **las siete pantallas se maquetan por ancho, con los breakpoints de fábrica; la
 pantalla de juego se maqueta por puntero, con `handheld`. No se cruzan.**
 
 `pointer-coarse:` sí se admite, y **para una sola cosa**: esconder una pista que sólo tiene
-sentido con ratón. El único precedente es `components/play-cabinet.tsx:658`. Nunca para cambiar
-una maquetación, y nunca para un área táctil, que es M4.
+sentido con ratón. El único precedente es `components/play-cabinet.tsx:533`, la línea de
+controles de teclado. Nunca para cambiar una maquetación, y nunca para un área táctil, que es M4.
 
 Los dos arbitrarios de `app/(vault)/acerca-de/page.tsx:84,129` **se quedan, y no son deuda**. No
 fallan a 360 ni a 390 —por debajo de 820 y de 900 apilan, que es lo correcto— y moverlos a
@@ -270,7 +311,7 @@ orden no se altera:
    `w-[min(100%,Npx)]`. `components/library-browser.tsx:73` y `components/auth-panel.tsx:39` son
    dos pantallas enteras de responsividad con **cero** puntos de corte.
 2. **`clamp()`, para una medida continua**: un tamaño de letra, un relleno, un ancho máximo.
-   Para eso está la escala del `@theme inline` en `app/globals.css:87-92`, y el
+   Para eso está la escala del `@theme inline` en `app/globals.css:103-108`, y el
    `p-[clamp(22px,4vw,36px)]` de `auth-panel.tsx:39`.
 3. **Una variante `sm:`/`md:`, y sólo para un cambio discontinuo**: una pista que aparece, un
    `order` que se resetea, una dirección que gira. `components/activity-feed.tsx:59` es el caso
@@ -305,19 +346,26 @@ es el que ya estaba viendo una pantalla rota.** Es la misma función que cumple 
 
 **Pasa si** al terminar, `git status --short` sólo enseña archivos de las nueve piezas, sus
 componentes, `app/globals.css` y el ledger. **Falla si** hay uno solo bajo `lib/games/`,
-`app/jugar/`, `components/play-*.tsx`, `components/game-canvas.tsx`, `specs/`, `supabase/` o
-`references/`.
+`app/jugar/`, `components/play-*.tsx`, **`components/game-pad.tsx`**,
+`components/game-canvas.tsx`, `specs/`, `supabase/` o `references/`.
 
-La SPEC 11 y la SPEC 12 ya portaron la pantalla de juego, y su presupuesto de `--av-chrome`
-sigue siendo, en palabras de su propia «Validación», «una cuenta y no una medida»: **diez de sus
-veintisiete criterios están sin firmar y sólo los firma un dedo**. Tocar `PlayHeader` o las dos
-`@custom-variant` «para que quede consistente» reabre un porte que aún no ha terminado de
-verificarse.
+`game-pad.tsx` entra en esa lista desde la SPEC 13 y **no lo cazaba el comodín `play-*`**: es el
+mando de dedo, salió de `play-cabinet.tsx` y es tan intocable como él.
+
+Las SPEC 11, 12 y 13 ya portaron la pantalla de juego. Sus tres presupuestos de `--av-chrome`
+—`28rem` en escritorio, `25rem` en `handheld`, `8.5rem` en `handheld-wide`— **ya no son «una
+cuenta y no una medida»**: la SPEC 13 los re-midió contra la pantalla real, en las dos posturas y
+a los dos anchos, y ahí cambiaron los dos de mano. Lo que **sigue sin firmar es lo mismo de
+siempre**: el margen seguro real, el `devicePixelRatio` de un teléfono, el tacto, y en la SPEC 13
+además la postura horizontal, que no se llegó a mirar en un aparato. **Eso sólo lo firma un
+dedo.** Tocar `PlayHeader`, el mando o las dos `@custom-variant` «para que quede consistente»
+reabre un porte que aún no ha terminado de verificarse.
 
 `app/globals.css` **sí** es escribible, y para dos cosas: añadir una variable de maquetación a
-`:root` —M6— y nada más. Ni las dos `@custom-variant` de `:178-179`, ni `--av-play-header` de
-`:49`, ni el `html { overflow-x: hidden }` de `:159-161`: quitarlo desnudaría la rejilla del
-fondo, que es justo para lo que está.
+`:root` —M6— y nada más. Ni las dos `@custom-variant` de `:195-196`, ni `--av-play-header` de
+`:59`, ni los cinco `--av-pad-*` de `:49-53` con sus `--color-av-pad-*` de `:91-95`, que son la
+piel del mando y los estrenó la SPEC 13, ni el `html { overflow-x: hidden }` de `:176-178`:
+quitarlo desnudaría la rejilla del fondo, que es justo para lo que está.
 
 ### M12 · Un panel que tapa la pantalla no deja correr lo de debajo
 
@@ -327,7 +375,7 @@ el propio cajón lleva `overscroll-contain` si puede desplazarse. **Falla si** e
 sobre el velo mueve el artículo de detrás, que en un teléfono es lo que hace que un menú parezca
 roto.
 
-El patrón ya está en el repo: `components/play-cabinet.tsx:770,827` llevan `overflow-y-auto
+El patrón ya está en el repo: `components/play-cabinet.tsx:645,702` llevan `overflow-y-auto
 overscroll-contain` en sus superpuestos. Y el cajón ya hace bien todo lo demás —Escape en
 `:73-80`, velo en `:169-171`, `aria-expanded` y `aria-controls` en `:156-157`—, así que lo que
 falta es exactamente esto y sólo esto.
@@ -350,6 +398,14 @@ mejora sobre la SPEC 12, no un empate: allí la maquetación de mano no llegó a
 vez porque dependía de `(pointer: coarse)`. **Aquí M8 prohíbe depender del puntero a propósito,
 así que todo lo que este agente escribe se pinta estrechando una ventana.** Ése es el
 rendimiento de la política de breakpoints.
+
+La SPEC 13 subió el listón de lo que se puede medir sin aparato, y conviene copiarle el criterio
+más que la técnica: **midió las 16 combinaciones** —cuatro máquinas × cuatro tamaños— en vez de
+mirar dos, y **simuló `env(safe-area-inset-bottom)` a 34px en vertical y 21 en horizontal** para
+no dar por bueno un hueco que en un iPhone no existe. Lo segundo te sirve tal cual el día que
+alguien declare `viewportFit: "cover"` en el layout raíz y M7 deje de valer cero. Y lo que aun
+así se le escapó —la postura horizontal en un aparato real— es exactamente la clase de cosa que
+esta lista existe para no olvidar.
 
 Las seis cosas que sólo puede firmar un teléfono real:
 

@@ -9,7 +9,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 **Arcade Vault**: plataforma para jugar online y competir por la mayor cantidad de
 puntos. Ya no es el scaffold de `create-next-app`: hoy son **siete pantallas**, cuatro
 máquinas jugables con motor propio y un marcador compartido en Supabase. Lo construido
-llega hasta **SPEC 12**.
+llega hasta **SPEC 13**.
 
 El flujo de trabajo del proyecto es **Spec Driven Design** vía las skills `/spec` y `/spec-impl` de [Klerith/fernando-skills](https://github.com/Klerith/fernando-skills) (`npx skills@latest add Klerith/fernando-skills`). Antes de implementar una feature nueva, espera/produce la spec correspondiente en lugar de escribir código directamente.
 
@@ -38,6 +38,7 @@ historial cuenta el producto mejor que el código:
 | 10   | Snake, escrita desde cero, con `public/snake/fruits.png`                                   |
 | 11   | `/jugar/[id]` jugable con el dedo: maquetación vertical y horizontal de mano               |
 | 12   | El mando de mano se vuelve de consola: cruz, `B`/`A` y `PAUSA`/`SALIR` en el centro        |
+| 13   | El mando se viste: chasis, cruz con flechas SVG y hub, `B`/`A` con relieve; `game-pad.tsx` |
 
 Ojo: la spec 02 sigue marcada como `Aprobado` aunque la portada está implementada; el
 estado del encabezado no siempre se actualizó al cerrar.
@@ -63,7 +64,7 @@ npx supabase db push   # aplica las migraciones de supabase/migrations/
 - Tailwind v4 se configura **en CSS**, no en `tailwind.config.js`: los tokens viven en el bloque `@theme inline` de `app/globals.css`, alimentados por variables CSS de `:root`. Para añadir colores/fuentes del tema, edítalo ahí. PostCSS solo carga `@tailwindcss/postcss`.
 - Las fuentes se cargan con `next/font/google` en `app/layout.tsx` y se exponen como variables CSS (`--font-press-start` para Press Start 2P, `--font-courier-prime` para Courier Prime) enlazadas al tema de Tailwind (`font-display`, `font-mono`/`font-sans`).
 - El tema es **dark-only**: los tokens `--av-*` de `app/globals.css` derivan de `references/templates/` (paleta neón `#00f5ff` / `#ff006e` / `#f5ff00` sobre `#0a0a0f`). No hay variante clara ni theme switcher; no uses variantes `dark:`. Ojo: las **skins** de las que habla `skin-designer` son otra cosa —la paleta del canvas de un motor, que no hereda nada del tema del sitio—, y no contradicen esto: el sitio sigue siendo dark-only.
-- Los efectos CRT del template son utilidades propias en `globals.css`: `av-glow-*`, `av-halo-*`, `av-grid-floor`, `av-scanlines`, `av-vignette`, y las animaciones `animate-av-*` (fade, slide, row, caret, spin, sweep, cabinet, pulse, flicker, grid).
+- Los efectos CRT del template son utilidades propias en `globals.css`: `av-glow-*`, `av-halo-*`, `av-grid-floor`, `av-scanlines`, `av-vignette`, y las animaciones `animate-av-*` (fade, slide, row, caret, spin, sweep, cabinet, pulse, flicker, grid, led).
 - **Dos variantes propias, también en `globals.css`**, declaradas con `@custom-variant` de Tailwind v4 y usadas por nombre en el marcado: `handheld` es puntero grueso con la ventana por debajo de 480px de ancho **o** de alto, y `handheld-wide` es lo mismo en horizontal. Las dos llevan `(pointer: coarse)` acompañado siempre del umbral, para que un portátil táctil no cumpla ninguna y una tableta —un iPad mini mide 744px por su lado corto— se quede con la maquetación de escritorio. Sólo las usa la pantalla de juego, y desde que existe `mobile-porter` eso es **una regla y no una observación** (M8 de `.claude/mobile-porter/reglas-movil.md`): las otras siete pantallas se maquetan por **ancho**, con los breakpoints de fábrica de Tailwind, porque lo único que les cambia es cuánto sitio hay; la de juego se maqueta por **puntero**, porque lo que le cambia es con qué se juega. Y hay un motivo práctico además del conceptual: `(pointer: coarse)` no lo cumple un Chrome de escritorio, así que una regla escrita bajo `handheld` no se puede ver ni verificar estrechando una ventana —la SPEC 12 lo pagó y lo dejó escrito en su «Validación»—. Para ocultar algo con el dedo sin cambiar de maquetación está `pointer-coarse:`, que ya trae Tailwind. Junto a ellas vive `--av-play-header`, el alto de `PlayHeader` con el dedo: la cabecera lo fija y el `<main>` de `/jugar/[id]` se lo resta a `100svh`, y va en `:root` porque son hermanos y sólo comparten lo que herede la raíz.
 - `next.config.ts` sólo declara `turbopack.root = import.meta.dirname`, porque hay un `package-lock.json` suelto por encima del repo y sin eso Turbopack lo toma como raíz del workspace y avisa en cada build. Cualquier otro flag (p. ej. `cacheComponents`) es una decisión nueva, no algo ya asumido.
 - **Lo que se pinta en Press Start 2P va en mayúsculas y sin tildes.** La fuente no tiene glifos acentuados y el navegador los sustituye por otra, que al lado de un avance de 20px sale como una mota. Lo mismo con los símbolos del template (`▸ ▶ ✦ …`): se dibujan con ASCII. El único no-ASCII admitido es `·`. Los cuerpos de texto van en Courier Prime y **sí** llevan su acentuación.
@@ -209,7 +210,8 @@ máquina, se actualiza también esa tabla.
   teclado se coge de `lib/games/input.ts`
   (`createInput()`), que engancha `window` solo mientras hay partida y limita el
   `preventDefault` a las flechas y `Space`. Declara sus teclas vivas en
-  `ENGINE_KEYS`, dentro de `components/play-cabinet.tsx`. Y añade su fila a
+  `ENGINE_KEYS`, dentro de `components/game-pad.tsx`, y reparte sus dos botones
+  de acción en `ENGINE_PAD`, que está al lado. Y añade su fila a
   `references/implemented-games.md`, que es la tabla que se consulta para saber
   qué hay implementado.
 - **`lib/preview-art.ts` guarda arte sin máquina.** Su `PreviewId` es
@@ -250,14 +252,21 @@ máquina, se actualiza también esa tabla.
   | Maquetación                          | `--av-chrome` | Qué cambia                                                                                  |
   | ------------------------------------ | ------------- | ------------------------------------------------------------------------------------------- |
   | Escritorio                           | `28rem`       | la de siempre: HUD con `PAUSA`, gabinete, fila de cinco botones, controles y `PIEL`         |
-  | Vertical de mano (`handheld`)        | `24rem`       | HUD en una línea y sin `PAUSA`, mando de consola bajo el tablero, sin los controles         |
-  | Horizontal de mano (`handheld-wide`) | `7rem`        | gabinete en fila: cruz con `PAUSA`, tablero a `h-full`, `B`/`A` con `SALIR`; cabecera corta |
+  | Vertical de mano (`handheld`)        | `25rem`       | HUD en una línea y sin `PAUSA`, mando de consola bajo el tablero, sin los controles         |
+  | Horizontal de mano (`handheld-wide`) | `8.5rem`      | gabinete en fila: cruz con `PAUSA`, tablero a `h-full`, `B`/`A` con `SALIR`; cabecera corta |
 
   Sólo `/jugar/[id]` declara `viewport` propio —escala fija y `viewportFit:
 "cover"`—, así que el pellizco se pierde ahí y se conserva en las otras siete
   pantallas; a cambio, esa ruta rellena con `env(safe-area-inset-*)`. El
   `<main>` mide `100svh` menos `--av-play-header`, que es lo que ocupa
-  `PlayHeader` con el dedo, y no se desplaza. La fila de cinco botones es sólo de ratón y
+  `PlayHeader` con el dedo, y no se desplaza. Esa altura sólo manda porque con
+  el dedo el `<main>` apaga su `flex-1` (`handheld:flex-none`, SPEC 13): `body`
+  declara `min-h-full` sobre un `html` de altura automática, así que la cadena
+  llega ahí indefinida y `flex-basis: 0%` se resuelve por contenido, con lo que
+  crecer le ganaba al `height`. En vertical no se notaba —al tablero lo acota su
+  `max-w`, que lee `100svh` directamente—, pero en horizontal el marco se
+  quedaba sin nada contra lo que medir su `h-full` y la página se desplazaba casi
+  mil píxeles. La fila de cinco botones es sólo de ratón y
   teclado: con el dedo, en las dos posturas, el mando es el de una consola. Los
   botones se pintan por eso **tres veces** en el DOM y CSS
   enseña un juego cada vez; el canvas, en cambio, se pinta una sola vez, y por
@@ -273,9 +282,37 @@ máquina, se actualiza también esa tabla.
   superpuesto de la pantalla, porque en el centro del mando una salida
   accidental tira una partida y su marca.
 
-  Qué manda cada botón de acción lo dice **`ENGINE_PAD`**, en
-  `components/play-cabinet.tsx` y junto a `ENGINE_KEYS`. No hay teclas nuevas:
-  son las cinco de siempre, repartidas.
+- **El mando vive en `components/game-pad.tsx`**, y con él las cuatro tablas que
+  dicen qué botón manda qué tecla: `PAD`, `CROSS_CELL`, `ENGINE_KEYS` y
+  `ENGINE_PAD`, más el botón base `PadKey`. Salió del gabinete en SPEC 13, que
+  son 900 líneas y orquestan la partida, no dibujan un mando. `play-cabinet.tsx`
+  importa de ahí `PAD`, `ENGINE_KEYS` y `PadKey` para su fila de cinco de
+  escritorio: una sola fuente, que duplicarlas es la forma segura de que un día
+  digan cosas distintas. `GamePad` se monta una vez en vertical y **dos** en
+  horizontal, con `side="left"` y `side="right"`.
+
+- **Y desde SPEC 13 tiene aspecto de mando**, con la piel del prototipo de
+  `references/gamepad-assets/`: chasis con doble borde y trama de puntos, cruz
+  con relieve y flechas SVG, hub central con una gema que late (`animate-av-led`)
+  y `B`/`A` redondos con halo y aro punteado. Cinco tokens `--av-pad-*` en
+  `globals.css` para lo que se repite —las caras del chasis, la de un botón y el
+  canto duro del relieve—; los degradados y halos de una sola aparición se
+  quedan como valor arbitrario, que un token de un solo uso es un nombre que
+  mantener sin nada que unificar. Las pieles viven en `PAD_SKIN`, con cuatro
+  estados cada una (`base`, `rest`, `on`, `dead`) y escritas enteras: `A` y `B`
+  son dos entradas y no una con el color interpolado, igual que los cuatro
+  acentos del sitio. `row`, la de la fila de cinco de escritorio, no cambió.
+  El chasis se parte en horizontal —`PAD_SHELL` es un `Record<PadSide, string>`—
+  porque el tablero va en medio: cada mitad se redondea hacia fuera y deja recto
+  el canto que mira al canvas. En vertical el ancho está contado y por eso el
+  relleno lateral es de 4px y no los 22 del prototipo: en un teléfono de 360px el
+  gabinete deja 328 útiles y los tres bloques piden 312. El hueco entre bloques
+  lo reparte `justify-evenly`, que es lo que cede cuando algo aprieta; 44px de
+  lado corto es suelo y no se toca.
+
+  Qué manda cada botón de acción lo dice **`ENGINE_PAD`**, junto a `ENGINE_KEYS`
+  y en el mismo archivo. No hay teclas nuevas: son las cinco de siempre,
+  repartidas.
 
   | Máquina     | `B`                       | `A`                      |
   | ----------- | ------------------------- | ------------------------ |
@@ -284,10 +321,10 @@ máquina, se actualiza también esa tabla.
   | `arkanoid`  | — apagado                 | `ESPACIO` lanzar la bola |
   | `snake`     | — apagado                 | `ESPACIO` arrancar       |
 
-  La tabla vive en el gabinete y **no en `GameMount`** a propósito: qué hace
-  cada tecla es del motor, pero cuál cae bajo qué pulgar es de interfaz, y
-  llevarla al contrato obligaría a tocar las cuatro máquinas. `lib/games/` no
-  cambió ni una línea.
+  La tabla vive en el mando y **no en `GameMount`** a propósito: qué hace cada
+  tecla es del motor, pero cuál cae bajo qué pulgar es de interfaz, y llevarla al
+  contrato obligaría a tocar las cuatro máquinas. `lib/games/` no cambió ni una
+  línea, ni en SPEC 12 ni en SPEC 13.
 
   Que la cruz conserve la flecha que también manda `B` es lo que obliga a
   **contar pulsaciones por tecla** en `PlayCabinet`: `↑` llega desde dos sitios
@@ -296,6 +333,19 @@ máquina, se actualiza también esa tabla.
   quede pegada. Por eso todos los botones del mando —también los de
   escritorio— entran por `pressKey()` / `releaseKey()` y ninguno llama al
   `GameHandle` directamente.
+
+  Y desde SPEC 13 **esa cuenta se pinta**: junto a la `ref` que cuenta vive un
+  espejo en estado, `down`, con las teclas que están abajo, y un botón se dibuja
+  hundido cuando lo está **su tecla**, venga del botón que venga. Con el
+  `:active` de CSS, apretar `B` en Asteroids dejaba apagada la flecha `↑` de la
+  cruz mientras el propulsor estaba encendido, y un mando que no dice la verdad
+  es peor que uno feo. El espejo sólo se toca cuando una tecla cruza el cero, así
+  que cuesta unos pocos renders por segundo —del orden de los que ya provoca
+  `onState`— y nunca uno por frame; el canvas no se entera, porque `GameCanvas`
+  monta en un efecto que depende sólo del `GameMount`. Vaciar la cuenta pasó por
+  eso a `pauseRun()` y `togglePause()`, los puntos de origen de la pausa, y salió
+  del efecto que habla con el motor: desde que vaciarla es cambiar estado,
+  hacerlo en el cuerpo de un efecto encadena renders.
 
 - `references/started-games/`, `references/source-assets/` y
   `references/templates/` son material de referencia: se leen, no se editan. Lo

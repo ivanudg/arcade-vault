@@ -1,6 +1,6 @@
 # SPEC 13 — Gamepad MK-II
 
-> **Estado:** Borrador
+> **Estado:** Implementado
 > **Depende de:** SPEC 11, SPEC 12
 > **Fecha:** 2026-08-14
 > **Objetivo:** Vestir el mando táctil de `/jugar/[id]` con el gamepad MK-II de `references/gamepad-assets/` —chasis propio, cruz con flechas SVG y hub, `B`/`A` redondos con relieve y las dos píldoras de partida— sin tocar ninguna tecla ni la maquetación de escritorio.
@@ -239,50 +239,87 @@ cambian ni un píxel: son la infraestructura.
 
 **Escritorio no se entera**
 
-- [ ] A 1280 de ancho, `/jugar/asteroids` enseña la fila de cinco botones con
+- [x] A 1280 de ancho, `/jugar/asteroids` enseña la fila de cinco botones con
       `←`, `↑`, `↓`, `→` y `FUEGO`, la línea de controles de teclado y `PAUSA` en
       el HUD, sin chasis ni botones redondos.
-- [ ] `--av-chrome` de escritorio sigue en `28rem`.
-- [ ] Ningún botón de la fila de cinco cambia de tamaño, color ni tipografía.
+- [x] `--av-chrome` de escritorio sigue en `28rem`.
+- [x] Ningún botón de la fila de cinco cambia de tamaño, color ni tipografía.
 
 **El mando se ve como el prototipo**
 
-- [ ] Con puntero grueso y ventana por debajo de 480px, el mando va dentro de un
+- [x] Con puntero grueso y ventana por debajo de 480px, el mando va dentro de un
       chasis con borde redondeado, borde cian, borde interior y trama de puntos.
-- [ ] Las cuatro flechas son triángulos SVG, no caracteres de la fuente.
-- [ ] La celda central de la cruz tiene el hub con la gema en rombo, y la gema
+- [x] Las cuatro flechas son triángulos SVG, no caracteres de la fuente.
+- [x] La celda central de la cruz tiene el hub con la gema en rombo, y la gema
       late.
-- [ ] `B` es cian y `A` es magenta, los dos redondos, con relieve y letra en
+- [x] `B` es cian y `A` es magenta, los dos redondos, con relieve y letra en
       Press Start 2P.
-- [ ] `A` está a la derecha de `B` en las dos posturas.
-- [ ] En horizontal hay dos medio-chasis, uno a cada lado del tablero, y ningún
+- [x] `A` está a la derecha de `B` en las dos posturas.
+- [x] En horizontal hay dos medio-chasis, uno a cada lado del tablero, y ningún
       chasis alrededor del canvas.
 
 **El mando dice la verdad**
 
-- [ ] En Asteroids, mantener `B` dibuja hundida también la flecha `↑` de la cruz.
-- [ ] Con `↑` pulsada desde la cruz y desde `B` a la vez, soltar uno de los dos
+- [x] En Asteroids, mantener `B` dibuja hundida también la flecha `↑` de la cruz.
+- [x] Con `↑` pulsada desde la cruz y desde `B` a la vez, soltar uno de los dos
       deja los dos botones hundidos y el propulsor encendido.
-- [ ] Al soltar el último de los dos, los dos botones vuelven a reposo y el
+- [x] Al soltar el último de los dos, los dos botones vuelven a reposo y el
       propulsor se apaga.
-- [ ] Pulsar `PAUSA` con un dedo encima de la cruz deja todos los botones en
+- [x] Pulsar `PAUSA` con un dedo encima de la cruz deja todos los botones en
       reposo al reanudar.
-- [ ] En Arkanoid, `B` y las flechas `↑` y `↓` se ven apagadas —sin relieve ni
+- [x] En Arkanoid, `B` y las flechas `↑` y `↓` se ven apagadas —sin relieve ni
       aro— y no responden al dedo.
 
 **Nada se rompió**
 
-- [ ] Las cinco teclas siguen siendo las mismas: `npx tsc --noEmit` pasa y
+- [x] Las cinco teclas siguen siendo las mismas: `npx tsc --noEmit` pasa y
       `lib/games/` no tiene ni una línea cambiada.
-- [ ] `PAUSA` alterna a `SEGUIR` y `SALIR` abre `ExitOverlay` con la partida ya
+- [x] `PAUSA` alterna a `SEGUIR` y `SALIR` abre `ExitOverlay` con la partida ya
       en pausa.
-- [ ] Girar el teléfono de vertical a horizontal no reinicia la partida: la
+- [x] Girar el teléfono de vertical a horizontal no reinicia la partida: la
       puntuación del HUD sigue donde estaba.
-- [ ] Todo botón del mando mide 44px o más en su lado corto, incluidas las dos
+- [x] Todo botón del mando mide 44px o más en su lado corto, incluidas las dos
       píldoras de partida.
-- [ ] A 390 × 844 y a 360 × 640, en las dos posturas y con las cuatro máquinas,
+- [x] A 390 × 844 y a 360 × 640, en las dos posturas y con las cuatro máquinas,
       el tablero entra entero y la página no se desplaza en ningún eje.
-- [ ] `npm run lint` y `npm run build` pasan.
+- [x] `npm run lint` y `npm run build` pasan.
+
+## Validación
+
+Los veinte criterios se comprobaron **midiendo**, no a ojo, y quedan marcados. El
+método y su límite, para quien venga detrás:
+
+- **Escritorio** se verificó en la ventana real a 1280, y la fila de cinco se
+  comparó clase a clase contra el HTML prerenderizado de antes del refactor: lo
+  único que cambia son las dos `active:*` que sustituyó el espejo `down`.
+- **Las dos maquetaciones de dedo** no se pueden ver estrechando una ventana,
+  porque `handheld` exige `(pointer: coarse)` y un Chrome de escritorio no lo
+  cumple —la advertencia que dejó escrita la SPEC 12—. Se montó la pantalla en un
+  iframe del tamaño exacto del teléfono, donde las media queries y `100svh` se
+  evalúan contra ese tamaño, y se le **re-emitieron sus propias reglas CSS de
+  `handheld`** quitándoles sólo la condición de puntero. Son las mismas
+  declaraciones, no una imitación; se comprobó además que el iframe da las mismas
+  cifras al píxel que la ventana real puesta a 844 × 390.
+- **Las 16 combinaciones** del último criterio —cuatro máquinas × 390 × 844,
+  360 × 640, 844 × 390 y 640 × 360— dieron 0 fallos, con
+  `env(safe-area-inset-bottom)` simulado a 34px en vertical y 21 en horizontal.
+
+**Lo que este método no cubre, y por tanto sigue sin firmar por una persona:** el
+margen seguro real, el `devicePixelRatio` de un teléfono, el tacto, y si la trama
+de puntos de 8px del chasis bate con las `av-scanlines` y produce muaré. La
+maquetación vertical se miró en un iPhone y se corrigió con lo que se vio —los
+bloques tocaban el canto del chasis y las píldoras se leían como aros de neón—;
+la horizontal no.
+
+Durante el repaso final apareció un defecto y se corrigió: el borde interior de
+los medio-chasis no se abría por el lado del canvas, porque `before:border-r-0`
+no le gana a `before:border` —quien decide ahí es el orden de la hoja de
+Tailwind, no el marcado—. Cada remate declara ahora sus lados en vez de anular
+uno.
+
+Y un hallazgo que venía de antes: el `<main>` de `/jugar/[id]` no acotaba su
+altura con el dedo, así que en horizontal la página se desplazaba casi mil
+píxeles. Está explicado en la nota que esta spec dejó en la SPEC 12.
 
 ## Decisiones
 
