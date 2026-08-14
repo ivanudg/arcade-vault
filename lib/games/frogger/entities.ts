@@ -13,6 +13,8 @@ import {
   CELL,
   COLOR_CAR,
   COLOR_FROG,
+  COLOR_GATOR,
+  COLOR_HOME,
   COLOR_LADY,
   COLOR_LOG,
   COLOR_TRUCK,
@@ -21,7 +23,19 @@ import {
   DIVE_CYCLE,
   DIVE_DOWN,
   DIVE_WARN,
+  FLY_EVERY,
+  FLY_LASTS,
+  GATOR_CYCLE,
+  GATOR_FROM,
+  GATOR_OPEN,
   HIT_PAD,
+  HOME_COLS,
+  HOMES,
+  LADY_EVERY,
+  LADY_FROM,
+  ROW_HOMES,
+  ROW_MEDIAN,
+  SNAKE_SPEED,
   W,
 } from "@/lib/games/frogger/constants";
 import { cycleAt, overlap, wrapSpan } from "@/lib/games/frogger/math";
@@ -278,5 +292,263 @@ export class Frog {
       ctx.arc(x + CELL / 2, y + 7, 4, 0, Math.PI * 2);
       ctx.fill();
     }
+  }
+}
+
+/**
+ * Los cinco nichos de la orilla de arriba, con el cocodrilo y la mosca.
+ *
+ * Cuál de los cinco toca no se sortea: sale del número de ciclo y de la ronda,
+ * así que dos partidas de la misma ronda ven lo mismo en el mismo segundo. Una
+ * casa que se cerrara sin motivo aparente parecería un bug, y es justo el sitio
+ * donde el azar tentaría más.
+ */
+export class Homes {
+  /** Los cinco nichos: `true` si ya tienen rana. */
+  filled: boolean[] = Array.from({ length: HOMES }, () => false);
+
+  /** Píxel del borde izquierdo del nicho `i`. */
+  static x(i: number): number {
+    return HOME_COLS[i] * CELL;
+  }
+
+  get y(): number {
+    return ROW_HOMES * CELL;
+  }
+
+  /** ¿En qué nicho cae el centro de una rana con el borde izquierdo en `x`? */
+  indexAt(x: number): number | null {
+    const center = x + CELL / 2;
+    for (let i = 0; i < HOMES; i++) {
+      const left = Homes.x(i);
+      if (center >= left && center < left + CELL) return i;
+    }
+    return null;
+  }
+
+  /** ¿Están los cinco ocupados? */
+  get complete(): boolean {
+    return this.filled.every(Boolean);
+  }
+
+  reset(): void {
+    this.filled = this.filled.map(() => false);
+  }
+
+  /**
+   * Índice del nicho con cocodrilo ahora mismo, o `null`.
+   *
+   * Asoma los `GATOR_OPEN` primeros segundos de cada ciclo de `GATOR_CYCLE`, y
+   * nunca en un nicho que ya tiene rana: ahí no cabe.
+   */
+  gatorAt(t: number, round: number): number | null {
+    if (round < GATOR_FROM) return null;
+    if (cycleAt(t, GATOR_CYCLE) > GATOR_OPEN) return null;
+    const i = (Math.floor(t / GATOR_CYCLE) + round) % HOMES;
+    return this.filled[i] ? null : i;
+  }
+
+  /**
+   * Índice del nicho con mosca ahora mismo, o `null`. Sale desde la ronda 1: es
+   * la recompensa, no el castigo, y no hay ninguna `*_FROM` que la retrase.
+   */
+  flyAt(t: number, round: number): number | null {
+    if (cycleAt(t, FLY_EVERY) > FLY_LASTS) return null;
+    const i = (Math.floor(t / FLY_EVERY) + round) % HOMES;
+    if (this.filled[i]) return null;
+    // Nunca en el mismo nicho que el cocodrilo: sería un cebo imposible.
+    return this.gatorAt(t, round) === i ? null : i;
+  }
+
+  draw(ctx: CanvasRenderingContext2D, t: number, round: number): void {
+    const gator = this.gatorAt(t, round);
+    const fly = this.flyAt(t, round);
+    const y = this.y;
+
+    for (let i = 0; i < HOMES; i++) {
+      const x = Homes.x(i);
+
+      ctx.strokeStyle = COLOR_HOME;
+      ctx.lineWidth = 2;
+      ctx.strokeRect(x + 2, y + 4, CELL - 4, CELL - 8);
+
+      if (this.filled[i]) {
+        ctx.fillStyle = COLOR_FROG;
+        ctx.beginPath();
+        ctx.ellipse(x + CELL / 2, y + CELL / 2, CELL / 2 - 9, CELL / 2 - 11, 0, 0, Math.PI * 2);
+        ctx.fill();
+        continue;
+      }
+
+      if (gator === i) this.drawGator(ctx, x, y);
+      if (fly === i) this.drawFly(ctx, x, y, t);
+    }
+  }
+
+  private drawGator(ctx: CanvasRenderingContext2D, x: number, y: number): void {
+    ctx.fillStyle = COLOR_GATOR;
+    // Dos triángulos: el hocico abierto asomando por el fondo del nicho.
+    ctx.beginPath();
+    ctx.moveTo(x + 7, y + 14);
+    ctx.lineTo(x + CELL - 7, y + 18);
+    ctx.lineTo(x + 7, y + 22);
+    ctx.closePath();
+    ctx.fill();
+    ctx.beginPath();
+    ctx.moveTo(x + 7, y + 26);
+    ctx.lineTo(x + CELL - 7, y + 24);
+    ctx.lineTo(x + 7, y + 32);
+    ctx.closePath();
+    ctx.fill();
+    // Dientes.
+    ctx.fillStyle = "#0a0a0f";
+    for (let d = 0; d < 4; d++) {
+      ctx.fillRect(x + 10 + d * 6, y + 20, 2, 4);
+    }
+  }
+
+  private drawFly(ctx: CanvasRenderingContext2D, x: number, y: number, t: number): void {
+    // Parpadea: es lo que la distingue de un adorno del nicho.
+    if (cycleAt(t, 0.6) > 0.4) return;
+    ctx.fillStyle = COLOR_LADY;
+    ctx.beginPath();
+    ctx.arc(x + CELL / 2, y + CELL / 2, 4, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillRect(x + CELL / 2 - 8, y + CELL / 2 - 5, 5, 2);
+    ctx.fillRect(x + CELL / 2 + 3, y + CELL / 2 - 5, 5, 2);
+  }
+}
+
+/**
+ * La serpiente que patrulla la mediana desde `SNAKE_FROM`.
+ *
+ * Es la única entidad del tablero con estado propio en vez de una función del
+ * tiempo: rebota, y un rebote depende de dónde venía.
+ */
+export class Snake {
+  x: number;
+  dir: 1 | -1 = 1;
+
+  constructor(x: number) {
+    this.x = x;
+  }
+
+  get y(): number {
+    return ROW_MEDIAN * CELL;
+  }
+
+  update(dt: number, mult: number): void {
+    this.x += SNAKE_SPEED * mult * this.dir * dt;
+    if (this.x <= 0) {
+      this.x = 0;
+      this.dir = 1;
+    } else if (this.x >= W - CELL) {
+      this.x = W - CELL;
+      this.dir = -1;
+    }
+  }
+
+  /** Con la misma indulgencia que un coche: rozarla no mata. */
+  hits(x: number): boolean {
+    return overlap(x + HIT_PAD, CELL - 2 * HIT_PAD, this.x, CELL);
+  }
+
+  draw(ctx: CanvasRenderingContext2D): void {
+    const y = this.y;
+    ctx.fillStyle = COLOR_GATOR;
+    // Cuerpo ondulado: cuatro tramos que alternan de altura.
+    for (let s = 0; s < 4; s++) {
+      const sx = this.x + s * 10;
+      const sy = y + (s % 2 === 0 ? 15 : 20);
+      ctx.fillRect(sx, sy, 10, 6);
+    }
+    // Cabeza, en el sentido de la marcha.
+    const hx = this.dir === 1 ? this.x + CELL - 6 : this.x;
+    ctx.fillRect(hx, y + 14, 6, 8);
+  }
+}
+
+/**
+ * La dama-rana, esperando sobre una plataforma del río.
+ *
+ * Se implementa como una bandera en la rana —`escorting`— y no como una entidad
+ * que la sigue: es una línea de estado en vez de un sistema, y visualmente basta
+ * con un punto encima.
+ */
+export class Bonus {
+  /** ¿Está ahora mismo en el tablero? */
+  active = false;
+  /** Píxel del borde izquierdo, ya centrado sobre su plataforma. */
+  laneX = 0;
+  /** Fila del carril que la lleva, en píxeles. */
+  laneY = 0;
+
+  /** Ciclo de `LADY_EVERY` que se está sirviendo, y si ya se gastó. */
+  private cycle = -1;
+  private spent = false;
+
+  /**
+   * Sigue a la plataforma que le tocó este ciclo.
+   *
+   * Aparece cuando esa plataforma entra entera en pantalla y se va con ella:
+   * una sola aparición por ciclo, sin más temporizador que la geometría del
+   * carril.
+   */
+  update(t: number, round: number, lane: Lane): void {
+    if (round < LADY_FROM) {
+      this.active = false;
+      return;
+    }
+
+    const cycle = Math.floor(t / LADY_EVERY);
+    if (cycle !== this.cycle) {
+      this.cycle = cycle;
+      this.spent = false;
+      this.active = false;
+    }
+    if (this.spent) return;
+
+    const i = (cycle + round) % lane.spec.count;
+    const x = lane.positions(t)[i];
+    const visible = x >= 0 && x + lane.width <= W;
+
+    if (visible) {
+      this.active = true;
+      this.laneX = x + lane.width / 2 - CELL / 2;
+      this.laneY = lane.y;
+    } else if (this.active) {
+      // Se fue montada en su plataforma: hasta el ciclo siguiente.
+      this.active = false;
+      this.spent = true;
+    }
+  }
+
+  /** La recoge la rana: se apaga hasta el ciclo siguiente. */
+  take(): void {
+    this.active = false;
+    this.spent = true;
+  }
+
+  reset(): void {
+    this.active = false;
+    this.spent = false;
+    this.cycle = -1;
+  }
+
+  draw(ctx: CanvasRenderingContext2D): void {
+    if (!this.active) return;
+    const x = this.laneX;
+    const y = this.laneY;
+
+    ctx.fillStyle = COLOR_LADY;
+    ctx.beginPath();
+    ctx.ellipse(x + CELL / 2, y + CELL / 2, CELL / 2 - 9, CELL / 2 - 10, 0, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.fillStyle = "#0a0a0f";
+    ctx.beginPath();
+    ctx.arc(x + CELL / 2 - 4, y + CELL / 2 - 4, 2, 0, Math.PI * 2);
+    ctx.arc(x + CELL / 2 + 4, y + CELL / 2 - 4, 2, 0, Math.PI * 2);
+    ctx.fill();
   }
 }
