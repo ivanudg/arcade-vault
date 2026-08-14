@@ -188,6 +188,19 @@ function Arrow({ code }: { code: string }) {
   );
 }
 
+/**
+ * El chasis, lo que convierte tres bloques sueltos en un mando: cara en
+ * degradado con los dos tokens de carcasa, borde cian, la sombra proyectada del
+ * prototipo, un borde interior a 4px (`::before`) y la trama de puntos de 8px
+ * (`::after`, al 60% como en el original).
+ *
+ * El relleno lateral es de 6px y no los 22 del prototipo porque el ancho aquí
+ * está contado: en un teléfono de 360px el gabinete deja 328 útiles y los tres
+ * bloques ya suman 308.
+ */
+const PAD_SHELL =
+  "relative rounded-[22px] border border-av-cyan/18 bg-linear-to-b from-av-pad-shell-top to-av-pad-shell-bottom px-1.5 pt-2.5 pb-2 shadow-[0_30px_80px_-30px_rgba(0,245,255,0.4),0_0_0_1px_rgba(255,255,255,0.02),inset_0_1px_0_rgba(255,255,255,0.06),inset_0_-2px_0_rgba(0,0,0,0.6)] before:pointer-events-none before:absolute before:inset-1 before:rounded-[18px] before:border before:border-av-cyan/14 before:content-[''] after:pointer-events-none after:absolute after:inset-0 after:rounded-[inherit] after:bg-[radial-gradient(rgba(255,255,255,0.03)_1px,transparent_1px)] after:bg-[length:8px_8px] after:opacity-60 after:content-['']";
+
 /** Las dos posturas de mano. No hay una tercera: escritorio no monta esto. */
 export type PadLayout = "vertical" | "horizontal";
 
@@ -458,18 +471,25 @@ export function GamePad({
   }
 
   // El mando de vertical: la misma cruz, con las dos acciones enfrente y los
-  // botones de partida en medio. Cae bajo el tablero y a lo ancho del gabinete,
-  // así que cada pulgar tiene el suyo sin cruzar la mano. En horizontal esto se
-  // apaga, porque allí los dos bloques están a los lados.
+  // botones de partida en medio, todo dentro del chasis. Cae bajo el tablero y
+  // a lo ancho del gabinete, así que cada pulgar tiene el suyo sin cruzar la
+  // mano. En horizontal esto se apaga, porque allí los bloques están a los
+  // lados y el chasis se parte en dos.
   return (
-    <div className="mt-3 hidden items-center justify-between gap-2 handheld:flex handheld-wide:hidden">
-      {cross("grid shrink-0 grid-cols-3 grid-rows-3 gap-1.5")}
-      {/* El centro, entre los dos pulgares: los botones de partida. */}
-      <div className="flex shrink-0 flex-col items-center gap-2">
-        {pauseKey()}
-        {exitKey()}
+    <div className={`mt-3 hidden ${PAD_SHELL} handheld:block handheld-wide:hidden`}>
+      {/* Los tres bloques, por encima de la trama del chasis, como el `.gp-body`
+          del prototipo. Sin hueco propio: a 360px de ancho los tres suman 308
+          de los 314 que deja el chasis, y lo que sobra lo reparte
+          `justify-between`. El hueco es lo que cede; 44px de botón es suelo. */}
+      <div className="relative z-1 flex items-center justify-between">
+        {cross("grid shrink-0 grid-cols-3 grid-rows-3 gap-1.5")}
+        {/* El centro, entre los dos pulgares: los botones de partida. */}
+        <div className="flex shrink-0 flex-col items-center gap-2">
+          {pauseKey()}
+          {exitKey()}
+        </div>
+        {actions("flex shrink-0 items-center gap-2")}
       </div>
-      {actions("flex shrink-0 items-center gap-2")}
     </div>
   );
 }
