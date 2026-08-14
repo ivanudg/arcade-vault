@@ -551,7 +551,7 @@ export function PlayCabinet({ game }: { game: Game }) {
               // la fila y el canvas se encarga de no deformarse, apoyado en el
               // `aspect-ratio` que `GameCanvas` ya le pone. El tope calculado
               // sobra ahí, porque quien acota es la altura.
-              className="relative mx-auto overflow-hidden rounded-[22px] bg-av-void shadow-[inset_0_0_60px_rgba(0,0,0,0.9),inset_0_0_12px_rgba(0,245,255,0.16)] [--av-chrome:16rem] max-w-[calc((100svh-var(--av-chrome))*var(--av-ratio))] handheld:[--av-chrome:24rem] handheld-wide:h-full handheld-wide:w-auto handheld-wide:max-w-none handheld-wide:rounded-[12px] handheld-wide:[--av-chrome:7rem]"
+              className="relative mx-auto overflow-hidden rounded-[22px] bg-av-void shadow-[inset_0_0_60px_rgba(0,0,0,0.9),inset_0_0_12px_rgba(0,245,255,0.16)] [--av-chrome:16rem] max-w-[calc((100svh-var(--av-chrome))*var(--av-ratio))] handheld:[--av-chrome:24rem] handheld-wide:h-full handheld-wide:w-auto handheld-wide:max-w-none handheld-wide:rounded-xl handheld-wide:[--av-chrome:7rem]"
             >
               <GameCanvas
                 game={engine}
