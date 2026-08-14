@@ -220,7 +220,7 @@ export type PadSide = "full" | "left" | "right";
  * (`::after`, al 60% como en el original).
  */
 const PAD_SHELL_BASE =
-  "relative border border-av-cyan/18 bg-linear-to-b from-av-pad-shell-top to-av-pad-shell-bottom shadow-[0_30px_80px_-30px_rgba(0,245,255,0.4),0_0_0_1px_rgba(255,255,255,0.02),inset_0_1px_0_rgba(255,255,255,0.06),inset_0_-2px_0_rgba(0,0,0,0.6)] before:pointer-events-none before:absolute before:border before:border-av-cyan/14 before:content-[''] after:pointer-events-none after:absolute after:inset-0 after:rounded-[inherit] after:bg-[radial-gradient(rgba(255,255,255,0.03)_1px,transparent_1px)] after:bg-[length:8px_8px] after:opacity-60 after:content-['']";
+  "relative border border-av-cyan/18 bg-linear-to-b from-av-pad-shell-top to-av-pad-shell-bottom shadow-[0_30px_80px_-30px_rgba(0,245,255,0.4),0_0_0_1px_rgba(255,255,255,0.02),inset_0_1px_0_rgba(255,255,255,0.06),inset_0_-2px_0_rgba(0,0,0,0.6)] before:pointer-events-none before:absolute before:border-av-cyan/14 before:content-[''] after:pointer-events-none after:absolute after:inset-0 after:rounded-[inherit] after:bg-[radial-gradient(rgba(255,255,255,0.03)_1px,transparent_1px)] after:bg-[length:8px_8px] after:opacity-60 after:content-['']";
 
 /**
  * El remate de cada postura. En vertical el chasis es uno y va entero; en
@@ -237,9 +237,9 @@ const PAD_SHELL_BASE =
  * el alto, así que el relleno es parejo y corto.
  */
 const PAD_SHELL: Record<PadSide, string> = {
-  full: `${PAD_SHELL_BASE} rounded-[22px] px-1 pt-2.5 pb-2 before:inset-1 before:rounded-[18px]`,
-  left: `${PAD_SHELL_BASE} rounded-l-[22px] px-2 py-2 before:inset-y-1 before:right-0 before:left-1 before:rounded-l-[18px] before:border-r-0`,
-  right: `${PAD_SHELL_BASE} rounded-r-[22px] px-2 py-2 before:inset-y-1 before:right-1 before:left-0 before:rounded-r-[18px] before:border-l-0`,
+  full: `${PAD_SHELL_BASE} rounded-[22px] px-1 pt-2.5 pb-2 before:inset-1 before:rounded-[18px] before:border`,
+  left: `${PAD_SHELL_BASE} rounded-l-[22px] px-2 py-2 before:inset-y-1 before:right-0 before:left-1 before:rounded-l-[18px] before:border-y before:border-l`,
+  right: `${PAD_SHELL_BASE} rounded-r-[22px] px-2 py-2 before:inset-y-1 before:right-1 before:left-0 before:rounded-r-[18px] before:border-y before:border-r`,
 };
 
 type GamePadProps = {

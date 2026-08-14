@@ -400,3 +400,31 @@ hay que mirar en el teléfono.
 - Las otras siete pantallas del sitio en móvil.
 
 Cada una de ellas, si llega, va en su propia spec.
+
+---
+
+## Lo que la SPEC 13 dejó atrás
+
+La SPEC 13 vistió este mando con el gamepad MK-II. **Nada de lo funcional
+cambió** —las mismas cinco teclas, el mismo reparto de `ENGINE_PAD`, los mismos
+tres bloques y la misma cuenta de pulsaciones—, así que los criterios de arriba
+siguen valiendo. Lo que dejó de ser cierto es la piel y dónde vive el código:
+
+- **Los botones ya no son los rectángulos con borde cian de la fila de cinco.**
+  La cruz tiene relieve y flechas SVG, `B` y `A` son redondos con halo y aro, y
+  `PAUSA` y `SALIR` son píldoras de plástico. Los tres bloques van dentro de un
+  chasis, entero en vertical y partido en dos en horizontal.
+- **Las tablas se mudaron.** `PAD`, `CROSS_CELL`, `ENGINE_KEYS` y `ENGINE_PAD`
+  ya no están en `components/play-cabinet.tsx` sino en `components/game-pad.tsx`,
+  y el gabinete importa de ahí las que necesita su fila de escritorio.
+- **La cuenta de `held` se pinta.** Esta spec la dejó en una `ref` porque nadie
+  la miraba; ahora la mira el mando y un botón se dibuja hundido cuando lo está
+  su tecla, venga del botón que venga. Con `:active` de CSS, apretar `B` en
+  Asteroids dejaba apagada la flecha `↑` de la cruz con el propulsor encendido.
+- **Los presupuestos subieron**, porque el chasis añade alto: `handheld` de
+  `24rem` a `25rem` y `handheld-wide` de `7rem` a `8.5rem`.
+- **El `<main>` de `/jugar/[id]` apaga su `flex-1` con el dedo.** Su
+  `h-[calc(100svh-var(--av-play-header))]` no llegaba a mandar, y en horizontal
+  la página se desplazaba casi mil píxeles. Es un defecto que venía de la SPEC 11
+  y que aquí no se vio: `(pointer: coarse)` no lo cumple un Chrome de escritorio,
+  que es la advertencia que esta misma spec dejó escrita en su «Validación».
