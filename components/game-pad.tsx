@@ -188,24 +188,40 @@ function Arrow({ code }: { code: string }) {
   );
 }
 
-/**
- * El chasis, lo que convierte tres bloques sueltos en un mando: cara en
- * degradado con los dos tokens de carcasa, borde cian, la sombra proyectada del
- * prototipo, un borde interior a 4px (`::before`) y la trama de puntos de 8px
- * (`::after`, al 60% como en el original).
- *
- * El relleno lateral es de 6px y no los 22 del prototipo porque el ancho aquí
- * está contado: en un teléfono de 360px el gabinete deja 328 útiles y los tres
- * bloques ya suman 308.
- */
-const PAD_SHELL =
-  "relative rounded-[22px] border border-av-cyan/18 bg-linear-to-b from-av-pad-shell-top to-av-pad-shell-bottom px-1.5 pt-2.5 pb-2 shadow-[0_30px_80px_-30px_rgba(0,245,255,0.4),0_0_0_1px_rgba(255,255,255,0.02),inset_0_1px_0_rgba(255,255,255,0.06),inset_0_-2px_0_rgba(0,0,0,0.6)] before:pointer-events-none before:absolute before:inset-1 before:rounded-[18px] before:border before:border-av-cyan/14 before:content-[''] after:pointer-events-none after:absolute after:inset-0 after:rounded-[inherit] after:bg-[radial-gradient(rgba(255,255,255,0.03)_1px,transparent_1px)] after:bg-[length:8px_8px] after:opacity-60 after:content-['']";
-
 /** Las dos posturas de mano. No hay una tercera: escritorio no monta esto. */
 export type PadLayout = "vertical" | "horizontal";
 
 /** Qué medio-chasis se pinta. `full` es el de vertical, entero. */
 export type PadSide = "full" | "left" | "right";
+
+/**
+ * El chasis, lo que convierte tres bloques sueltos en un mando: cara en
+ * degradado con los dos tokens de carcasa, borde cian, la sombra proyectada del
+ * prototipo, un borde interior a 4px (`::before`) y la trama de puntos de 8px
+ * (`::after`, al 60% como en el original).
+ */
+const PAD_SHELL_BASE =
+  "relative border border-av-cyan/18 bg-linear-to-b from-av-pad-shell-top to-av-pad-shell-bottom shadow-[0_30px_80px_-30px_rgba(0,245,255,0.4),0_0_0_1px_rgba(255,255,255,0.02),inset_0_1px_0_rgba(255,255,255,0.06),inset_0_-2px_0_rgba(0,0,0,0.6)] before:pointer-events-none before:absolute before:border before:border-av-cyan/14 before:content-[''] after:pointer-events-none after:absolute after:inset-0 after:rounded-[inherit] after:bg-[radial-gradient(rgba(255,255,255,0.03)_1px,transparent_1px)] after:bg-[length:8px_8px] after:opacity-60 after:content-['']";
+
+/**
+ * El remate de cada postura. En vertical el chasis es uno y va entero; en
+ * horizontal son dos, uno por lado del tablero, porque el tablero va en medio
+ * y un panel único es imposible —y envolver la fila entera metería el marco
+ * calculado del gabinete dentro de otro marco—. De ahí que cada medio se
+ * redondee **hacia fuera** y deje recto el canto que mira al canvas, con el
+ * borde interior abierto por ese lado: los dos se leen como un mando partido y
+ * no como dos cajas sueltas.
+ *
+ * El relleno lateral de `full` es de 6px y no los 22 del prototipo porque el
+ * ancho ahí está contado: en un teléfono de 360px el gabinete deja 328 útiles y
+ * los tres bloques ya suman 308. En horizontal sobra ancho y lo que escasea es
+ * el alto, así que el relleno es parejo y corto.
+ */
+const PAD_SHELL: Record<PadSide, string> = {
+  full: `${PAD_SHELL_BASE} rounded-[22px] px-1.5 pt-2.5 pb-2 before:inset-1 before:rounded-[18px]`,
+  left: `${PAD_SHELL_BASE} rounded-l-[22px] px-2 py-2 before:inset-y-1 before:right-0 before:left-1 before:rounded-l-[18px] before:border-r-0`,
+  right: `${PAD_SHELL_BASE} rounded-r-[22px] px-2 py-2 before:inset-y-1 before:right-1 before:left-0 before:rounded-r-[18px] before:border-l-0`,
+};
 
 type GamePadProps = {
   gameId: GameId;
@@ -453,9 +469,11 @@ export function GamePad({
   // las acciones, que es el hueco que deja cada bloque.
   if (side === "left") {
     return (
-      <div className="hidden shrink-0 flex-col items-center gap-2 handheld-wide:flex">
-        {cross("grid grid-cols-3 grid-rows-3 gap-1.5")}
-        {pauseKey()}
+      <div className={`hidden shrink-0 ${PAD_SHELL.left} handheld-wide:block`}>
+        <div className="relative z-1 flex flex-col items-center gap-2">
+          {cross("grid grid-cols-3 grid-rows-3 gap-1.5")}
+          {pauseKey()}
+        </div>
       </div>
     );
   }
@@ -463,9 +481,11 @@ export function GamePad({
   // Y las dos acciones, donde cae el derecho, con SALIR debajo.
   if (side === "right") {
     return (
-      <div className="hidden shrink-0 flex-col items-center gap-2 handheld-wide:flex">
-        {actions("flex items-center gap-2")}
-        {exitKey()}
+      <div className={`hidden shrink-0 ${PAD_SHELL.right} handheld-wide:block`}>
+        <div className="relative z-1 flex flex-col items-center gap-2">
+          {actions("flex items-center gap-2")}
+          {exitKey()}
+        </div>
       </div>
     );
   }
@@ -476,7 +496,7 @@ export function GamePad({
   // mano. En horizontal esto se apaga, porque allí los bloques están a los
   // lados y el chasis se parte en dos.
   return (
-    <div className={`mt-3 hidden ${PAD_SHELL} handheld:block handheld-wide:hidden`}>
+    <div className={`mt-3 hidden ${PAD_SHELL.full} handheld:block handheld-wide:hidden`}>
       {/* Los tres bloques, por encima de la trama del chasis, como el `.gp-body`
           del prototipo. Sin hueco propio: a 360px de ancho los tres suman 308
           de los 314 que deja el chasis, y lo que sobra lo reparte
