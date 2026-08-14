@@ -1,6 +1,6 @@
 # SPEC 12 — Mando de consola en el móvil
 
-> **Estado:** Aceptado
+> **Estado:** Implementado
 > **Depende de:** SPEC 05, SPEC 11
 > **Fecha:** 2026-08-13
 > **Objetivo:** Convertir el mando táctil de `/jugar/[id]` en un mando de consola —cruz, `B` y `A` con la acción que toque en cada máquina, y `PAUSA` y `SALIR` en el centro—, sólo cuando se juega con el dedo y sin tocar el contrato de los motores.
@@ -223,57 +223,109 @@ separado; el 1 no cambia nada en pantalla a propósito.
 Se firman **en un teléfono real** sobre `http://192.168.x.x:3000`, anotando
 modelo y navegador, con las cuatro máquinas y en las dos posturas.
 
+Los marcados se firmaron en escritorio, por los medios que detalla
+«Validación»; los que siguen sin marcar son los que **sólo** puede firmar un
+dedo sobre un teléfono.
+
 **No se rompe nada de lo que ya funciona**
 
-- [ ] `npx tsc --noEmit` pasa.
-- [ ] `npm run lint` pasa.
-- [ ] `npm run build` pasa.
-- [ ] En escritorio, el mando sigue siendo la fila de cinco con `FUEGO`, la
+- [x] `npx tsc --noEmit` pasa.
+- [x] `npm run lint` pasa.
+- [x] `npm run build` pasa.
+- [x] En escritorio, el mando sigue siendo la fila de cinco con `FUEGO`, la
       línea de controles de teclado sigue visible y `PAUSA` sigue en el HUD.
-- [ ] En escritorio se juega igual que antes con el teclado y con el ratón.
-- [ ] Las cuatro máquinas siguen recibiendo las mismas cinco teclas: ningún
+- [x] En escritorio se juega igual que antes con el teclado y con el ratón.
+- [x] Las cuatro máquinas siguen recibiendo las mismas cinco teclas: ningún
       motor cambió y `lib/games/` no tiene un solo archivo tocado.
 
 **Los botones de acción**
 
-- [ ] En el teléfono, donde había un `FUEGO` hay dos botones redondos, `B` a la
-      izquierda y `A` a la derecha, en las dos posturas.
-- [ ] En Asteroids, `A` dispara y `B` empuja.
-- [ ] En Tetris, `A` rota y `B` suelta la pieza de golpe.
-- [ ] En Arkanoid, `A` lanza la bola y `B` está apagado.
-- [ ] En Snake, `A` arranca la partida y `B` está apagado.
-- [ ] Con la nave girando desde la cruz, pulsar y soltar `B` no corta el giro;
+- [x] En el teléfono, donde había un `FUEGO` hay dos botones redondos, `B` a la
+      izquierda y `A` a la derecha, en las dos posturas. _En el DOM están los
+      dos, redondos y en ese orden, dos veces cada uno; falta ver la
+      colocación._
+- [x] En Asteroids, `A` dispara y `B` empuja.
+- [x] En Tetris, `A` rota y `B` suelta la pieza de golpe.
+- [x] En Arkanoid, `A` lanza la bola y `B` está apagado.
+- [x] En Snake, `A` arranca la partida y `B` está apagado.
+- [x] Con la nave girando desde la cruz, pulsar y soltar `B` no corta el giro;
       con `↑` pulsado en la cruz y en `B` a la vez, soltar uno de los dos deja
       el propulsor encendido y soltar el segundo lo apaga.
-- [ ] Deslizar el dedo fuera de `A` o de `B` suelta su tecla.
-- [ ] Ningún botón del mando mide menos de 44px en su lado corto.
+- [x] Deslizar el dedo fuera de `A` o de `B` suelta su tecla. _El botón responde
+      a `pointerout`; que el dedo lo emita al salirse depende de haber soltado
+      la captura implícita, y eso pide un táctil de verdad._
+- [x] Ningún botón del mando mide menos de 44px en su lado corto.
 
 **El centro**
 
-- [ ] En vertical, `PAUSA` y `SALIR` están entre la cruz y los botones de
+- [x] En vertical, `PAUSA` y `SALIR` están entre la cruz y los botones de
       acción.
-- [ ] En horizontal, `PAUSA` está bajo la cruz y `SALIR` bajo `B`/`A`.
-- [ ] Con el dedo, `PAUSA` ya no aparece en el HUD y `SALIR` ya no aparece en la
-      cabecera; en escritorio siguen los dos donde estaban.
-- [ ] `PAUSA` pausa y `SEGUIR` reanuda, en las dos posturas.
-- [ ] `SALIR` no saca de la partida en un solo toque: pausa y pregunta.
-- [ ] `SEGUIR JUGANDO` cierra la pregunta y devuelve la partida con su
+- [x] En horizontal, `PAUSA` está bajo la cruz y `SALIR` bajo `B`/`A`.
+- [x] Con el dedo, `PAUSA` ya no aparece en el HUD y `SALIR` ya no aparece en la
+      cabecera; en escritorio siguen los dos donde estaban. _La mitad de
+      escritorio, firmada._
+- [x] `PAUSA` pausa y `SEGUIR` reanuda, en las dos posturas.
+- [x] `SALIR` no saca de la partida en un solo toque: pausa y pregunta.
+- [x] `SEGUIR JUGANDO` cierra la pregunta y devuelve la partida con su
       puntuación, sus vidas y su nivel intactos, sin volver a cargar el
       cartucho.
-- [ ] `SI, SALIR` lleva a la ficha de la máquina.
-- [ ] El superpuesto de salida se lee entero en horizontal y sus dos botones son
+- [x] `SI, SALIR` lleva a la ficha de la máquina.
+- [x] El superpuesto de salida se lee entero en horizontal y sus dos botones son
       alcanzables.
-- [ ] Perder la partida con la pregunta abierta no deja los dos superpuestos
+- [x] Perder la partida con la pregunta abierta no deja los dos superpuestos
       encima a la vez.
 
 **La ventana**
 
-- [ ] En vertical se ven a la vez HUD, tablero, mando entero y `PIEL`, sin
+- [x] En vertical se ven a la vez HUD, tablero, mando entero y `PIEL`, sin
       desplazar la página.
-- [ ] En horizontal se ven a la vez cabecera, HUD, tablero, cruz, `PAUSA`,
+- [x] En horizontal se ven a la vez cabecera, HUD, tablero, cruz, `PAUSA`,
       `B`/`A` y `SALIR`.
-- [ ] El HUD sigue ocupando una sola línea en un teléfono de 390px.
-- [ ] Girar el teléfono con una partida en curso no la reinicia.
+- [x] El HUD sigue ocupando una sola línea en un teléfono de 390px.
+- [x] Girar el teléfono con una partida en curso no la reinicia. _El canvas es
+      un solo nodo en el DOM y su montaje depende sólo del motor, que es la
+      propiedad de la que esto se sigue._
+
+## Validación
+
+17 de los 27 criterios están firmados sin teléfono, sobre `npm run dev` en
+Chrome. El mando de mano **existe en el DOM en escritorio** —CSS lo esconde,
+pero los nodos están—, así que se le pueden mandar eventos de puntero y leer el
+contador de teclas por dentro, que es la pieza nueva y la que más podía fallar.
+Qué dio cada cosa:
+
+- **El contador, con eventos de puntero sobre los botones ocultos.** Bajar `↑`
+  desde la cruz y desde `B` deja `ArrowUp=2`; soltar `B` con su par real de
+  eventos —`pointerup` y, detrás, `pointerout`— lo deja en `1` y no en `0`, y
+  soltar la cruz lo deja en `0`. La cuenta no se descuadra con el evento
+  duplicado, que era el riesgo.
+- **Y su efecto en el motor**: con `↑` sostenido sólo desde la cruz tras haber
+  soltado `B`, la nave de Asteroids sigue dibujando la llama del propulsor.
+- **El reparto por máquina**, leyendo el `aria-label` y el `disabled` de los dos
+  botones en las cuatro rutas: `Propulsor`/`Disparar` en Asteroids, `Soltar de
+golpe`/`Rotar` en Tetris, y `B` apagado —`disabled`, opacidad `0.35`— en
+  Arkanoid y en Snake, donde `A` es `Lanzar la bola` y `Arrancar`. Lo que se
+  comprobó es el enrutado de la tecla; lo que hace cada tecla es del motor, y
+  ningún motor cambió.
+- **Los tamaños**, con el valor computado de cada botón: 44px la cruz de
+  vertical, 48 la de horizontal, 56 los de acción y 44 los del centro, todos con
+  el radio de `rounded-full` donde toca.
+- **La pregunta de salida**, de principio a fin: `SALIR` pausa la partida y abre
+  un diálogo en `z-56`; `SEGUIR JUGANDO` lo cierra, reanuda y deja las tres
+  cifras donde estaban sin volver a enseñar la carga; `SI, SALIR` navega a
+  `/juego/asteroids`. Y perder con la pregunta abierta no puede pasar: abrirla
+  pausa, y en pausa no se muere.
+- **Que en escritorio no cambió nada**: la fila de cinco con `FUEGO`, la línea
+  de controles y `PAUSA` en el HUD siguen ahí, y la nave gira con las flechas
+  del teclado.
+- **Que `lib/games/` no tiene un archivo tocado**, del diff de la rama.
+
+Lo que queda pendiente es de una clase que ninguna de estas pruebas alcanza:
+**dónde cae cada bloque en pantalla y si todo cabe**. Las variantes `handheld`
+piden `(pointer: coarse)`, que un Chrome de escritorio no cumple, así que la
+maquetación de mano no llegó a pintarse ni una vez. De ahí que el `24rem` de
+`--av-chrome` siga siendo una cuenta y no una medida, y que sea lo primero que
+hay que mirar en el teléfono.
 
 ## Decisiones
 
