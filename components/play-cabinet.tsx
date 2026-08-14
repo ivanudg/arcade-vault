@@ -104,6 +104,15 @@ const ENGINE_PAD: Partial<Record<GameId, { a: PadAction; b: PadAction | null }>>
   snake: { a: { code: "Space", aria: "Arrancar" }, b: null },
 };
 
+/**
+ * Los botones del centro del mando, los de partida. Redondos y del mínimo que
+ * un pulgar acierta, 44px, porque son los tres bloques del mando los que se
+ * reparten el ancho de un teléfono: en uno de 360px quedan 328 útiles y la
+ * cuenta sale justa —144 la cruz, 44 el centro y 120 las dos acciones—. No se
+ * pulsan en caliente, así que aquí el círculo pequeño no cuesta partidas.
+ */
+const CENTER_KEY = "size-11 touch-none rounded-full px-0 text-[6px]";
+
 const SAVED_MESSAGE = "PUNTUACION GUARDADA";
 /** Lo que enseña el HUD antes del primer `onState`. */
 const FRESH_RUN: GameState = { score: 0, lives: 3, level: 1 };
@@ -360,6 +369,25 @@ export function PlayCabinet({ game }: { game: Game }) {
       : padKey({ label, code: "", aria: `${label}, sin acción en esta máquina` }, round, true);
   }
 
+  /**
+   * PAUSA / SEGUIR. Se pinta tres veces —en el HUD, que es donde vive con ratón
+   * y teclado, y en el centro del mando en las dos posturas de mano—, y CSS
+   * enseña una sola: es la misma regla que ya siguen los botones del mando, y
+   * el estado es uno solo, así que las tres dicen lo mismo.
+   */
+  function pauseButton(className = "") {
+    return (
+      <button
+        type="button"
+        onClick={() => setPaused((p) => !p)}
+        aria-pressed={paused}
+        className={`cursor-pointer border border-av-yellow/45 bg-transparent font-display text-av-yellow active:scale-94 hover:bg-av-yellow/16 hover:text-white ${className}`}
+      >
+        {paused ? "SEGUIR" : "PAUSA"}
+      </button>
+    );
+  }
+
   function replay() {
     clearInterval(typer.current);
     // La partida nueva empieza con el mando en reposo: una tecla que se quedó
@@ -396,7 +424,8 @@ export function PlayCabinet({ game }: { game: Game }) {
             avanza 1em por carácter, así que lo que se recorta es lo que se
             paga por carácter —el cuerpo, el tracking de 1px y los huecos—, no
             ninguna de las cuatro celdas: las tres cifras y el jugador se
-            quedan, y PAUSA con ellas en la misma fila. */}
+            quedan. PAUSA ya no está entre ellas, que desde SPEC 12 baja al
+            centro del mando. */}
         <div className="flex flex-wrap items-center justify-between gap-3 border border-av-cyan/30 bg-[rgba(13,15,22,0.9)] px-4 py-3.5 handheld:flex-nowrap handheld:gap-1.5 handheld:px-1.5 handheld:py-1.5">
           <div className="flex flex-wrap gap-5.5 font-display text-[9px] tracking-av handheld:min-w-0 handheld:flex-nowrap handheld:gap-1.5 handheld:text-[6px] handheld:tracking-normal">
             {/* Los rótulos los pone el motor: las tres cifras son siempre las
@@ -432,16 +461,11 @@ export function PlayCabinet({ game }: { game: Game }) {
             </span>
           </div>
 
-          <button
-            type="button"
-            onClick={() => setPaused((p) => !p)}
-            aria-pressed={paused}
-            // Encoge con el HUD, pero nunca cede su sitio: `shrink-0` lo deja
-            // entero a la derecha de la fila aunque las cifras crezcan.
-            className="cursor-pointer border border-av-yellow/45 bg-transparent px-3.5 py-2.75 font-display text-[9px] text-av-yellow active:scale-94 hover:bg-av-yellow/16 hover:text-white handheld:shrink-0 handheld:px-2 handheld:py-2 handheld:text-[7px]"
-          >
-            {paused ? "SEGUIR" : "PAUSA"}
-          </button>
+          {/* Con el dedo el HUD se queda sólo con sus cuatro celdas: PAUSA es
+              un botón de partida y baja al centro del mando, que es donde lo
+              busca el pulgar. En escritorio no molesta donde está y no se
+              mueve. */}
+          {pauseButton("px-3.5 py-2.75 text-[9px] handheld:hidden")}
         </div>
 
         {/* El marco del gabinete es aire, y con el dedo el aire es lo primero
@@ -471,15 +495,20 @@ export function PlayCabinet({ game }: { game: Game }) {
           {/* La fila de juego. En todas las maquetaciones menos la horizontal
               de mano es `display: contents`, así que no existe: el marco cuelga
               del gabinete igual que siempre. En horizontal se convierte en la
-              fila que reparte el ancho —el mando a los lados llega en el paso
-              siguiente— y da al marco un alto contra el que medirse. */}
+              fila que reparte el ancho entre el mando de la izquierda, el
+              tablero y el de la derecha, y da al marco un alto contra el que
+              medirse. */}
           <div className="contents handheld-wide:flex handheld-wide:min-h-0 handheld-wide:flex-1 handheld-wide:items-center handheld-wide:justify-center handheld-wide:gap-2">
-            {/* Las cuatro flechas, donde cae el pulgar izquierdo. Sólo existen
-                en horizontal: en vertical las pinta la fila de cinco. */}
-            <div className="hidden shrink-0 grid-cols-3 grid-rows-3 gap-1.5 handheld-wide:grid">
-              {PAD.filter((k) => k.side === "dpad").map((entry) =>
-                padKey(entry, `size-12 px-0 py-0 ${CROSS_CELL[entry.code]}`),
-              )}
+            {/* Las cuatro flechas, donde cae el pulgar izquierdo, con PAUSA
+                debajo. Sólo existen en horizontal: en vertical las pinta el
+                mando de abajo. */}
+            <div className="hidden shrink-0 flex-col items-center gap-2 handheld-wide:flex">
+              <div className="grid grid-cols-3 grid-rows-3 gap-1.5">
+                {PAD.filter((k) => k.side === "dpad").map((entry) =>
+                  padKey(entry, `size-12 px-0 py-0 ${CROSS_CELL[entry.code]}`),
+                )}
+              </div>
+              {pauseButton(CENTER_KEY)}
             </div>
 
             <div
@@ -553,15 +582,19 @@ export function PlayCabinet({ game }: { game: Game }) {
               así que cada pulgar tiene el suyo sin cruzar la mano. En
               horizontal esto se apaga, porque allí los dos bloques están a los
               lados. */}
-          <div className="mt-3 hidden items-center justify-between gap-3 handheld:flex handheld-wide:hidden">
+          <div className="mt-3 hidden items-center justify-between gap-2 handheld:flex handheld-wide:hidden">
             <div className="grid shrink-0 grid-cols-3 grid-rows-3 gap-1.5">
               {PAD.filter((k) => k.side === "dpad").map((entry) =>
-                padKey(entry, `size-12 px-0 py-0 ${CROSS_CELL[entry.code]}`),
+                padKey(entry, `size-11 px-0 py-0 ${CROSS_CELL[entry.code]}`),
               )}
             </div>
-            <div className="flex shrink-0 items-center gap-3">
-              {actionKey("b", "size-16")}
-              {actionKey("a", "size-16")}
+            {/* El centro, entre los dos pulgares: los botones de partida. */}
+            <div className="flex shrink-0 flex-col items-center gap-2">
+              {pauseButton(CENTER_KEY)}
+            </div>
+            <div className="flex shrink-0 items-center gap-2">
+              {actionKey("b", "size-14")}
+              {actionKey("a", "size-14")}
             </div>
           </div>
 
