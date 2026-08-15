@@ -27,6 +27,12 @@
 
 import {
   CELL,
+  COLOR_BANK,
+  COLOR_LANE_LINE,
+  COLOR_ROAD,
+  COLOR_TIMER,
+  COLOR_TIMER_LOW,
+  COLOR_WATER,
   DEATH_MS,
   HOP_MS,
   LADY_ROW,
@@ -48,6 +54,7 @@ import {
   SPEED_MAX,
   SPEED_STEP,
   START_COL,
+  TIME_LOW,
   TIME_MIN,
   TIME_START,
   TIME_STEP,
@@ -390,8 +397,91 @@ export const froggerGame: GameMount = {
 
     // ── Dibujo ───────────────────────────────────────────────────────────────
 
+    /** Una franja segura: orilla de arriba, mediana y acera de salida. */
+    function drawBank(row: number) {
+      const y = row * CELL;
+      ctx.globalAlpha = 0.16;
+      ctx.fillStyle = COLOR_BANK;
+      ctx.fillRect(0, y, W, CELL);
+      ctx.globalAlpha = 1;
+      ctx.fillStyle = COLOR_BANK;
+      ctx.fillRect(0, y, W, 2);
+      ctx.fillRect(0, y + CELL - 2, W, 2);
+    }
+
+    /**
+     * El cronómetro de la travesía, bajo la fila de casas.
+     *
+     * Es la barra que sustituye a una cuarta cifra del HUD, y se vacía de
+     * izquierda a derecha: lo que queda se apoya en el borde derecho.
+     */
+    function drawTimer(r: Run) {
+      const total = timeForRound(r.round);
+      const frac = Math.max(0, Math.min(r.time / total, 1));
+      const width = W * frac;
+      const y = CELL - 6;
+      ctx.fillStyle = r.time <= TIME_LOW ? COLOR_TIMER_LOW : COLOR_TIMER;
+      ctx.fillRect(W - width, y, width, 4);
+    }
+
+    /**
+     * El tablero entero, y nada más.
+     *
+     * Ni puntuación, ni vidas, ni ronda, ni `GAME OVER`: eso lo pinta React a
+     * veinte píxeles del canvas, como en las otras cuatro máquinas. El motor
+     * sólo sube las tres cifras por `onState`. La única excepción es el
+     * cronómetro, que no tiene equivalente fuera.
+     */
     function draw() {
-      ctx.clearRect(0, 0, W, H);
+      const r = run;
+
+      // Asfalto de fondo y agua encima, en su franja.
+      ctx.fillStyle = COLOR_ROAD;
+      ctx.fillRect(0, 0, W, H);
+      ctx.fillStyle = COLOR_WATER;
+      ctx.fillRect(0, ROW_RIVER_TOP * CELL, W, (ROW_RIVER_BOTTOM - ROW_RIVER_TOP + 1) * CELL);
+
+      // Líneas de carril: sólo entre carriles de carretera, discontinuas.
+      ctx.fillStyle = COLOR_LANE_LINE;
+      for (let row = ROW_ROAD_TOP + 1; row <= ROW_ROAD_BOTTOM; row++) {
+        for (let x = 0; x < W; x += 24) ctx.fillRect(x, row * CELL - 1, 14, 2);
+      }
+
+      // Las dos orillas y la mediana.
+      drawBank(ROW_HOMES);
+      drawBank(ROW_MEDIAN);
+      drawBank(ROW_START);
+
+      r.homes.draw(ctx, r.t, r.round);
+      drawTimer(r);
+
+      // Primero el río y después la carretera, que es el orden en que se leen
+      // de arriba abajo.
+      for (const lane of r.lanes) {
+        if (lane.spec.kind === "log" || lane.spec.kind === "turtle") lane.draw(ctx, r.t);
+      }
+      for (const lane of r.lanes) {
+        if (lane.spec.kind === "car" || lane.spec.kind === "truck") lane.draw(ctx, r.t);
+      }
+
+      if (r.snake) r.snake.draw(ctx);
+      r.bonus.draw(ctx);
+      r.frog.draw(ctx);
+
+      // La X de la fase `"dead"`, encima de la rana: es lo que hace que se vea
+      // qué la mató antes de reaparecer.
+      if (r.phase === "dead") {
+        const x = r.frog.viewX();
+        const y = r.frog.viewY();
+        ctx.strokeStyle = COLOR_TIMER_LOW;
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.moveTo(x + 6, y + 6);
+        ctx.lineTo(x + CELL - 6, y + CELL - 6);
+        ctx.moveTo(x + CELL - 6, y + 6);
+        ctx.lineTo(x + 6, y + CELL - 6);
+        ctx.stroke();
+      }
     }
 
     // ── Bucle ────────────────────────────────────────────────────────────────

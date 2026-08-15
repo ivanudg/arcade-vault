@@ -67,6 +67,7 @@ export const POINTS_LADY = 200; // por llegar a casa escoltando a la dama-rana
 export const TIME_START = 30;
 export const TIME_STEP = 2; // se acorta cada ronda
 export const TIME_MIN = 20; // suelo: la ronda 6 ya no acorta más
+export const TIME_LOW = 5; // desde aquí la barra cambia de color
 
 // ── Progresión ───────────────────────────────────────────────────────────────
 
