@@ -3,7 +3,7 @@
  * leen y se comprueban de un vistazo, que es justo lo que no se puede hacer con
  * el closure de `mount()`.
  *
- * Ninguna usa `Math.random()`, y eso no es casualidad: en este motor los
+ * Ninguna sortea nada, y eso no es casualidad: en este motor los
  * carriles, las tortugas, el cocodrilo, la mosca y la dama-rana son funciones
  * del tiempo y de la ronda, así que dos partidas de la misma ronda se juegan
  * igual y una posición se reproduce en la consola sin montar el juego.

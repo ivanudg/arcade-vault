@@ -15,7 +15,7 @@
  *   una barra en el canvas, bajo la fila de casas. Es la misma excepción que
  *   usan las barras de potenciador de Asteroids: del HUD de un original sólo
  *   sobrevive lo que no tiene equivalente fuera.
- * - **No hay ni un `Math.random()`.** Los carriles, las tortugas que se
+ * - **No se sortea nada, en ninguna parte.** Los carriles, las tortugas que se
  *   sumergen, el cocodrilo, la mosca y la dama-rana son funciones de `run.t` y
  *   de la ronda, así que dos partidas de la misma ronda se juegan igual y una
  *   posición se reproduce en la consola sin montar el juego. La única entidad
