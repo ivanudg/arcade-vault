@@ -11,6 +11,12 @@
  * `rgba` con `tint()`. Aquí sólo está el color, y por eso esas dos ranuras van en
  * `#rrggbb` de seis dígitos, que es lo único que `tint()` acepta.
  *
+ * **Y desde el 2026-08-15 una piel es color más un rasgo de dibujo**: `glow` dice
+ * si las entidades salen con halo del suyo propio. Es el mismo rasgo que estrenó
+ * Tetris el mismo día, y aquí cae sobre un motor de vectores: lo que se ilumina
+ * no son rellenos sino trazos de 1,5 px. **Ni un hex de estas tres paletas cambió
+ * al añadirlo.**
+ *
  * `clasico` es extracción, no diseño: cada hex se puede señalar en el código que
  * había antes de vestir la máquina, así que elegirla deja la partida exactamente
  * como estaba.
@@ -41,6 +47,20 @@ export interface Palette {
   hyper: string;
   /** Bomba nova: el estallido radial de ocho rayos. */
   nova: string;
+  /**
+   * Si esta piel pinta las entidades con halo de su propio color.
+   *
+   * **La piel dice si hay halo; el motor dice de cuánto**, igual que con el
+   * alfa: aquí sólo está la decisión, y el radio lo miden las dos constantes de
+   * `entities.ts`. No hay una segunda geometría escondida —el trazo, su grosor y
+   * la silueta son los de siempre—: lo único que cambia es el `shadowBlur` del
+   * contexto mientras se dibuja cada entidad.
+   *
+   * `false` en `clasico`, que es extracción y no se toca ni un píxel. El fondo y
+   * las barras de power-up no lo llevan en ninguna piel: el lienzo lo mancharía
+   * entero y las barras son HUD dentro del canvas, no entidades.
+   */
+  glow: boolean;
 }
 
 /**
@@ -56,6 +76,13 @@ export interface Palette {
  * medio lo que te mata, tenue lo que sólo decora. Los cinco power-ups comparten
  * el escalón vivo —no hay cuatro—, y se distinguen por su glifo, que el motor
  * dibuja distinto para cada uno, y por el rótulo de su barra del HUD.
+ *
+ * Las dos llevan `glow`, y por motivos distintos. En `neon` el halo es lo que
+ * convierte una silueta de vectores en un trazo de tubo encendido, que es lo que
+ * la piel dice ser. En `retro` es el sangrado del fósforo de un monitor verde,
+ * corto y pegado al trazo. Los dos radios los miden las constantes de
+ * `entities.ts`, y no son el mismo: en `retro` las entidades se separan por
+ * escalón de brillo, y un halo largo funde un escalón con el siguiente.
  */
 export const PALETTES: Record<SkinId, Palette> = {
   clasico: {
@@ -70,6 +97,7 @@ export const PALETTES: Record<SkinId, Palette> = {
     slow: "#fd4",
     hyper: "#5f8",
     nova: "#f55",
+    glow: false,
   },
   neon: {
     bg: "#0a0a0f",
@@ -83,6 +111,7 @@ export const PALETTES: Record<SkinId, Palette> = {
     slow: "#f5ff00",
     hyper: "#ff9d4d",
     nova: "#ff006e",
+    glow: true,
   },
   retro: {
     bg: "#001100",
@@ -96,5 +125,6 @@ export const PALETTES: Record<SkinId, Palette> = {
     slow: "#33ff33",
     hyper: "#33ff33",
     nova: "#33ff33",
+    glow: true,
   },
 };

@@ -22,6 +22,12 @@
  * —vivo contra medio— y encima por el velo que ya ponía el motor, así que la
  * diferencia de brillo en pantalla es la misma que en `clasico`.
  *
+ * **Desde el 2026-08-15 la piel trae además un rasgo de dibujo**, `glow`, que
+ * dice si las entidades salen con halo. No es un color y no cuenta como ranura:
+ * siguen siendo diecisiete y las tres pieles las cubren enteras. `clasico` lo
+ * lleva en `false`, así que la piel por defecto no cambió ni un píxel; el radio
+ * del halo no está aquí, lo miden dos constantes de `entities.ts`.
+ *
  * `clasico` es extracción, no diseño: cada hex se puede señalar en el código que
  * había antes de vestir la máquina, así que la piel por defecto deja la partida
  * exactamente como estaba.
@@ -64,6 +70,29 @@ export interface Palette {
   timerLow: string;
   /** El recorte oscuro dentro de una entidad: ojos y dientes. */
   detail: string;
+  /**
+   * ¿Salen las entidades con halo?
+   *
+   * **No es un color, es un rasgo de dibujo**, y es el único campo de esta piel
+   * que no lo es. Dice si lo que se mueve por el tablero se pinta con un
+   * resplandor de su propio color; el radio no viaja aquí, lo mide `entities.ts`
+   * —la piel dice si hay halo, el motor dice de cuánto—, igual que con el alfa.
+   *
+   * Lo llevan las **ocho ranuras que son entidad**: coche, camión, tronco, las
+   * dos tortugas, rana, dama-rana y cocodrilo. Las nueve restantes no, y por tres
+   * motivos distintos: `road`, `water`, `laneLine` y `bank` son el lienzo y el
+   * fondo activo —un halo sobre un `fillRect` que cubre cinco filas mancha el
+   * frame entero—; `grain` y `detail` son **recortes**, no entidades, y su color
+   * es el del fondo, así que su aura sólo serviría para comerse por dentro el
+   * relleno que los rodea; y `home`, `timer` y `timerLow` son señalización fija
+   * —el marco del nicho, la barra del cronómetro y la X de la muerte—, que es la
+   * misma razón por la que las cuatro barras de potenciador de Asteroids se
+   * quedaron fuera de su halo.
+   *
+   * `clasico: false` es lo que hace que la piel por defecto siga dibujando
+   * exactamente lo de siempre.
+   */
+  glow: boolean;
 }
 
 /**
@@ -129,6 +158,7 @@ export const PALETTES: Record<SkinId, Palette> = {
     timer: "#f5ff00",
     timerLow: "#ff006e",
     detail: "#0a0a0f",
+    glow: false,
   },
   neon: {
     road: "#0a0a0f",
@@ -148,6 +178,7 @@ export const PALETTES: Record<SkinId, Palette> = {
     timer: "#f5ff00",
     timerLow: "#ff006e",
     detail: "#0a0a0f",
+    glow: true,
   },
   retro: {
     road: "#001100",
@@ -167,5 +198,6 @@ export const PALETTES: Record<SkinId, Palette> = {
     timer: "#116611",
     timerLow: "#22aa22",
     detail: "#001100",
+    glow: true,
   },
 };

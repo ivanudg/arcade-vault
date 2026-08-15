@@ -14,13 +14,20 @@ no se toca. Si no la tiene, la creas tú, en esta ronda, antes de la paleta.
 
 ## El reparto: qué es de todas y qué es de una
 
-| Alcance  | Archivos                                                                                     | Cuándo se escribe            |
-| -------- | -------------------------------------------------------------------------------------------- | ---------------------------- |
-| De todas | `lib/games/skins.ts`, `lib/games/engine.ts`, `components/play-cabinet.tsx`, `lib/storage.ts` | **Una sola vez**, la primera |
-| De una   | `lib/games/<juego>/skins.ts` y los archivos de dibujo de ese motor                           | Cada vez que vistes una      |
+| Alcance  | Archivos                                                                                     | Cuándo se escribe             |
+| -------- | -------------------------------------------------------------------------------------------- | ----------------------------- |
+| De todas | `lib/games/skins.ts`, `lib/games/engine.ts`, `components/play-cabinet.tsx`, `lib/storage.ts` | **Una sola vez**, la primera  |
+| De todas | `lib/games.ts`, sólo para **añadir** una ayuda de dibujo junto a `tint()`                    | Cuando un rasgo nuevo la pide |
+| De una   | `lib/games/<juego>/skins.ts` y los archivos de dibujo de ese motor                           | Cada vez que vistes una       |
 
-Los cuatro primeros los comparten los cuatro motores: **un error ahí rompe máquinas que no
+Los cuatro primeros los comparten los cinco motores: **un error ahí rompe máquinas que no
 estabas tocando**. Por eso el cambio de contrato es aditivo y todo lo nuevo es opcional.
+
+`lib/games.ts` es un caso aparte y el único donde el agente escribe fuera de `lib/games/`: es
+de todo el sitio, no sólo de los motores —de ahí salen `GAMES`, `GameId` y el `tint()` que usan
+las tarjetas—, así que ahí **sólo se añade**, nunca se toca lo que ya está. Una función de
+dibujo nueva al final, con su bloque de comentario, y nada más. El catálogo no es del
+`skin-designer`.
 
 **`components/game-canvas.tsx` no se toca. Nunca.** Su efecto de montaje depende sólo de
 `[game]` y así se queda: si la skin entrara por sus props, cambiarla remontaría el motor y
@@ -145,6 +152,34 @@ export const PALETTES: Record<SkinId, Palette> = {
 `clasico` es **copia literal** de lo que el motor pintaba antes. Es S2, y aquí se vuelve
 verificable de verdad: `git diff` de esa ronda no puede cambiar ni un hex de lo que se veía.
 
+### P1.1 · Los rasgos de dibujo, si el motor pide alguno
+
+Una propiedad de `Palette` puede **no ser un color**, y entonces es un `boolean` y nada más:
+dice si esa piel usa un camino de dibujo que el motor ya tiene escrito. Hay dos en el repo,
+`useAtlas` en Snake y `glow` en Tetris, y los dos van documentados en el bloque de comentario
+del archivo, con qué piel lo activa y por qué.
+
+Tres condiciones, y las tres a la vez:
+
+- **Booleano, nunca un número.** El número es del motor: la piel dice si hay halo, el motor
+  dice de cuánto, igual que con el alfa. Un radio dentro de la paleta es geometría en la
+  paleta.
+- **El camino ya existe** o se escribe en esta ronda **sin tocar el juego**: ni una hitbox, ni
+  un tamaño, ni un ritmo. `useAtlas: false` cae al círculo plano que el motor ya pintaba
+  cuando la imagen no cargaba; `glow: true` cambia el inset de la celda de 1 px a 2, que es
+  dibujo y no colisión.
+- **`clasico` se queda con el valor que reproduce lo de hoy**, que suele ser el que deja el
+  camino de siempre. Es S2: la rama por defecto no cambia ni un píxel, y eso se comprueba en
+  el `git diff` viendo que sus líneas son las mismas, sólo indentadas.
+
+Si el rasgo se pinta en más de un sitio, el helper va en `lib/games.ts`, junto a `tint()` —de
+ahí es de donde los motores importan las ayudas de dibujo—, y no en `lib/games/skins.ts`, que
+es sólo vocabulario. Los dos que hay son `glow(ctx, color, blur)` y `noGlow(ctx)`. **Todo lo
+que se encienda en el contexto se apaga en la misma función que lo encendió**: `shadowColor`,
+`shadowBlur`, `globalAlpha` y `globalCompositeOperation` son estado global del canvas, y lo que
+no se suelte lo hereda el dibujo siguiente. Por eso `noGlow()` suelta las **dos** propiedades
+del halo y no sólo el radio.
+
 ## P2 · Los archivos de dibujo del motor
 
 Cada literal de color se sustituye por su propiedad de la paleta. La paleta llega **por
@@ -217,8 +252,10 @@ haber empezado, y el usuario se entera al hacer `npm run build`, no ahora.
 
 ## Las cinco reglas de la aplicación
 
-- **Sólo cambia el color.** Ni una constante de ritmo, ni una regla, ni una firma que no sea
-  para pasar la paleta. Vestir no es reequilibrar.
+- **Sólo cambia lo que se ve.** El color, y como mucho un rasgo de dibujo booleano de los de
+  P1.1. Ni una constante de ritmo, ni una regla, ni una firma que no sea para pasar la paleta.
+  Vestir no es reequilibrar: si al cambiar de piel una hitbox se mueve o una pieza cae a otra
+  velocidad, no era una piel.
 - **`clasico` deja la máquina exactamente como estaba.** Si al terminar el juego se ve
   distinto con la skin por defecto, la extracción está mal.
 - **Una máquina por ronda.** La que te pidieron. Las otras tres no se abren ni para mirar.

@@ -10,6 +10,7 @@
  * alguna de las tres cifras del HUD— y `onGameOver`.
  */
 
+import { glow, noGlow } from "@/lib/games";
 import type { GameCallbacks, GameHandle, GameMount, GameState } from "@/lib/games/engine";
 import { createInput } from "@/lib/games/input";
 import { DEFAULT_SKIN, SKIN_IDS } from "@/lib/games/skins";
@@ -30,7 +31,14 @@ import {
   type PowerUpType,
 } from "@/lib/games/asteroids/constants";
 import { dist, rand, randInt } from "@/lib/games/asteroids/math";
-import { Asteroid, Bullet, Particle, PowerUp, Ship } from "@/lib/games/asteroids/entities";
+import {
+  Asteroid,
+  Bullet,
+  Particle,
+  PowerUp,
+  Ship,
+  glowSpread,
+} from "@/lib/games/asteroids/entities";
 import { PALETTES } from "@/lib/games/asteroids/skins";
 
 /** El estado de partida entero. Una instancia por `mount()`. */
@@ -327,10 +335,16 @@ export const asteroidsGame: GameMount = {
       // Parpadeo en el último ~1s antes de expirar
       if (r.timers.shield < 1 && Math.floor(r.timers.shield * 8) % 2 === 0) return;
       ctx.strokeStyle = palette.shield;
+      // La sexta entidad con halo, y la única que no se dibuja en `entities.ts`
+      // porque necesita el `Run` entero: es la misma ranura que el icono del
+      // power-up, así que sale con el mismo resplandor o el escudo activo se
+      // vería plano al lado del que aún está por recoger.
+      if (palette.glow) glow(ctx, palette.shield, glowSpread(palette));
       ctx.lineWidth = 1.5;
       ctx.beginPath();
       ctx.arc(r.ship.x, r.ship.y, r.ship.radius + 7, 0, Math.PI * 2);
       ctx.stroke();
+      if (palette.glow) noGlow(ctx);
     }
 
     /**
@@ -338,6 +352,13 @@ export const asteroidsGame: GameMount = {
      * están en el HUD de React, a veinte píxeles del canvas. Del `drawHUD`
      * original solo sobreviven las barras de power-up, que no tienen sitio
      * fuera. El `GAME OVER` tampoco: lo pinta el superpuesto que ya existe.
+     *
+     * **Ni el lienzo ni las barras llevan halo, en ninguna piel.** El lienzo
+     * porque un `fillRect` de `W × H` con `shadowBlur` encendido mancharía el
+     * frame entero, y las barras porque son HUD dentro del canvas y no
+     * entidades. Ninguno de los dos lo apaga por su cuenta: cada entidad suelta
+     * el suyo antes de devolver el control, así que el contexto llega aquí
+     * limpio de un frame para el siguiente.
      */
     function draw() {
       const r = run;

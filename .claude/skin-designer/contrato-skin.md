@@ -21,9 +21,24 @@ se lee del código en cada invocación, nunca de aquí ni del ledger.
 
 ## Qué es una skin
 
-Una skin es un **mapeo completo de las ranuras de color de un motor a colores concretos**. No
-es un filtro, ni un tinte global, ni un cambio de CSS: el canvas del motor no hereda nada del
-tema del sitio, y cada `fillStyle` que el motor asigna sale de una constante suya.
+Una skin es un **mapeo completo de las ranuras de color de un motor a colores concretos**, más
+—cuando el motor lo pide— **algún rasgo de dibujo booleano**. No es un filtro, ni un tinte
+global, ni un cambio de CSS: el canvas del motor no hereda nada del tema del sitio, y cada
+`fillStyle` que el motor asigna sale de una constante suya.
+
+**El rasgo de dibujo es la excepción, no la puerta de atrás.** Un campo de piel que no es un
+color sólo se admite cuando la decisión es de la piel de verdad y el motor no puede tomarla
+por ella. Hay dos hasta hoy, y los dos son booleanos: el `useAtlas` de Snake, que dice si la
+fruta sale del atlas o del círculo plano que el motor ya tiene escrito, y el `glow` de Tetris,
+que dice si las celdas se pintan con halo o con banda de brillo. Ni uno ni otro cambia una
+hitbox, un tamaño ni un ritmo: si un rasgo tocara el juego, deja de ser piel.
+
+**Y la frontera se escribe igual que con el alfa: la piel dice si hay halo, el motor dice de
+cuánto.** El radio del resplandor es del motor, como el 0,12 del brillo o el `globalAlpha` que
+Arkanoid modula por puntos de vida — mide en píxeles de su propio mundo y depende de cosas que
+la piel no sabe, como el lado de la celda o el hueco que hay que dejar legible. La piel aporta
+la decisión y el color; el motor, el número. Un rasgo que llegara con su número dentro estaría
+metiendo geometría en la paleta.
 
 Una **ranura** es cada elemento pintable que el motor distingue por color. Se nombra con su
 identificador real del código, sea una constante (`COLOR_BODY`, `COLORS[3]`, `COLOR_MAP.r`) o
@@ -94,6 +109,13 @@ inventariadas en la Fase 4 y ninguna celda vacía.
 
 Falla si queda una sin color. Una ranura sin cubrir no es un detalle pendiente: es una entidad
 que se pinta con el color de la skin anterior, o que no se pinta.
+
+**Cubrir no es lo mismo que pintar.** Una piel puede nombrar una ranura y luego no llegar a
+usarla, si un rasgo de dibujo suyo la deja fuera: el `fruit` de Snake con `useAtlas: true` y el
+`gloss` de Tetris con `glow: true` están los dos en las tres columnas y cada uno se pinta sólo
+en dos. S1 pide que la tabla esté completa, para que cambiar de piel nunca herede un color de
+la anterior; qué se llega a dibujar con cada valor lo decide el motor. Lo que sí falla S1 es
+una celda vacía.
 
 ### S2 · `clasico` se extrae, no se diseña
 
