@@ -136,20 +136,29 @@ export const HIT_PAD = 6;
  */
 export const RIDE_PAD = 10;
 
-// ── Colores ──────────────────────────────────────────────────────────────────
+// ── Velos ────────────────────────────────────────────────────────────────────
 
-export const COLOR_ROAD = "#0a0a0f";
-export const COLOR_LANE_LINE = "rgba(255,0,110,0.16)";
-export const COLOR_WATER = "rgba(0,245,255,0.10)";
-export const COLOR_BANK = "#ff006e";
-export const COLOR_CAR = "#ff006e";
-export const COLOR_TRUCK = "rgba(255,0,110,0.7)";
-export const COLOR_LOG = "#00f5ff";
-export const COLOR_TURTLE = "rgba(0,245,255,0.75)";
-export const COLOR_TURTLE_DIVING = "rgba(0,245,255,0.25)";
-export const COLOR_FROG = "#f5ff00";
-export const COLOR_LADY = "#ff006e";
-export const COLOR_GATOR = "rgba(245,255,0,0.85)";
-export const COLOR_HOME = "rgba(0,245,255,0.45)";
-export const COLOR_TIMER = "#f5ff00";
-export const COLOR_TIMER_LOW = "#ff006e";
+/**
+ * Las transparencias del dibujo. Aquí ya no hay colores: los quince que vivían
+ * en el bloque `── Colores ──` se mudaron a `skins.ts` al vestir la máquina, y
+ * lo que queda es la parte que **no** es de la piel.
+ *
+ * Cada uno de estos alfas se escribía antes dentro de un `rgba(...)` entero
+ * —`rgba(0,245,255,0.10)` el agua, `rgba(245,255,0,0.85)` el cocodrilo— o como
+ * un `globalAlpha` suelto. El color es de la piel; la transparencia es una
+ * decisión de dibujo del motor, así que se queda donde estaba y el `rgba` se
+ * monta al pintar con el `tint()` de `lib/games.ts`.
+ *
+ * Los dos de la tortuga son los que llevan información de juego y no adorno:
+ * pisar una sumergida mata, y la distancia entre 0,75 y 0,25 es la señal que lo
+ * avisa. Tocarlos es reequilibrar, no revestir.
+ */
+export const ALPHA_LANE_LINE = 0.16;
+export const ALPHA_WATER = 0.1;
+export const ALPHA_BANK = 0.16;
+export const ALPHA_TRUCK = 0.7;
+export const ALPHA_LOG_GRAIN = 0.35;
+export const ALPHA_TURTLE = 0.75;
+export const ALPHA_TURTLE_DIVING = 0.25;
+export const ALPHA_GATOR = 0.85;
+export const ALPHA_HOME = 0.45;

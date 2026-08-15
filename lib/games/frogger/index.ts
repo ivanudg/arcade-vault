@@ -26,13 +26,10 @@
  */
 
 import {
+  ALPHA_BANK,
+  ALPHA_LANE_LINE,
+  ALPHA_WATER,
   CELL,
-  COLOR_BANK,
-  COLOR_LANE_LINE,
-  COLOR_ROAD,
-  COLOR_TIMER,
-  COLOR_TIMER_LOW,
-  COLOR_WATER,
   DEATH_MS,
   HOP_MS,
   LADY_ROW,
@@ -63,8 +60,11 @@ import {
 } from "@/lib/games/frogger/constants";
 import { Bonus, Frog, Homes, Lane, Snake } from "@/lib/games/frogger/entities";
 import { lanesForRound } from "@/lib/games/frogger/lanes";
+import { PALETTES } from "@/lib/games/frogger/skins";
 import type { GameCallbacks, GameHandle, GameMount, GameState } from "@/lib/games/engine";
 import { createInput } from "@/lib/games/input";
+import { DEFAULT_SKIN, SKIN_IDS } from "@/lib/games/skins";
+import { tint } from "@/lib/games";
 
 /**
  * Estado de una partida.
@@ -123,6 +123,7 @@ const HOPS: readonly { code: string; dx: number; dy: number }[] = [
 export const froggerGame: GameMount = {
   world: { width: W, height: H },
   hud: ["PUNTUACION", "VIDAS", "NIVEL"],
+  skins: SKIN_IDS,
 
   mount(canvas: HTMLCanvasElement, cb: GameCallbacks): GameHandle {
     const context2d = canvas.getContext("2d");
@@ -132,6 +133,13 @@ export const froggerGame: GameMount = {
     const ctx: CanvasRenderingContext2D = context2d;
 
     const input = createInput();
+
+    /**
+     * La piel activa, y aquí dentro es donde vive: dos partidas montadas a la
+     * vez tienen la suya, como ya pasa con la puntuación y las entidades. El
+     * default es `clasico`, o sea los colores que SPEC 14 dejó escritos.
+     */
+    let palette = PALETTES[DEFAULT_SKIN];
 
     let run = createRun();
     let frame: number | null = null;
@@ -409,11 +417,11 @@ export const froggerGame: GameMount = {
     /** Una franja segura: orilla de arriba, mediana y acera de salida. */
     function drawBank(row: number) {
       const y = row * CELL;
-      ctx.globalAlpha = 0.16;
-      ctx.fillStyle = COLOR_BANK;
+      ctx.globalAlpha = ALPHA_BANK;
+      ctx.fillStyle = palette.bank;
       ctx.fillRect(0, y, W, CELL);
       ctx.globalAlpha = 1;
-      ctx.fillStyle = COLOR_BANK;
+      ctx.fillStyle = palette.bank;
       ctx.fillRect(0, y, W, 2);
       ctx.fillRect(0, y + CELL - 2, W, 2);
     }
@@ -429,7 +437,7 @@ export const froggerGame: GameMount = {
       const frac = Math.max(0, Math.min(r.time / total, 1));
       const width = W * frac;
       const y = CELL - 6;
-      ctx.fillStyle = r.time <= TIME_LOW ? COLOR_TIMER_LOW : COLOR_TIMER;
+      ctx.fillStyle = r.time <= TIME_LOW ? palette.timerLow : palette.timer;
       ctx.fillRect(W - width, y, width, 4);
     }
 
@@ -445,13 +453,13 @@ export const froggerGame: GameMount = {
       const r = run;
 
       // Asfalto de fondo y agua encima, en su franja.
-      ctx.fillStyle = COLOR_ROAD;
+      ctx.fillStyle = palette.road;
       ctx.fillRect(0, 0, W, H);
-      ctx.fillStyle = COLOR_WATER;
+      ctx.fillStyle = tint(palette.water, ALPHA_WATER);
       ctx.fillRect(0, ROW_RIVER_TOP * CELL, W, (ROW_RIVER_BOTTOM - ROW_RIVER_TOP + 1) * CELL);
 
       // Líneas de carril: sólo entre carriles de carretera, discontinuas.
-      ctx.fillStyle = COLOR_LANE_LINE;
+      ctx.fillStyle = tint(palette.laneLine, ALPHA_LANE_LINE);
       for (let row = ROW_ROAD_TOP + 1; row <= ROW_ROAD_BOTTOM; row++) {
         for (let x = 0; x < W; x += 24) ctx.fillRect(x, row * CELL - 1, 14, 2);
       }
@@ -461,28 +469,28 @@ export const froggerGame: GameMount = {
       drawBank(ROW_MEDIAN);
       drawBank(ROW_START);
 
-      r.homes.draw(ctx, r.t, r.round);
+      r.homes.draw(ctx, r.t, r.round, palette);
       drawTimer(r);
 
       // Primero el río y después la carretera, que es el orden en que se leen
       // de arriba abajo.
       for (const lane of r.lanes) {
-        if (lane.spec.kind === "log" || lane.spec.kind === "turtle") lane.draw(ctx, r.t);
+        if (lane.spec.kind === "log" || lane.spec.kind === "turtle") lane.draw(ctx, r.t, palette);
       }
       for (const lane of r.lanes) {
-        if (lane.spec.kind === "car" || lane.spec.kind === "truck") lane.draw(ctx, r.t);
+        if (lane.spec.kind === "car" || lane.spec.kind === "truck") lane.draw(ctx, r.t, palette);
       }
 
-      if (r.snake) r.snake.draw(ctx);
-      r.bonus.draw(ctx);
-      r.frog.draw(ctx);
+      if (r.snake) r.snake.draw(ctx, palette);
+      r.bonus.draw(ctx, palette);
+      r.frog.draw(ctx, palette);
 
       // La X de la fase `"dead"`, encima de la rana: es lo que hace que se vea
       // qué la mató antes de reaparecer.
       if (r.phase === "dead") {
         const x = r.frog.viewX();
         const y = r.frog.viewY();
-        ctx.strokeStyle = COLOR_TIMER_LOW;
+        ctx.strokeStyle = palette.timerLow;
         ctx.lineWidth = 3;
         ctx.beginPath();
         ctx.moveTo(x + 6, y + 6);
@@ -571,6 +579,13 @@ export const froggerGame: GameMount = {
 
       release(code) {
         input.release(code);
+      },
+
+      // Sólo cambia el color: no repinta, no reinicia y no toca el bucle. El
+      // frame siguiente ya sale con la piel nueva porque `draw()` lee `palette`
+      // cada vez, así que se puede cambiar a mitad de travesía.
+      setSkin(id) {
+        palette = PALETTES[id];
       },
     };
   },

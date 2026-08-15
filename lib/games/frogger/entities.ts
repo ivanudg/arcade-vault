@@ -7,19 +7,21 @@
  * cada coche en el instante `t` con la fórmula de `positions()`, y por eso el
  * juego entero es una función del tiempo y de la ronda. Lo único que sí es
  * estado es la rana, que la mueve el jugador.
+ *
+ * La piel llega igual que el `ctx`, **por parámetro** y en cada `draw()`: la
+ * activa vive en el closure de `mount()` y ninguna entidad se queda con un color
+ * guardado, para que cambiarla se vea en el frame siguiente sin tocar la partida
+ * en curso. El alfa no viaja con ella: eso es de `constants.ts`.
  */
 
 import {
+  ALPHA_GATOR,
+  ALPHA_HOME,
+  ALPHA_LOG_GRAIN,
+  ALPHA_TRUCK,
+  ALPHA_TURTLE,
+  ALPHA_TURTLE_DIVING,
   CELL,
-  COLOR_CAR,
-  COLOR_FROG,
-  COLOR_GATOR,
-  COLOR_HOME,
-  COLOR_LADY,
-  COLOR_LOG,
-  COLOR_TRUCK,
-  COLOR_TURTLE,
-  COLOR_TURTLE_DIVING,
   DIVE_CYCLE,
   DIVE_DOWN,
   DIVE_WARN,
@@ -41,6 +43,8 @@ import {
 } from "@/lib/games/frogger/constants";
 import { cycleAt, overlap, wrapSpan } from "@/lib/games/frogger/math";
 import type { LaneSpec } from "@/lib/games/frogger/lanes";
+import type { Palette } from "@/lib/games/frogger/skins";
+import { tint } from "@/lib/games";
 
 /** Un carril con sus entidades, todas del mismo tipo, largo y velocidad. */
 export class Lane {
@@ -144,65 +148,72 @@ export class Lane {
     return null;
   }
 
-  draw(ctx: CanvasRenderingContext2D, t: number): void {
+  draw(ctx: CanvasRenderingContext2D, t: number, p: Palette): void {
     const positions = this.positions(t);
     for (let i = 0; i < positions.length; i++) {
       const x = positions[i];
       switch (this.spec.kind) {
         case "car":
-          this.drawCar(ctx, x);
+          this.drawCar(ctx, x, p);
           break;
         case "truck":
-          this.drawTruck(ctx, x);
+          this.drawTruck(ctx, x, p);
           break;
         case "log":
-          this.drawLog(ctx, x);
+          this.drawLog(ctx, x, p);
           break;
         case "turtle":
-          this.drawTurtles(ctx, x, t, i);
+          this.drawTurtles(ctx, x, t, i, p);
           break;
       }
     }
   }
 
-  private drawCar(ctx: CanvasRenderingContext2D, x: number): void {
+  private drawCar(ctx: CanvasRenderingContext2D, x: number, p: Palette): void {
     const y = this.y;
-    ctx.fillStyle = COLOR_CAR;
+    ctx.fillStyle = p.car;
     ctx.fillRect(x + 3, y + 8, this.width - 6, CELL - 16);
     // Morro, para que se vea hacia dónde va.
     const nose = this.spec.speed >= 0 ? x + this.width - 8 : x + 3;
     ctx.fillRect(nose, y + 13, 5, CELL - 26);
   }
 
-  private drawTruck(ctx: CanvasRenderingContext2D, x: number): void {
+  private drawTruck(ctx: CanvasRenderingContext2D, x: number, p: Palette): void {
     const y = this.y;
     const forward = this.spec.speed >= 0;
-    ctx.fillStyle = COLOR_TRUCK;
+    ctx.fillStyle = tint(p.truck, ALPHA_TRUCK);
     // Caja.
     const boxX = forward ? x + 3 : x + CELL - 3;
     ctx.fillRect(boxX, y + 6, this.width - CELL, CELL - 12);
     // Cabina, un poco más baja.
     const cabX = forward ? x + this.width - CELL + 2 : x + 4;
-    ctx.fillStyle = COLOR_CAR;
+    ctx.fillStyle = p.car;
     ctx.fillRect(cabX, y + 10, CELL - 6, CELL - 20);
   }
 
-  private drawLog(ctx: CanvasRenderingContext2D, x: number): void {
+  private drawLog(ctx: CanvasRenderingContext2D, x: number, p: Palette): void {
     const y = this.y;
-    ctx.fillStyle = COLOR_LOG;
+    ctx.fillStyle = p.log;
     ctx.fillRect(x, y + 6, this.width, CELL - 12);
     // Vetas: una raya por celda, para que se lea el arrastre.
-    ctx.fillStyle = "rgba(10,10,15,0.35)";
+    ctx.fillStyle = tint(p.grain, ALPHA_LOG_GRAIN);
     for (let c = 1; c < this.spec.len; c++) {
       ctx.fillRect(x + c * CELL - 1, y + 8, 2, CELL - 16);
     }
   }
 
-  private drawTurtles(ctx: CanvasRenderingContext2D, x: number, t: number, i: number): void {
+  private drawTurtles(
+    ctx: CanvasRenderingContext2D,
+    x: number,
+    t: number,
+    i: number,
+    p: Palette,
+  ): void {
     const y = this.y;
     const down = this.submerged(t, i);
     const warning = this.diving(t, i);
-    ctx.fillStyle = down || warning ? COLOR_TURTLE_DIVING : COLOR_TURTLE;
+    ctx.fillStyle =
+      down || warning ? tint(p.turtleDiving, ALPHA_TURTLE_DIVING) : tint(p.turtle, ALPHA_TURTLE);
     for (let c = 0; c < this.spec.len; c++) {
       const cx = x + c * CELL + CELL / 2;
       const cy = y + CELL / 2;
@@ -268,14 +279,14 @@ export class Frog {
     return (this.hop.fromRow + (this.hop.toRow - this.hop.fromRow) * this.hop.k) * CELL;
   }
 
-  draw(ctx: CanvasRenderingContext2D): void {
+  draw(ctx: CanvasRenderingContext2D, p: Palette): void {
     const x = this.viewX();
     const y = this.viewY();
     // A media zancada la rana se agranda: es lo que da lectura al salto.
     const lift = this.hop ? Math.sin(this.hop.k * Math.PI) * 3 : 0;
     const pad = 7 - lift;
 
-    ctx.fillStyle = COLOR_FROG;
+    ctx.fillStyle = p.frog;
     ctx.beginPath();
     ctx.ellipse(x + CELL / 2, y + CELL / 2, CELL / 2 - pad, CELL / 2 - pad - 1, 0, 0, Math.PI * 2);
     ctx.fill();
@@ -286,7 +297,7 @@ export class Frog {
     ctx.fillRect(x + CELL - 10, y + CELL / 2 + legs - 2, 6, 3);
 
     // Ojos.
-    ctx.fillStyle = "#0a0a0f";
+    ctx.fillStyle = p.detail;
     ctx.beginPath();
     ctx.arc(x + CELL / 2 - 5, y + CELL / 2 - 5, 2.5, 0, Math.PI * 2);
     ctx.arc(x + CELL / 2 + 5, y + CELL / 2 - 5, 2.5, 0, Math.PI * 2);
@@ -294,7 +305,7 @@ export class Frog {
 
     // La dama-rana viaja como un punto encima, no como una entidad que sigue.
     if (this.escorting) {
-      ctx.fillStyle = COLOR_LADY;
+      ctx.fillStyle = p.lady;
       ctx.beginPath();
       ctx.arc(x + CELL / 2, y + 7, 4, 0, Math.PI * 2);
       ctx.fill();
@@ -367,7 +378,7 @@ export class Homes {
     return this.gatorAt(t, round) === i ? null : i;
   }
 
-  draw(ctx: CanvasRenderingContext2D, t: number, round: number): void {
+  draw(ctx: CanvasRenderingContext2D, t: number, round: number, p: Palette): void {
     const gator = this.gatorAt(t, round);
     const fly = this.flyAt(t, round);
     const y = this.y;
@@ -375,25 +386,25 @@ export class Homes {
     for (let i = 0; i < HOMES; i++) {
       const x = Homes.x(i);
 
-      ctx.strokeStyle = COLOR_HOME;
+      ctx.strokeStyle = tint(p.home, ALPHA_HOME);
       ctx.lineWidth = 2;
       ctx.strokeRect(x + 2, y + 4, CELL - 4, CELL - 8);
 
       if (this.filled[i]) {
-        ctx.fillStyle = COLOR_FROG;
+        ctx.fillStyle = p.frog;
         ctx.beginPath();
         ctx.ellipse(x + CELL / 2, y + CELL / 2, CELL / 2 - 9, CELL / 2 - 11, 0, 0, Math.PI * 2);
         ctx.fill();
         continue;
       }
 
-      if (gator === i) this.drawGator(ctx, x, y);
-      if (fly === i) this.drawFly(ctx, x, y, t);
+      if (gator === i) this.drawGator(ctx, x, y, p);
+      if (fly === i) this.drawFly(ctx, x, y, t, p);
     }
   }
 
-  private drawGator(ctx: CanvasRenderingContext2D, x: number, y: number): void {
-    ctx.fillStyle = COLOR_GATOR;
+  private drawGator(ctx: CanvasRenderingContext2D, x: number, y: number, p: Palette): void {
+    ctx.fillStyle = tint(p.gator, ALPHA_GATOR);
     // Dos triángulos: el hocico abierto asomando por el fondo del nicho.
     ctx.beginPath();
     ctx.moveTo(x + 7, y + 14);
@@ -408,16 +419,22 @@ export class Homes {
     ctx.closePath();
     ctx.fill();
     // Dientes.
-    ctx.fillStyle = "#0a0a0f";
+    ctx.fillStyle = p.detail;
     for (let d = 0; d < 4; d++) {
       ctx.fillRect(x + 10 + d * 6, y + 20, 2, 4);
     }
   }
 
-  private drawFly(ctx: CanvasRenderingContext2D, x: number, y: number, t: number): void {
+  private drawFly(
+    ctx: CanvasRenderingContext2D,
+    x: number,
+    y: number,
+    t: number,
+    p: Palette,
+  ): void {
     // Parpadea: es lo que la distingue de un adorno del nicho.
     if (cycleAt(t, 0.6) > 0.4) return;
-    ctx.fillStyle = COLOR_LADY;
+    ctx.fillStyle = p.lady;
     ctx.beginPath();
     ctx.arc(x + CELL / 2, y + CELL / 2, 4, 0, Math.PI * 2);
     ctx.fill();
@@ -460,9 +477,9 @@ export class Snake {
     return overlap(x + HIT_PAD, CELL - 2 * HIT_PAD, this.x, CELL);
   }
 
-  draw(ctx: CanvasRenderingContext2D): void {
+  draw(ctx: CanvasRenderingContext2D, p: Palette): void {
     const y = this.y;
-    ctx.fillStyle = COLOR_GATOR;
+    ctx.fillStyle = tint(p.gator, ALPHA_GATOR);
     // Cuerpo ondulado: cuatro tramos que alternan de altura.
     for (let s = 0; s < 4; s++) {
       const sx = this.x + s * 10;
@@ -542,17 +559,17 @@ export class Bonus {
     this.cycle = -1;
   }
 
-  draw(ctx: CanvasRenderingContext2D): void {
+  draw(ctx: CanvasRenderingContext2D, p: Palette): void {
     if (!this.active) return;
     const x = this.laneX;
     const y = this.laneY;
 
-    ctx.fillStyle = COLOR_LADY;
+    ctx.fillStyle = p.lady;
     ctx.beginPath();
     ctx.ellipse(x + CELL / 2, y + CELL / 2, CELL / 2 - 9, CELL / 2 - 10, 0, 0, Math.PI * 2);
     ctx.fill();
 
-    ctx.fillStyle = "#0a0a0f";
+    ctx.fillStyle = p.detail;
     ctx.beginPath();
     ctx.arc(x + CELL / 2 - 4, y + CELL / 2 - 4, 2, 0, Math.PI * 2);
     ctx.arc(x + CELL / 2 + 4, y + CELL / 2 - 4, 2, 0, Math.PI * 2);
