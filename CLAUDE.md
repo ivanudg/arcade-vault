@@ -7,9 +7,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Proyecto
 
 **Arcade Vault**: plataforma para jugar online y competir por la mayor cantidad de
-puntos. Ya no es el scaffold de `create-next-app`: hoy son **siete pantallas**, cuatro
+puntos. Ya no es el scaffold de `create-next-app`: hoy son **siete pantallas**, cinco
 máquinas jugables con motor propio y un marcador compartido en Supabase. Lo construido
-llega hasta **SPEC 13**.
+llega hasta **SPEC 14**.
 
 El flujo de trabajo del proyecto es **Spec Driven Design** vía las skills `/spec` y `/spec-impl` de [Klerith/fernando-skills](https://github.com/Klerith/fernando-skills) (`npx skills@latest add Klerith/fernando-skills`). Antes de implementar una feature nueva, espera/produce la spec correspondiente en lugar de escribir código directamente.
 
@@ -39,6 +39,7 @@ historial cuenta el producto mejor que el código:
 | 11   | `/jugar/[id]` jugable con el dedo: maquetación vertical y horizontal de mano               |
 | 12   | El mando de mano se vuelve de consola: cruz, `B`/`A` y `PAUSA`/`SALIR` en el centro        |
 | 13   | El mando se viste: chasis, cruz con flechas SVG y hub, `B`/`A` con relieve; `game-pad.tsx` |
+| 14   | Frogger: rondas infinitas, cronómetro en el canvas y la fauna del río; estrena `REFLEJOS`  |
 
 Ojo: la spec 02 sigue marcada como `Aprobado` aunque la portada está implementada; el
 estado del encabezado no siempre se actualizó al cerrar.
@@ -97,8 +98,8 @@ URL**: existe para que `/jugar/[id]` quede fuera y monte su cabecera reducida
 
 ## Motores de juego
 
-El vault tiene **cuatro** máquinas, `asteroids`, `tetris`, `arkanoid` y `snake`,
-y **toda la que entre a partir de aquí entra con motor**. Hasta SPEC 07 el catálogo enseñaba
+El vault tiene **cinco** máquinas, `asteroids`, `tetris`, `arkanoid`, `snake` y
+`frogger`, y **toda la que entre a partir de aquí entra con motor**. Hasta SPEC 07 el catálogo enseñaba
 nueve y dejaba jugar una: las otras ocho eran escaparate —escena congelada de
 `drawPreview()`, HUD de cifras fijas y un botón que simulaba morir—. Ese camino
 se borró entero (`lib/demo-run.ts` y la bifurcación «sin motor» de
@@ -140,6 +141,37 @@ máquina, se actualiza también esa tabla.
   `ESPACIO`, que la deja como la primera máquina que usa los **cinco** botones
   del mando. Fuera quedaron los obstáculos por nivel, las frutas especiales, el
   modo toroidal y el sonido.
+- `frogger` entró en SPEC 14 y es la **primera de `REFLEJOS`**: de los seis
+  valores de `GameCategory` sólo queda `LABERINTO` sin estrenar. Es la **segunda
+  escrita desde cero** y esta vez sin ni un archivo de partida —Snake al menos
+  traía su atlas—, así que el equilibrio entero lo fija la spec y vive en dos
+  sitios: `lib/games/frogger/constants.ts` los números —celda de 40 en una
+  rejilla de 15 × 13, tres vidas, cinco casas, 30 s por travesía que bajan a 20,
+  y las seis constantes de puntuación— y `lanes.ts` la progresión, en
+  `lanesForRound(round)`, que es una **función pura de la ronda**: multiplica la
+  velocidad por 1,12 con tope en ×2,2, y decide desde qué ronda hay camiones y
+  qué tortugas se sumergen. Ajustar la dificultad es cambiar un número en uno de
+  esos dos archivos; el motor no se toca. Su directorio son cinco archivos
+  —`constants.ts`, `lanes.ts`, `math.ts`, `entities.ts` e `index.ts`—, y es la
+  **segunda que usa los cinco botones** del mando, porque `ESPACIO` saca a la
+  rana de la orilla al empezar y después de cada vida. **No hay ni un
+  `Math.random()`**: carriles, tortugas, cocodrilo, mosca y dama-rana son
+  funciones de `run.t` y de la ronda, así que dos partidas de la misma ronda se
+  juegan igual y una posición se reproduce en la consola sin montar el juego; la
+  única entidad con estado propio es la serpiente de la mediana, porque rebota.
+  Fuera quedaron los sonidos, los assets —no carga ni un archivo—, las
+  disposiciones de carriles por ronda y la segunda pantalla del arcade.
+- **El cronómetro de Frogger se pinta en el canvas, no en el HUD.** Frogger da 30
+  segundos por travesía y paga por cada uno que sobra, así que el tiempo es
+  información de juego permanente; pero `GameState` son tres cifras y ya están
+  dichas. La salida no fue extender el contrato sino la novena regla de
+  `engine-contract.md`: el motor no pinta el HUD, pero **sí** pinta lo que no
+  tiene equivalente fuera, como las barras de potenciador de Asteroids. Es una
+  barra bajo la fila de casas que se vacía de izquierda a derecha y cambia de
+  color en los últimos cinco segundos. Por eso `frogger` declara los mismos tres
+  rótulos que Asteroids, Arkanoid y Snake y es la **cuarta seguida que no toca el
+  contrato**, y por eso el cronómetro corriendo **no** provoca renders: `onState`
+  sigue emitiendo por diferencia sobre las tres cifras de siempre.
 
 - **El vault sirve un binario, y el contrato no se enteró.** `snake` es el único
   motor que carga un archivo: `public/snake/fruits.png`, el atlas del que salen
@@ -216,12 +248,14 @@ máquina, se actualiza también esa tabla.
   qué hay implementado.
 - **`lib/preview-art.ts` guarda arte sin máquina.** Su `PreviewId` es
   `GameId | ArchivedPreviewId`, y `ArchivedPreviewId` son las escenas de las
-  máquinas que salieron del catálogo en SPEC 07: eran ocho y hoy son **cinco**,
-  porque tres **se movieron** —salieron de `ArchivedPreviewId` y entraron por
+  máquinas que salieron del catálogo en SPEC 07: eran ocho y hoy son **cuatro**,
+  porque cuatro **se movieron** —salieron de `ArchivedPreviewId` y entraron por
   `GameId`, no se copiaron—: la que era una pantalla de Tetris al llegar
   SPEC 08; `muro` al llegar SPEC 09, que era una pantalla de Arkanoid y hoy es
-  el `case "arkanoid"`; y `serpiente` al llegar SPEC 10, hoy el `case "snake"`,
-  con su aritmética intacta —el `case` sólo se renombró—. Ninguna de las cinco
+  el `case "arkanoid"`; `serpiente` al llegar SPEC 10, hoy el `case "snake"`; y
+  `corredor` al llegar SPEC 14, seis bandas horizontales que ya eran una
+  travesía de carriles y hoy son el `case "frogger"`, con su aritmética intacta
+  —el `case` sólo se renombró—. Ninguna de las cuatro
   que quedan tiene material en `references/started-games/`, pero eso ya no las
   descarta: Snake tampoco lo tenía y su motor se escribió entero. El `switch` de
   `drawPreview()` acaba en `id satisfies never`, así que una máquina nueva sin
@@ -314,16 +348,17 @@ máquina, se actualiza también esa tabla.
   y en el mismo archivo. No hay teclas nuevas: son las cinco de siempre,
   repartidas.
 
-  | Máquina     | `B`                       | `A`                      |
-  | ----------- | ------------------------- | ------------------------ |
-  | `asteroids` | `↑` propulsor             | `ESPACIO` disparar       |
-  | `tetris`    | `ESPACIO` soltar de golpe | `↑` rotar                |
-  | `arkanoid`  | — apagado                 | `ESPACIO` lanzar la bola |
-  | `snake`     | — apagado                 | `ESPACIO` arrancar       |
+  | Máquina     | `B`                       | `A`                          |
+  | ----------- | ------------------------- | ---------------------------- |
+  | `asteroids` | `↑` propulsor             | `ESPACIO` disparar           |
+  | `tetris`    | `ESPACIO` soltar de golpe | `↑` rotar                    |
+  | `arkanoid`  | — apagado                 | `ESPACIO` lanzar la bola     |
+  | `snake`     | — apagado                 | `ESPACIO` arrancar           |
+  | `frogger`   | — apagado                 | `ESPACIO` salir de la orilla |
 
   La tabla vive en el mando y **no en `GameMount`** a propósito: qué hace cada
   tecla es del motor, pero cuál cae bajo qué pulgar es de interfaz, y llevarla al
-  contrato obligaría a tocar las cuatro máquinas. `lib/games/` no cambió ni una
+  contrato obligaría a tocar las cinco máquinas. `lib/games/` no cambió ni una
   línea, ni en SPEC 12 ni en SPEC 13.
 
   Que la cruz conserve la flecha que también manda `B` es lo que obliga a
@@ -372,8 +407,8 @@ Desde SPEC 06 las puntuaciones son **una sola tabla compartida**, no una copia p
 navegador. `addScore()` ya no existe. Desde SPEC 07 **arranca vacío**: las noventa
 marcas sembradas se borraron y se llena jugando. Ninguna máquina nueva se siembra:
 SPEC 08 metió la fila de `tetris` en `public.games`, SPEC 09 la de `arkanoid` y
-SPEC 10 la de `snake` —la tabla tiene **cuatro**, con `sort_order` 0, 1, 2 y 3—,
-y ni una marca en `public.scores`.
+SPEC 10 la de `snake` y SPEC 14 la de `frogger` —la tabla tiene **cinco**, con
+`sort_order` 0, 1, 2, 3 y 4—, y ni una marca en `public.scores`.
 
 - **Qué vive en la base de datos y qué no.** `public.scores` son las marcas y
   `public.games` existe para que `scores.game_id` tenga una clave ajena real. El
