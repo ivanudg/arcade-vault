@@ -67,7 +67,7 @@ export default async function GamePage({ params }: PageProps<"/juego/[id]">) {
       >
         <Link
           href="/"
-          className="mb-6.5 inline-block border border-av-cyan/45 px-3.5 py-2.75 font-display text-[9px] tracking-av text-av-cyan hover:bg-av-cyan/14 hover:text-white"
+          className="mb-6.5 inline-flex min-h-11 items-center border border-av-cyan/45 px-3.5 py-2.75 font-display text-[9px] tracking-av text-av-cyan hover:bg-av-cyan/14 hover:text-white"
         >
           &lt; VOLVER AL VAULT
         </Link>

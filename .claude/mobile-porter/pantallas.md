@@ -132,40 +132,44 @@ monta `SiteHeader` y `SiteFooter` en `:22` y `:46` por su cuenta.
 
 ## Pantallas
 
-| pantalla   | ruta          | estado      | defectos | abiertos | alta       | adaptada | revisado   | notas                                                              |
-| ---------- | ------------- | ----------- | -------- | -------- | ---------- | -------- | ---------- | ------------------------------------------------------------------ |
-| Cabecera   | (compartida)  | auditada    | 4        | 4        | 2026-08-14 | —        | 2026-08-14 | Chrome de las nueve. Se porta en la ronda de la primera que la use |
-| Pie        | (compartida)  | auditada    | 1        | 1        | 2026-08-14 | —        | 2026-08-14 | Chrome de las nueve                                                |
-| Salon      | `/salon`      | auditada    | 3        | 3        | 2026-08-14 | —        | 2026-08-14 | Los dos unicos criticos del repo estan aqui                        |
-| Portada    | `/`           | auditada    | 2        | 2        | 2026-08-14 | —        | 2026-08-14 | El M6 depende de que la Cabecera deje de envolver                  |
-| Biblioteca | `/biblioteca` | auditada    | 2        | 2        | 2026-08-14 | —        | 2026-08-14 | La rejilla de tarjetas ya es sana; solo fallan las areas tactiles  |
-| Ficha      | `/juego/[id]` | auditada    | 1        | 1        | 2026-08-14 | —        | 2026-08-14 | Solo falla por debajo de 360                                       |
-| Cuenta     | `/cuenta`     | auditada    | 2        | 2        | 2026-08-14 | —        | 2026-08-14 | El M5 de los campos solo se ve en un iPhone                        |
-| Acerca de  | `/acerca-de`  | auditada    | 3        | 1        | 2026-08-14 | —        | 2026-08-14 | Dos de sus tres filas son la excepcion registrada de M8            |
-| 404        | `/not-found`  | sin-auditar | —        | —        | 2026-08-14 | —        | 2026-08-14 | Monta el chrome por su cuenta, fuera del grupo (vault)             |
+| pantalla   | ruta          | estado      | defectos | abiertos | alta       | adaptada   | revisado   | notas                                                                                                                                                                                                              |
+| ---------- | ------------- | ----------- | -------- | -------- | ---------- | ---------- | ---------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Cabecera   | (compartida)  | en-curso    | 6        | 4        | 2026-08-14 | —          | 2026-08-15 | M7 y M12 cerrados en la ronda de la Ficha. M2 pide decision: ver Notas                                                                                                                                             |
+| Pie        | (compartida)  | adaptada    | 1        | 0        | 2026-08-14 | 2026-08-15 | 2026-08-15 | M7 escrito; solo lo firma un telefono con muesca                                                                                                                                                                   |
+| Salon      | `/salon`      | auditada    | 3        | 3        | 2026-08-14 | —          | 2026-08-14 | Los dos unicos criticos del repo estan aqui                                                                                                                                                                        |
+| Portada    | `/`           | auditada    | 2        | 2        | 2026-08-14 | —          | 2026-08-14 | El M6 depende de que la Cabecera deje de envolver                                                                                                                                                                  |
+| Biblioteca | `/biblioteca` | auditada    | 2        | 2        | 2026-08-14 | —          | 2026-08-14 | La rejilla de tarjetas ya es sana; solo fallan las areas tactiles                                                                                                                                                  |
+| Ficha      | `/juego/[id]` | adaptada    | 3        | 1        | 2026-08-14 | 2026-08-15 | 2026-08-15 | Medida sobre `/juego/frogger`, el peor caso de descripcion. El abierto es `<360`. Sin firmar: M7 entera, `svh` contra `dvh`, la separacion entre objetivos, el teclado en pantalla, el rebote de iOS y si da gusto |
+| Cuenta     | `/cuenta`     | auditada    | 2        | 2        | 2026-08-14 | —          | 2026-08-14 | El M5 de los campos solo se ve en un iPhone                                                                                                                                                                        |
+| Acerca de  | `/acerca-de`  | auditada    | 3        | 1        | 2026-08-14 | —          | 2026-08-14 | Dos de sus tres filas son la excepcion registrada de M8                                                                                                                                                            |
+| 404        | `/not-found`  | sin-auditar | —        | —        | 2026-08-14 | —          | 2026-08-14 | Monta el chrome por su cuenta, fuera del grupo (vault)                                                                                                                                                             |
 
 ## Defectos
 
-| pantalla   | regla | ancla                                | cadena                            | gravedad | ancho    | estado   | visto      | notas                                                                   |
-| ---------- | ----- | ------------------------------------ | --------------------------------- | -------- | -------- | -------- | ---------- | ----------------------------------------------------------------------- |
-| Salon      | M2    | `components/hall-of-fame.tsx:30`     | `grid-cols-[62px_`                | critico  | 390      | abierto  | 2026-08-14 | 266px de pista fija dejan JUGADOR en 32px a 390 y en 2px a 360          |
-| Salon      | M1    | `components/hall-of-fame.tsx:116`    | `flex-none bg-av-cyan px-1.75`    | critico  | 390      | abierto  | 2026-08-14 | La insignia TU MEJOR MARCA mide ~112px dentro de esa celda de 32px      |
-| Salon      | M4    | `components/hall-of-fame.tsx:69`     | `px-3.25 py-2.75`                 | serio    | 390      | abierto  | 2026-08-14 | Las pestanas de maquina miden ~33px de alto                             |
-| Cabecera   | M2    | `components/site-header.tsx:84`      | `justify-between gap-4.5`         | serio    | 390      | abierto  | 2026-08-14 | ~410px de contenido en 390: marca y boton envuelven a dos lineas        |
-| Cabecera   | M4    | `components/site-header.tsx:158`     | `h-9.5 w-10`                      | serio    | 390      | abierto  | 2026-08-14 | El hamburguesa mide 38x40                                               |
-| Cabecera   | M12   | `components/site-header.tsx:168`     | `fixed inset-0 z-45`              | serio    | 390      | abierto  | 2026-08-14 | El cajon no bloquea el scroll del body ni contiene el overscroll        |
-| Cabecera   | M7    | `components/site-header.tsx:84`      | `py-3.5 backdrop-blur-sm`         | menor    | apaisado | abierto  | 2026-08-14 | sticky top-0 sin inset arriba ni a los lados. Hoy env() vale 0          |
-| Pie        | M7    | `components/site-footer.tsx:49`      | `pt-5.5 pb-8.5`                   | menor    | 390      | abierto  | 2026-08-14 | Relleno inferior fijo, sin sumar el inset. Hoy env() vale 0             |
-| Portada    | M6    | `app/(vault)/page.tsx:69`            | `100svh-61px`                     | serio    | 390      | abierto  | 2026-08-14 | 61px es el alto de la cabecera de escritorio, escrito a mano            |
-| Portada    | M4    | `components/top-players.tsx:44`      | `px-2.5 py-1.75`                  | serio    | 390      | abierto  | 2026-08-14 | VER SALON mide ~25px de alto. El resto del componente esta sano         |
-| Biblioteca | M4    | `components/library-browser.tsx:60`  | `px-3 py-2.5`                     | serio    | 390      | abierto  | 2026-08-14 | Los chips de categoria miden ~30px de alto                              |
-| Biblioteca | M4    | `components/game-card.tsx:69`        | `px-2.5 py-3.25`                  | serio    | 390      | abierto  | 2026-08-14 | JUGAR e INFO miden ~37px. La segunda cadena es `px-3 py-3.25` en :75    |
-| Ficha      | M2    | `app/(vault)/juego/[id]/page.tsx:75` | `minmax(300px,1fr)`               | menor    | <360     | abierto  | 2026-08-14 | Desborda por debajo de 328px de ventana. Fuera de los dos umbrales      |
-| Cuenta     | M5    | `components/auth-panel.tsx:16`       | `p-3.25 text-[14px]`              | serio    | 390      | abierto  | 2026-08-14 | iOS amplia al enfocar un campo de menos de 16px y no devuelve la pagina |
-| Cuenta     | M4    | `components/auth-panel.tsx:87`       | `px-2 py-3.5`                     | serio    | 390      | abierto  | 2026-08-14 | Los botones del panel miden ~37px de alto                               |
-| Acerca de  | M4    | `app/(vault)/acerca-de/page.tsx:147` | `gap-2.5 font-display text-[9px]` | menor    | 390      | abierto  | 2026-08-14 | Por confirmar con el valor computado: es una lista, no un control       |
-| Acerca de  | M8    | `app/(vault)/acerca-de/page.tsx:84`  | `min-[820px]:grid-cols-3`         | menor    | —        | aceptado | 2026-08-14 | Excepcion registrada: apila por debajo de 820 y migrarlo romperia M10   |
-| Acerca de  | M8    | `app/(vault)/acerca-de/page.tsx:129` | `min-[900px]:grid-cols-`          | menor    | —        | aceptado | 2026-08-14 | Excepcion registrada: lo mismo entre 900 y 1024. No se anaden nuevos    |
+| pantalla   | regla | ancla                                | cadena                                   | gravedad | ancho    | estado   | visto      | notas                                                                                                                                                                                                                |
+| ---------- | ----- | ------------------------------------ | ---------------------------------------- | -------- | -------- | -------- | ---------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Salon      | M2    | `components/hall-of-fame.tsx:30`     | `grid-cols-[62px_`                       | critico  | 390      | abierto  | 2026-08-14 | 266px de pista fija dejan JUGADOR en 32px a 390 y en 2px a 360                                                                                                                                                       |
+| Salon      | M1    | `components/hall-of-fame.tsx:116`    | `flex-none bg-av-cyan px-1.75`           | critico  | 390      | abierto  | 2026-08-14 | La insignia TU MEJOR MARCA mide ~112px dentro de esa celda de 32px                                                                                                                                                   |
+| Salon      | M4    | `components/hall-of-fame.tsx:69`     | `px-3.25 py-2.75`                        | serio    | 390      | abierto  | 2026-08-14 | Las pestanas de maquina miden ~33px de alto                                                                                                                                                                          |
+| Cabecera   | M2    | `components/site-header.tsx:84`      | `justify-between gap-4.5`                | serio    | 390      | abierto  | 2026-08-14 | Medido sin sesion: la cabecera pasa de 67 a 78px y el hamburguesa se aplasta de 40 a 37.4 (390) y a 33.5 (360). Con sesion no envuelve. Pide decision: ver Notas                                                     |
+| Cabecera   | M4    | `components/site-header.tsx:158`     | `h-9.5 w-10`                             | serio    | 390      | abierto  | 2026-08-14 | Peor que en la siembra: 38 de alto, y el flex lo aplasta a 37.4 de ancho a 390 y a 33.5 a 360. No sube a `min-h-11` hasta que se resuelva el M2 de arriba, o desborda                                                |
+| Cabecera   | M12   | `components/site-header.tsx:168`     | `fixed inset-0 z-45`                     | serio    | 390      | resuelto | 2026-08-14 | Efecto que congela `<html>` mientras el cajon esta abierto, restaurado al cerrar y al desmontar, mas `overflow-y-auto overscroll-contain` en el cajon. Se congela html y no body: ver Notas                          |
+| Cabecera   | M7    | `components/site-header.tsx:84`      | `py-3.5 backdrop-blur-sm`                | menor    | apaisado | resuelto | 2026-08-14 | Los cuatro lados declarados enteros con `calc(... + env(safe-area-inset-*))`, sin restar sobre `px`/`py`. Hoy env() vale 0 y a 1280 no cambia nada                                                                   |
+| Pie        | M7    | `components/site-footer.tsx:49`      | `pt-5.5 pb-8.5`                          | menor    | 390      | resuelto | 2026-08-14 | `pb-[calc(2.125rem+env(safe-area-inset-bottom))]` y los dos lados con su inset; los 34px de siempre se conservan dentro del calc                                                                                     |
+| Portada    | M6    | `app/(vault)/page.tsx:69`            | `100svh-61px`                            | serio    | 390      | abierto  | 2026-08-14 | 61px es el alto de la cabecera de escritorio, escrito a mano                                                                                                                                                         |
+| Portada    | M4    | `components/top-players.tsx:44`      | `px-2.5 py-1.75`                         | serio    | 390      | abierto  | 2026-08-14 | VER SALON mide ~25px de alto. El resto del componente esta sano                                                                                                                                                      |
+| Biblioteca | M4    | `components/library-browser.tsx:60`  | `px-3 py-2.5`                            | serio    | 390      | abierto  | 2026-08-14 | Los chips de categoria miden ~30px de alto                                                                                                                                                                           |
+| Biblioteca | M4    | `components/game-card.tsx:69`        | `px-2.5 py-3.25`                         | serio    | 390      | abierto  | 2026-08-14 | JUGAR e INFO miden ~37px. La segunda cadena es `px-3 py-3.25` en :75                                                                                                                                                 |
+| Ficha      | M2    | `app/(vault)/juego/[id]/page.tsx:75` | `minmax(300px,1fr)`                      | menor    | <360     | abierto  | 2026-08-14 | Confirmado en navegador: a 390 y a 360 resuelve a una sola pista (362px y 332px) y no desborda. Sigue abierto por debajo de 328. No se toca: cambiar el 300 moveria donde pasa a dos columnas (excepcion (b) de M10) |
+| Cuenta     | M5    | `components/auth-panel.tsx:16`       | `p-3.25 text-[14px]`                     | serio    | 390      | abierto  | 2026-08-14 | iOS amplia al enfocar un campo de menos de 16px y no devuelve la pagina                                                                                                                                              |
+| Cuenta     | M4    | `components/auth-panel.tsx:87`       | `px-2 py-3.5`                            | serio    | 390      | abierto  | 2026-08-14 | Los botones del panel miden ~37px de alto                                                                                                                                                                            |
+| Acerca de  | M4    | `app/(vault)/acerca-de/page.tsx:147` | `gap-2.5 font-display text-[9px]`        | menor    | 390      | abierto  | 2026-08-14 | Por confirmar con el valor computado: es una lista, no un control                                                                                                                                                    |
+| Acerca de  | M8    | `app/(vault)/acerca-de/page.tsx:84`  | `min-[820px]:grid-cols-3`                | menor    | —        | aceptado | 2026-08-14 | Excepcion registrada: apila por debajo de 820 y migrarlo romperia M10                                                                                                                                                |
+| Acerca de  | M8    | `app/(vault)/acerca-de/page.tsx:129` | `min-[900px]:grid-cols-`                 | menor    | —        | aceptado | 2026-08-14 | Excepcion registrada: lo mismo entre 900 y 1024. No se anaden nuevos                                                                                                                                                 |
+| Ficha      | M4    | `app/(vault)/juego/[id]/page.tsx:70` | `mb-6.5 inline-block border`             | serio    | 390      | resuelto | 2026-08-15 | El breadcrumb VOLVER AL VAULT medido en 37.5px de alto. `inline-flex min-h-11 items-center`; a 1280 sube a 44 por la excepcion (a) de M10                                                                            |
+| Ficha      | M4    | `components/score-panel.tsx:84`      | `mt-4.5 block text-center`               | serio    | 390      | resuelto | 2026-08-15 | El enlace al Salon medido en 18px de alto a 390 y 36 a 360 (dos lineas). `flex min-h-11 items-center justify-center`; el `aside` crece 26px a 1280                                                                   |
+| Cabecera   | M4    | `components/site-header.tsx:87`      | `text-av-brand tracking-av text-av-cyan` | serio    | 390      | abierto  | 2026-08-15 | La marca ARCADE VAULT mide 16.5px de alto con sesion y 33 sin ella. Subirla a 44 crece la cabecera en 1280 y mueve el `100svh-61px` de la Portada: va con el M2                                                      |
+| Cabecera   | M4    | `components/site-header.tsx:137`     | `text-left text-[10px] tracking-av`      | serio    | 390      | abierto  | 2026-08-15 | El boton SALIR de la sesion mide 15x35. Solo se ve con sesion iniciada; mismo bloque que la marca                                                                                                                    |
 
 ## Notas
 
@@ -214,3 +218,58 @@ ronda no lo redescubra:
 - **`handheld` sí se puede medir** desde que la SPEC 13 inventó cómo. M8 sigue prohibiéndolo en
   tus pantallas, pero **por la razón de fondo y no por imposibilidad**: tus nueve se maquetan por
   ancho.
+
+### 2026-08-15 · La Ficha, medida sobre Frogger
+
+Primera ronda de porte del agente. La pantalla fue `/juego/[id]`, medida sobre `/juego/frogger`,
+que es la quinta máquina del vault y **el peor caso del bloque de descripción**: su `long` son
+632 caracteres frente a los ~400 de las otras cuatro, y ocupa 498px de alto a 390 y 577 a 360. La
+plantilla los absorbe sin desbordar y el texto se lee entero a los dos anchos: **la descripción
+larga no es un defecto**, y queda dicho para que otra ronda no lo «arregle».
+
+Se tocaron **tres piezas**, y es la excepción declarada de P2.1: la Ficha, más `SiteHeader` y
+`SiteFooter`, que son de las nueve y son la primera vez que se portan.
+
+**Dos cosas de método que costaron una ronda cada una y no hay que volver a descubrir:**
+
+- **`resize_window` no siempre puede.** Con la ventana de Chrome en pantalla completa de macOS,
+  las tres llamadas devuelven éxito y `window.innerWidth` **se queda en 1710**. No es un fallo
+  del MCP y no se arregla insistiendo. La salida fue la de la SPEC 13: **un iframe del tamaño
+  exacto**, que evalúa media queries, `svh`, `clamp(vw)` y `getBoundingClientRect()` contra su
+  propio viewport, y dio 390 y 360 exactos. Se comprueba siempre leyendo `innerWidth` **dentro**
+  del iframe antes de creerse una cifra.
+- **Congelar el `body` no congela esta página, y es culpa de `html { overflow-x: hidden }`.** Al
+  no ser `visible` en los dos ejes, `<html>` computa `hidden/auto`, deja de heredar el overflow
+  del `<body>` y se queda como `document.scrollingElement`. Medido: con `overflow:hidden` sólo en
+  el body, la página seguía desplazándose con el cajón abierto. M12 se cumple congelando
+  **`document.documentElement`**. Es la misma línea de `globals.css` que obliga a medir M1, y
+  ahora también manda en M12.
+
+**Lo que se dejó sin arreglar a propósito**, con su motivo:
+
+- **El M2 de la cabecera pide una decisión y por eso se para.** Medido sin sesión: a 390 el
+  contenido son ~426px en 390 disponibles, la cabecera crece de 67 a 78px porque la marca envuelve
+  a dos líneas, y el hamburguesa —declarado `w-10`— se aplasta a 37.4px, y a 33.5 a 360. Con
+  sesión iniciada no envuelve, porque el avatar ocupa menos que `INICIAR SESION`. Ninguno de los
+  ocho patrones lo resuelve: el `gap` y el relleno no dan los 36px que faltan, y las tres salidas
+  que quedan —bajar el bloque de sesión a una segunda línea con P1.1, mandar `INICIAR SESION` al
+  cajón (que ya tiene su enlace `Cuenta`), o dejar la marca en dos líneas a propósito— **son tres
+  aspectos distintos de la cabecera del sitio, y eso es una decisión de diseño, no un porte.**
+- **Los tres M4 de la cabecera van detrás de ese M2**, y no al revés: subir el hamburguesa a
+  `min-w-11` cuando hoy es lo que cede convertiría un aplastamiento en un desbordamiento real, y
+  subir la marca a 44px crecería la cabecera **en 1280** y movería el `100svh-61px` de la Portada,
+  que es el M6 que espera a que la cabecera tenga una altura fija de verdad. El orden de
+  `portar-pantalla.md` acierta: **M2 sobre `SiteHeader`, luego M4, luego M6 en el hero.**
+- **El `minmax(300px,1fr)` de la Ficha se queda.** A 390 y a 360 resuelve a una sola pista y no
+  desborda; sólo falla por debajo de 328, que está fuera de los dos umbrales. Bajarlo a 268 movería
+  el punto donde pasa a dos columnas, que es la excepción (b) de M10.
+
+**Una pista para la ronda de la Portada, medida de refilón al comprobar que el chrome no había
+roto nada**: `/` es la única de las nueve con desbordamiento **real** a 390 —`scrollWidth` 394
+contra 390—, con doce nodos culpables en el bloque de actividad. No se dan de alta aquí porque no
+era la pantalla de la ronda y sus archivos no se han leído; se miden en su ronda.
+
+**M10 verificado con números, no con la vista**: a 1280 no cambió ni un ancho, ni el número de
+columnas (`588.6px 588.6px 0px` antes y después), ni un tamaño de letra. Lo único que se movió son
+los dos objetivos táctiles que subieron a 44px —37.5 y 18— y los 6.5px que eso empuja hacia abajo
+al resto de la columna. Es la excepción (a), y es a propósito.

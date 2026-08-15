@@ -81,7 +81,7 @@ export function ScorePanel({
 
       <Link
         href={`/salon?juego=${id}`}
-        className="mt-4.5 block text-center text-[12px] tracking-av-wide text-av-text-dim hover:text-av-yellow"
+        className="mt-4.5 flex min-h-11 items-center justify-center text-center text-[12px] tracking-av-wide text-av-text-dim hover:text-av-yellow"
       >
         Ver el Salón de la Fama completo &gt;
       </Link>

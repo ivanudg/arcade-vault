@@ -46,7 +46,11 @@ export function SiteFooter({ text }: { text?: string }) {
   const line = text ?? BY_SECTION.find(([test]) => test(pathname))?.[1] ?? DEFAULT_TEXT;
 
   return (
-    <footer className="border-t border-white/6 px-[clamp(14px,3vw,40px)] pt-5.5 pb-8.5 text-center text-[11px] tracking-av-wide text-av-line">
+    // El pie es lo último de la página, así que su relleno de abajo es lo que
+    // toca el borde inferior: se le suma el inset sin sustituir los 34px de
+    // siempre. Hoy `env()` vale 0 —ninguna de las siete pide `viewportFit`—,
+    // así que el cambio es gratis y correcto el día que alguien lo declare.
+    <footer className="border-t border-white/6 pt-5.5 pr-[calc(clamp(14px,3vw,40px)+env(safe-area-inset-right))] pb-[calc(2.125rem+env(safe-area-inset-bottom))] pl-[calc(clamp(14px,3vw,40px)+env(safe-area-inset-left))] text-center text-[11px] tracking-av-wide text-av-line">
       {line}
     </footer>
   );
