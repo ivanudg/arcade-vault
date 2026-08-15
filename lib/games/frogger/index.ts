@@ -29,14 +29,22 @@ import {
   CELL,
   DEATH_MS,
   HOP_MS,
+  LADY_ROW,
   LIVES,
+  POINTS_FLY,
+  POINTS_HOME,
+  POINTS_LADY,
+  POINTS_ROUND,
   POINTS_ROW,
+  POINTS_TIME,
+  ROW_HOMES,
   ROW_MEDIAN,
   ROW_RIVER_BOTTOM,
   ROW_RIVER_TOP,
   ROW_ROAD_BOTTOM,
   ROW_ROAD_TOP,
   ROW_START,
+  SNAKE_FROM,
   SPEED_MAX,
   SPEED_STEP,
   START_COL,
@@ -212,6 +220,56 @@ export const froggerGame: GameMount = {
       r.frog.hop = { fromX, fromRow, toX, toRow, k: 0 };
     }
 
+    /**
+     * Travesía siguiente: la rana vuelve a la acera sin pasar por `"ready"`.
+     *
+     * Llegar a casa no vuelve a pedir `ESPACIO`: pararse cinco veces por ronda
+     * sería un peaje, y llegar no tiene el problema que tiene morir.
+     */
+    function newCrossing(r: Run) {
+      r.frog = new Frog(START_COL * CELL, ROW_START);
+      r.time = timeForRound(r.round);
+    }
+
+    /** Los cinco nichos llenos: se sube de ronda y el tablero se recarga. */
+    function nextRound(r: Run) {
+      r.score += POINTS_ROUND;
+      r.round += 1;
+      // El reloj de la ronda vuelve a cero: los carriles arrancan alineados con
+      // sus desfases, y la fauna estrena sus ciclos.
+      r.t = 0;
+      r.lanes = lanesForRound(r.round).map((spec) => new Lane(spec));
+      r.homes.reset();
+      r.bonus.reset();
+      r.snake = r.round >= SNAKE_FROM ? new Snake(0) : null;
+      newCrossing(r);
+    }
+
+    /**
+     * La rana ha aterrizado en la fila de casas.
+     *
+     * Sólo vale un nicho libre y sin cocodrilo: caer entre dos, en uno ya
+     * ocupado o en el que tiene el bicho es perder una vida.
+     */
+    function arriveHome(r: Run) {
+      const i = r.homes.indexAt(r.frog.x);
+      if (i === null || r.homes.filled[i] || r.homes.gatorAt(r.t, r.round) === i) {
+        die(r);
+        return;
+      }
+
+      const fly = r.homes.flyAt(r.t, r.round) === i;
+      r.homes.filled[i] = true;
+
+      r.score += POINTS_HOME + POINTS_TIME * Math.floor(Math.max(r.time, 0));
+      if (fly) r.score += POINTS_FLY;
+      if (r.frog.escorting) r.score += POINTS_LADY;
+      r.frog.escorting = false;
+
+      if (r.homes.complete) nextRound(r);
+      else newCrossing(r);
+    }
+
     /** Fin del salto: se resuelve el aterrizaje y se cobran las filas nuevas. */
     function land(r: Run) {
       const hop = r.frog.hop;
@@ -236,6 +294,8 @@ export const froggerGame: GameMount = {
       // paran porque la rana esté esperando o acabe de morir.
       r.t += dt;
       if (r.snake) r.snake.update(dt, speedMult(r.round));
+      const ladyLane = laneAt(r, LADY_ROW);
+      if (ladyLane) r.bonus.update(r.t, r.round, ladyLane);
 
       if (r.phase === "ready") {
         if (input.pressed("Space")) r.phase = "playing";
@@ -293,6 +353,20 @@ export const froggerGame: GameMount = {
       if (!r.frog.hop) {
         const row = r.frog.row;
         const lane = laneAt(r, row);
+
+        // La llegada, que es la sexta cosa que puede pasar al aterrizar y la
+        // única buena. Sale de aquí con la rana ya de vuelta en la acera.
+        if (row === ROW_HOMES) {
+          arriveHome(r);
+          return;
+        }
+
+        // La dama-rana se recoge pisando su plataforma: viaja como una bandera,
+        // no como una entidad que sigue a la rana.
+        if (r.bonus.active && row === LADY_ROW && Math.abs(r.frog.x - r.bonus.laneX) < CELL) {
+          r.frog.escorting = true;
+          r.bonus.take();
+        }
 
         // Atropello.
         if (inRoad(row) && lane && lane.hits(r.t, r.frog.x)) return die(r);

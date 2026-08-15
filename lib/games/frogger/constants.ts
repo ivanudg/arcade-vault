@@ -93,6 +93,9 @@ export const FLY_EVERY = 12.0; // cada cuánto sale la mosca
 export const FLY_LASTS = 5.0; // cuánto se queda
 export const LADY_EVERY = 20.0; // cada cuánto sale la dama-rana
 
+/** Fila del río en la que espera la dama-rana, montada en una plataforma. */
+export const LADY_ROW = 3;
+
 /** Píxeles por segundo de la serpiente de la mediana. */
 export const SNAKE_SPEED = 60;
 
