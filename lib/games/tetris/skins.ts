@@ -12,6 +12,13 @@
  * color, y por eso `gloss` va en `#rrggbb` de seis dígitos, que es lo único que
  * `tint()` acepta. La proyección no es ranura: reusa el color de su pieza.
  *
+ * **Y desde el 2026-08-15 una piel es color más un rasgo de dibujo**: `glow`
+ * dice si las celdas salen con halo. Sale del `drawBlockNeon` del original
+ * —`references/started-games/03-tetris/game.js:1020`—, que era lo único de su
+ * sistema de skins que el vault no tenía ya con otro nombre. Sus hex se quedaron
+ * fuera a propósito: `#18ffff` y compañía no son tokens `--av-*` y copiarlos
+ * rompería S5. **Ni un hex de estas tres paletas cambió al añadirlo.**
+ *
  * `clasico` es extracción, no diseño: cada hex se puede señalar en el código que
  * había antes de vestir la máquina, así que elegirla deja la partida exactamente
  * como estaba.
@@ -45,8 +52,29 @@ export interface Palette {
   grid: string;
   /** El rótulo `SIG.` sobre la pieza siguiente. */
   label: string;
-  /** La banda de brillo de cada celda. El motor le pone su 0,12. */
+  /**
+   * La banda de brillo de cada celda. El motor le pone su 0,12.
+   *
+   * Sólo la pinta `clasico`. Las dos pieles con halo la sustituyen por el
+   * resplandor, así que la ranura sigue aquí —S1 se mantiene: la paleta nombra
+   * todas las ranuras del motor— pero no llega a pintarse. Es lo mismo que hace
+   * el `useAtlas` de Snake, que declara que `neon` y `retro` renuncian a las
+   * frutas del atlas sin que la ranura `fruit` desaparezca.
+   */
   gloss: string;
+  /**
+   * Si esta piel pinta las celdas con halo en vez de con banda de brillo.
+   *
+   * Es el segundo campo de piel del vault que no es un color, tras el
+   * `useAtlas` de Snake, y sale del `drawBlockNeon` del original
+   * (`references/started-games/03-tetris/game.js:1020`). **La piel dice si hay
+   * halo; el motor dice de cuánto**, igual que con el alfa: aquí sólo está la
+   * decisión, y el radio lo mide `board.ts`.
+   *
+   * `false` en `clasico`, que es extracción y no se toca ni un píxel: inset de
+   * 1 px y banda de brillo, exactamente lo que la máquina pintaba antes.
+   */
+  glow: boolean;
 }
 
 /**
@@ -65,6 +93,13 @@ export interface Palette {
  * `medio`, así que la banda derecha mantiene sus tres cosas en tres escalones.
  * En fósforo monocromo el brillo de la celda se pierde: no hay blanco en la
  * rampa y S6 no admite inventarlo. Es fiel a un monitor verde de verdad.
+ *
+ * Las dos llevan `glow`, y por motivos distintos. En `neon` el halo es lo que
+ * hace que la pantalla se parezca a un letrero, que es lo que la piel dice ser.
+ * En `retro` es el sangrado del fósforo de un monitor verde, y encima le
+ * devuelve lo único que había perdido: sin banda de brillo y con las siete
+ * piezas del mismo `#33ff33`, el halo es lo que vuelve a dar volumen a la celda.
+ * Los dos radios los mide `board.ts`, y no son el mismo.
  */
 export const PALETTES: Record<SkinId, Palette> = {
   clasico: {
@@ -82,6 +117,7 @@ export const PALETTES: Record<SkinId, Palette> = {
     grid: "#22222e",
     label: "#8b8b99",
     gloss: "#ffffff",
+    glow: false,
   },
   neon: {
     bg: "#0a0a0f",
@@ -98,6 +134,7 @@ export const PALETTES: Record<SkinId, Palette> = {
     grid: "#3d4350",
     label: "#8f97a8",
     gloss: "#e7ebf5",
+    glow: true,
   },
   retro: {
     bg: "#001100",
@@ -114,5 +151,6 @@ export const PALETTES: Record<SkinId, Palette> = {
     grid: "#116611",
     label: "#22aa22",
     gloss: "#33ff33",
+    glow: true,
   },
 };

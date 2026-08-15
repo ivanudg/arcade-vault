@@ -21,16 +21,22 @@
  *
  * Los colores llegan por parámetro, en la `Palette` de la piel activa: vive en
  * el closure de `mount()`, así que dos partidas del mismo juego no comparten
- * color.
+ * color. Desde el 2026-08-15 la piel trae además un rasgo de dibujo, `glow`, y
+ * el radio de ese halo lo miden aquí `GLOW_BLUR` y `GLOW_BLUR_TIGHT`: no hay
+ * una segunda geometría escondida, ni el `fillRect` ni el `arc` ni las
+ * colisiones cambian, sólo el `shadowBlur` del contexto mientras se pinta.
  */
 
+import { glow, noGlow } from "@/lib/games";
 import type { GameInput } from "@/lib/games/input";
 import {
   BALL_RADIUS,
+  BLOCK_KINDS,
   LAUNCH_VX,
   LAUNCH_VY,
   MAX_BOUNCE_ANGLE,
   PADDLE,
+  UNBREAKABLE_LETTER,
   WORLD,
   growthForLevel,
   maxSpeedForLevel,
@@ -263,16 +269,92 @@ export function ballVsBlocks(ball: Ball, blocks: readonly Block[]): BlockHit {
 // ── Dibujo ───────────────────────────────────────────────────────────────────
 
 /**
+ * Radio del halo cuando la piel separa la rejilla por tinte: 4 px.
+ *
+ * Va **en píxeles** y no en fracción de nada, como el de Asteroids y al revés
+ * que el de Tetris: allí la unidad natural era el lado de la celda, que cambia
+ * entre el tablero y la banda de la siguiente, y aquí el mundo mide siempre
+ * `WORLD` y nada se escala —el bloque es de 66,6 × 24, el paddle de 162 × 14 y
+ * la bola de radio 8, y esos números no dependen de nada—. Una fracción del
+ * tamaño de la entidad además repartiría al revés de lo que conviene: le daría
+ * el radio más largo al bloque, que es justo el que tiene vecinos pegados, y el
+ * más corto a la bola, que va suelta.
+ *
+ * Lo que manda el número es el **hueco entre dos bloques contiguos**, que son
+ * los 6 px de `GAP_X`/`GAP_Y` y es lo único que separa un bloque del de al lado.
+ * Aquí se ilumina un relleno y no un trazo, así que el radio entero sale hacia
+ * fuera del borde —de ahí que sea la mitad que los 8 px de Asteroids, donde la
+ * mitad del aura cae dentro del propio trazo—. Con 4 px, en el centro del surco
+ * cada bloque aporta menos de un 7% de su brillo y la cuadrícula se sigue
+ * leyendo como cuadrícula; con 6 ya son casi dos décimas por lado y las diez
+ * columnas se funden en una banda.
+ */
+const GLOW_BLUR = 4;
+
+/**
+ * El radio corto, para una piel cuya rejilla entera comparte color: 2 px.
+ *
+ * Ahí el tinte ya no distingue nada y lo único que queda es el escalón: los
+ * rompibles en `#22aa22` y el gris irrompible un escalón por debajo, en
+ * `#116611`. Y esos dos se tocan de verdad —el nivel 9 alterna `3a3a3a3a3a`, así
+ * que cada irrompible tiene un rompible pegado a cada lado—: con 4 px, el aura
+ * del vecino invade el borde del irrompible y lo empuja hacia el escalón medio.
+ * Rompible contra irrompible es la distinción que decide la partida, porque de
+ * ella depende si una pantalla se puede despejar, así que el radio se acorta
+ * hasta que el aura muere dentro del surco. Es además lo que hace un fósforo de
+ * verdad: sangra corto y pegado al relleno, y el letrero de neón sangra amplio.
+ */
+const GLOW_BLUR_TIGHT = 2;
+
+/**
+ * Cuánto halo pide esta piel.
+ *
+ * **La piel dice si hay halo y el motor dice de cuánto**, que es la misma
+ * frontera que ya rige el alfa. El motor mide mirando la paleta que tiene
+ * delante y no el nombre de la piel —a estas funciones llega una `Palette` y
+ * nunca un `SkinId`, así que ni podría—: lo que obliga a acortar el radio no es
+ * que la piel se llame `retro`, es que sus bloques rompibles sean todos del
+ * mismo color, y entonces lo único que los separa del irrompible es el brillo,
+ * que es justo lo que un halo largo funde. Una cuarta piel monocroma se
+ * resolvería sola.
+ *
+ * El irrompible se queda fuera de la comparación a propósito: es el bloque con
+ * el que se contrasta, no uno de los comparados.
+ *
+ * El mismo radio vale para las tres cosas que se pintan. El paddle y la bola no
+ * imponen ninguna restricción propia —ninguno tiene un vecino a 6 px—, pero la
+ * bola **cruza la rejilla**, así que su aura cae en los mismos surcos y no puede
+ * ser más larga que la que ellos toleran.
+ */
+function glowSpread(p: Palette): number {
+  for (const kind of BLOCK_KINDS) {
+    if (kind === UNBREAKABLE_LETTER) continue;
+    if (p.blocks[kind] !== p.blocks.r) return GLOW_BLUR;
+  }
+  return GLOW_BLUR_TIGHT;
+}
+
+/**
  * Bloques vivos. El alpha comunica el desgaste de los multi-golpe: intacto
  * (`hp === maxHp`) → 1,0; baja con cada golpe hasta un mínimo de 0,4. Ya era una
  * primitiva en el original y no un sprite, así que se copia tal cual.
+ *
+ * El halo no le quita nada a ese desgaste: se enciende dentro del mismo
+ * `save()`/`restore()` que fija el `globalAlpha`, así que el aura sale igual de
+ * apagada que el relleno y un bloque tocado se sigue leyendo más tenue que uno
+ * intacto. Y ese `restore()` es también quien suelta el halo: `shadowColor` y
+ * `shadowBlur` son estado global del contexto, como el alfa, y salen de la misma
+ * pareja que ya estaba escrita aquí.
  */
 export function drawBlocks(ctx: CanvasRenderingContext2D, blocks: readonly Block[], p: Palette) {
+  const blur = p.glow ? glowSpread(p) : 0;
   for (const b of blocks) {
     if (!b.alive) continue;
+    const color = p.blocks[b.kind];
     ctx.save();
     ctx.globalAlpha = 0.4 + 0.6 * (b.hp / b.maxHp);
-    ctx.fillStyle = p.blocks[b.kind];
+    ctx.fillStyle = color;
+    if (p.glow) glow(ctx, color, blur);
     ctx.fillRect(b.x, b.y, b.w, b.h);
     ctx.restore();
   }
@@ -280,12 +362,18 @@ export function drawBlocks(ctx: CanvasRenderingContext2D, blocks: readonly Block
 
 export function drawPaddle(ctx: CanvasRenderingContext2D, paddle: Paddle, p: Palette) {
   ctx.fillStyle = p.paddle;
+  // Aquí no hay `restore()` que suelte el halo, así que se apaga a mano: si no,
+  // lo hereda lo siguiente que se pinte en este frame.
+  if (p.glow) glow(ctx, p.paddle, glowSpread(p));
   ctx.fillRect(paddle.x, paddle.y, paddle.w, paddle.h);
+  if (p.glow) noGlow(ctx);
 }
 
 export function drawBall(ctx: CanvasRenderingContext2D, ball: Ball, p: Palette) {
   ctx.fillStyle = p.ball;
+  if (p.glow) glow(ctx, p.ball, glowSpread(p));
   ctx.beginPath();
   ctx.arc(ball.x, ball.y, ball.r, 0, Math.PI * 2);
   ctx.fill();
+  if (p.glow) noGlow(ctx);
 }

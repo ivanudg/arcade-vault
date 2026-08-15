@@ -22,6 +22,12 @@
  * `clasico` es extracción, no diseño: cada hex se puede señalar en el código que
  * había antes de vestir la máquina, así que elegirla deja la partida exactamente
  * como estaba, atlas incluido.
+ *
+ * **Desde el 2026-08-15 hay un segundo rasgo de dibujo, `glow`**, y no cambió ni
+ * un hex de las tres paletas. Dice si la serpiente y la fruta salen con halo;
+ * cuánto mide ese halo lo decide `entities.ts`, que es la misma frontera del
+ * alfa —la piel dice si hay, el motor dice de cuánto—. Ni la rejilla ni el fondo
+ * lo llevan nunca: son fondo activo y lienzo, y un aura ahí mancharía el frame.
  */
 
 import type { SkinId } from "@/lib/games/skins";
@@ -50,6 +56,19 @@ export interface Palette {
    * fruta, así que no toca el juego.
    */
   useAtlas: boolean;
+  /**
+   * Si los segmentos y la fruta salen con halo del color que ya tienen.
+   *
+   * Booleano y nada más: el radio es del motor y lo miden `GLOW_BLUR` y
+   * `GLOW_BLUR_TIGHT` en `entities.ts`. No toca la celda, el inset ni la
+   * hitbox; sólo el `shadowBlur` del contexto mientras se pinta.
+   *
+   * `false` en `clasico`, que es lo que deja la máquina como estaba. La fruta
+   * del atlas **nunca** lleva halo, ni siquiera si una cuarta piel juntara
+   * `useAtlas` y `glow`: `drawImage` heredaría el aura del contexto, y añadirle
+   * algo al atlas es justo lo que S7 prohíbe.
+   */
+  glow: boolean;
 }
 
 /**
@@ -68,6 +87,13 @@ export interface Palette {
  * de radio 0,35, nunca ocupan la misma celda —comerla la muda— y confundirlas no
  * cuesta una vida. Lo que sí queda separado por color es la distinción que sí
  * mata: tu cuerpo nunca es del color de tu cabeza.
+ *
+ * Las dos encienden el halo y **no lo llevan igual de largo**, que es la
+ * decisión de la ronda del 2026-08-15: en `neon` el cuerpo se funde en un tubo
+ * continuo, porque la cabeza es de otro tinte y se sigue leyendo encima de él;
+ * en `retro` la cabeza está a un solo escalón del cuerpo, así que el halo se
+ * acorta para que la cadena de segmentos aguante y el aura del cuerpo no empuje
+ * a la cabeza. El número lo pone `entities.ts` y la piel no lo sabe.
  */
 export const PALETTES: Record<SkinId, Palette> = {
   clasico: {
@@ -77,6 +103,7 @@ export const PALETTES: Record<SkinId, Palette> = {
     head: "#f5ff00",
     fruit: "#ff006e",
     useAtlas: true,
+    glow: false,
   },
   neon: {
     bg: "#0a0a0f",
@@ -85,6 +112,7 @@ export const PALETTES: Record<SkinId, Palette> = {
     head: "#f5ff00",
     fruit: "#ff006e",
     useAtlas: false,
+    glow: true,
   },
   retro: {
     bg: "#001100",
@@ -93,5 +121,6 @@ export const PALETTES: Record<SkinId, Palette> = {
     head: "#33ff33",
     fruit: "#33ff33",
     useAtlas: false,
+    glow: true,
   },
 };

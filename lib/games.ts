@@ -114,3 +114,33 @@ export function tint(hex: string, alpha: number): string {
   const n = parseInt(hex.slice(1), 16);
   return `rgba(${(n >> 16) & 255},${(n >> 8) & 255},${n & 255},${alpha})`;
 }
+
+/**
+ * Enciende el halo del canvas: lo que se pinte a partir de aquí sale con un
+ * resplandor de `color` y radio `blur`.
+ *
+ * Vive junto a `tint()` porque es su pareja: los dos son ayudas de dibujo que
+ * los motores importan de `"@/lib/games"`, y los dos reparten igual la
+ * responsabilidad —la piel pone el color, el motor pone el número—. Ojo con el
+ * nombre: `Game.glow` es el acento de una máquina en las tarjetas y la ficha,
+ * que no tiene nada que ver con esto; esto sólo toca el canvas.
+ *
+ * **Siempre en pareja con `noGlow()`.** El `shadow*` del contexto es estado
+ * global: si no se suelta, lo hereda todo lo que se dibuje después.
+ */
+export function glow(ctx: CanvasRenderingContext2D, color: string, blur: number): void {
+  ctx.shadowColor = color;
+  ctx.shadowBlur = blur;
+}
+
+/**
+ * Apaga el halo. Suelta **las dos** propiedades a propósito: con
+ * `shadowBlur = 0` a secas, el contexto conserva el `shadowColor` y basta que
+ * alguien vuelva a subir el radio para que reaparezca un color que ya no toca.
+ * El original de `references/started-games/03-tetris/game.js:1018` lo dejó
+ * escrito en un comentario y aquí es la única forma de apagarlo.
+ */
+export function noGlow(ctx: CanvasRenderingContext2D): void {
+  ctx.shadowBlur = 0;
+  ctx.shadowColor = "transparent";
+}

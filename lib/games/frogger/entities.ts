@@ -12,6 +12,12 @@
  * activa vive en el closure de `mount()` y ninguna entidad se queda con un color
  * guardado, para que cambiarla se vea en el frame siguiente sin tocar la partida
  * en curso. El alfa no viaja con ella: eso es de `constants.ts`.
+ *
+ * Desde el 2026-08-15 la piel trae además un rasgo de dibujo, `glow`, y el radio
+ * de ese halo lo miden aquí `GLOW_BLUR` y `GLOW_BLUR_TIGHT`: la piel dice si hay
+ * halo y el motor dice de cuánto, que es la misma frontera que ya rige el alfa.
+ * Cada `draw()` que lo enciende lo suelta **en la misma función**, porque el
+ * `shadow*` del contexto es estado global y aquí se encadenan cinco por frame.
  */
 
 import {
@@ -44,7 +50,68 @@ import {
 import { cycleAt, overlap, wrapSpan } from "@/lib/games/frogger/math";
 import type { LaneSpec } from "@/lib/games/frogger/lanes";
 import type { Palette } from "@/lib/games/frogger/skins";
-import { tint } from "@/lib/games";
+import { glow, noGlow, tint } from "@/lib/games";
+
+/**
+ * El radio del halo, en píxeles: 6.
+ *
+ * **En píxeles y no en fracción de la celda**, como Asteroids, Arkanoid y Snake y
+ * al revés que Tetris: allí la unidad natural era el lado de la celda, que cambia
+ * entre el tablero y la banda de la siguiente pieza, y aquí el mundo mide siempre
+ * `W × H` y ninguna entidad se escala. Pero el motivo de fondo es otro, y es el
+ * mismo de las tres rondas anteriores: lo que el radio tiene que respetar no es
+ * el tamaño de la entidad sino **el hueco que el dibujo deja a su alrededor**, y
+ * ese hueco está escrito en píxeles sueltos —los `+6` y `CELL - 12` del tronco y
+ * la caja del camión, el `CELL / 2 - 6` del caparazón— que no cambiarían aunque
+ * `CELL` cambiase.
+ *
+ * Ese hueco son **6 px** y sale dos veces: es el margen que cada plataforma deja
+ * hasta el borde de su fila y, por tanto, la mitad de los 12 px de agua que
+ * separan dos carriles de río contiguos; y es también la mitad de los 12 px de
+ * surco que quedan entre dos caparazones pegados de una misma balsa —celda de 40
+ * contra un diámetro de 28—. Con 6 px el aura se apaga justo al cruzar al carril
+ * de al lado, así que la carretera no ilumina la carretera de arriba ni el río el
+ * río, que es donde el jugador cuenta huecos para decidir el salto; y la balsa se
+ * sigue leyendo como una fila de caparazones en vez de fundirse en una barra, que
+ * es información de verdad: cada caparazón es una celda que sostiene.
+ *
+ * El coche es todavía más holgado —deja 8 px por lado— y no impone nada.
+ */
+const GLOW_BLUR = 6;
+
+/**
+ * El radio corto, para una piel que separa las entidades por brillo: 3 px.
+ *
+ * En la rampa de fósforo la distinción que decide la partida está a **un solo
+ * escalón**: la tortuga a flote es `#33ff33` y la que se ha hundido `#22aa22`, y
+ * pisar una hundida mata. Con 6 px el aura viva de un tronco o de una tortuga a
+ * flote llega al borde del carril de al lado y empuja hacia arriba la media que
+ * haya allí, y ahí sí habría choque de S3, el peor de la serie: el brillo es lo
+ * único que separa la plataforma que sostiene de la que te ahoga. Con 3 px el
+ * sangrado muere a mitad del margen de 6 y el escalón aguanta entero. Es además
+ * lo físicamente cierto y lo que ya cerró las cuatro rondas anteriores: un
+ * fósforo verde sangra corto y un letrero de neón sangra amplio.
+ */
+const GLOW_BLUR_TIGHT = 3;
+
+/**
+ * Cuánto halo pide esta piel.
+ *
+ * El motor mide mirando la paleta que tiene delante y no el nombre de la piel
+ * —a `draw()` llega una `Palette` y nunca un `SkinId`, así que ni podría—.
+ *
+ * Lo que mira son **las cuatro amenazas**: coche, camión, cocodrilo y tortuga
+ * sumergida. Es el mismo indicador que usan Tetris con sus siete piezas,
+ * Asteroids con sus cinco power-ups, Arkanoid con sus ocho rompibles y Snake con
+ * su cabeza y su fruta: una piel que ha tenido que pintar del mismo color todo lo
+ * que mata es una piel que se quedó sin tintes libres, o sea una que separa por
+ * brillo, y en ella un halo largo funde justo lo que la sostiene. Una cuarta piel
+ * monocroma se resolvería sola, sin tocar este archivo.
+ */
+function glowSpread(p: Palette): number {
+  const monochrome = p.truck === p.car && p.gator === p.car && p.turtleDiving === p.car;
+  return monochrome ? GLOW_BLUR_TIGHT : GLOW_BLUR;
+}
 
 /** Un carril con sus entidades, todas del mismo tipo, largo y velocidad. */
 export class Lane {
@@ -172,30 +239,43 @@ export class Lane {
   private drawCar(ctx: CanvasRenderingContext2D, x: number, p: Palette): void {
     const y = this.y;
     ctx.fillStyle = p.car;
+    if (p.glow) glow(ctx, p.car, glowSpread(p));
     ctx.fillRect(x + 3, y + 8, this.width - 6, CELL - 16);
     // Morro, para que se vea hacia dónde va.
     const nose = this.spec.speed >= 0 ? x + this.width - 8 : x + 3;
     ctx.fillRect(nose, y + 13, 5, CELL - 26);
+    if (p.glow) noGlow(ctx);
   }
 
   private drawTruck(ctx: CanvasRenderingContext2D, x: number, p: Palette): void {
     const y = this.y;
     const forward = this.spec.speed >= 0;
-    ctx.fillStyle = tint(p.truck, ALPHA_TRUCK);
-    // Caja.
+    // El 0,7 es del dibujo, no de la piel: la caja siempre va translúcida. El
+    // aura toma ese mismo `rgba`, así que el velo del motor la atraviesa entera
+    // en vez de quedarse opaca detrás de una caja que sí se ve el fondo.
+    const box = tint(p.truck, ALPHA_TRUCK);
+    ctx.fillStyle = box;
+    if (p.glow) glow(ctx, box, glowSpread(p));
     const boxX = forward ? x + 3 : x + CELL - 3;
     ctx.fillRect(boxX, y + 6, this.width - CELL, CELL - 12);
-    // Cabina, un poco más baja.
+    // Cabina, un poco más baja. Es otra ranura: reengancha el halo con su color,
+    // o ardería del de la caja.
     const cabX = forward ? x + this.width - CELL + 2 : x + 4;
     ctx.fillStyle = p.car;
+    if (p.glow) glow(ctx, p.car, glowSpread(p));
     ctx.fillRect(cabX, y + 10, CELL - 6, CELL - 20);
+    if (p.glow) noGlow(ctx);
   }
 
   private drawLog(ctx: CanvasRenderingContext2D, x: number, p: Palette): void {
     const y = this.y;
     ctx.fillStyle = p.log;
+    if (p.glow) glow(ctx, p.log, glowSpread(p));
     ctx.fillRect(x, y + 6, this.width, CELL - 12);
-    // Vetas: una raya por celda, para que se lea el arrastre.
+    // Vetas: una raya por celda, para que se lea el arrastre. Van sin halo y el
+    // tronco lo suelta antes de pintarlas: la veta es un **recorte** del color
+    // del fondo, y un aura suya sólo serviría para comerse el tronco por dentro.
+    if (p.glow) noGlow(ctx);
     ctx.fillStyle = tint(p.grain, ALPHA_LOG_GRAIN);
     for (let c = 1; c < this.spec.len; c++) {
       ctx.fillRect(x + c * CELL - 1, y + 8, 2, CELL - 16);
@@ -212,8 +292,17 @@ export class Lane {
     const y = this.y;
     const down = this.submerged(t, i);
     const warning = this.diving(t, i);
-    ctx.fillStyle =
+    // **La ranura que manda en esta máquina.** El halo toma el mismo `rgba` que
+    // el relleno, no el hex opaco, y eso es lo que conserva la única señal que
+    // avisa de que pisar aquí mata: el aura de la hundida se pinta a 0,25 y la de
+    // la que flota a 0,75, así que la distancia entre las dos es exactamente la
+    // misma que sin halo. Con el hex opaco, la hundida habría ganado un aura
+    // sólida alrededor de un cuerpo translúcido y habría subido de brillo justo
+    // en el frame en el que tiene que apagarse.
+    const fill =
       down || warning ? tint(p.turtleDiving, ALPHA_TURTLE_DIVING) : tint(p.turtle, ALPHA_TURTLE);
+    ctx.fillStyle = fill;
+    if (p.glow) glow(ctx, fill, glowSpread(p));
     for (let c = 0; c < this.spec.len; c++) {
       const cx = x + c * CELL + CELL / 2;
       const cy = y + CELL / 2;
@@ -226,6 +315,7 @@ export class Lane {
       ctx.arc(cx + (this.spec.speed >= 0 ? 11 : -11), cy, 3.5, 0, Math.PI * 2);
       ctx.fill();
     }
+    if (p.glow) noGlow(ctx);
   }
 }
 
@@ -287,6 +377,7 @@ export class Frog {
     const pad = 7 - lift;
 
     ctx.fillStyle = p.frog;
+    if (p.glow) glow(ctx, p.frog, glowSpread(p));
     ctx.beginPath();
     ctx.ellipse(x + CELL / 2, y + CELL / 2, CELL / 2 - pad, CELL / 2 - pad - 1, 0, 0, Math.PI * 2);
     ctx.fill();
@@ -296,7 +387,9 @@ export class Frog {
     ctx.fillRect(x + 4, y + CELL / 2 + legs - 2, 6, 3);
     ctx.fillRect(x + CELL - 10, y + CELL / 2 + legs - 2, 6, 3);
 
-    // Ojos.
+    // Ojos. Sin halo, y se suelta antes de pintarlos: son un recorte del color
+    // del fondo, así que su aura sólo comería el cuerpo desde dentro.
+    if (p.glow) noGlow(ctx);
     ctx.fillStyle = p.detail;
     ctx.beginPath();
     ctx.arc(x + CELL / 2 - 5, y + CELL / 2 - 5, 2.5, 0, Math.PI * 2);
@@ -304,11 +397,17 @@ export class Frog {
     ctx.fill();
 
     // La dama-rana viaja como un punto encima, no como una entidad que sigue.
+    // Es otra ranura y reengancha su propio halo: en `neon` el ámbar despega del
+    // amarillo de la rana, y en `retro` va en tenue sobre un cuerpo vivo, así que
+    // su aura no puede aclararlo —el color del aura es el del punto, no el del
+    // cuerpo—.
     if (this.escorting) {
       ctx.fillStyle = p.lady;
+      if (p.glow) glow(ctx, p.lady, glowSpread(p));
       ctx.beginPath();
       ctx.arc(x + CELL / 2, y + 7, 4, 0, Math.PI * 2);
       ctx.fill();
+      if (p.glow) noGlow(ctx);
     }
   }
 }
@@ -386,15 +485,24 @@ export class Homes {
     for (let i = 0; i < HOMES; i++) {
       const x = Homes.x(i);
 
+      // El marco es señalización fija del tablero y va sin halo. En `retro` está
+      // en el escalón tenue a propósito, y un aura lo empujaría hacia el medio,
+      // que es donde asoma el cocodrilo **dentro de este mismo nicho**: ésa es la
+      // confusión que cuesta una vida, porque uno premia y el otro mata.
       ctx.strokeStyle = tint(p.home, ALPHA_HOME);
       ctx.lineWidth = 2;
       ctx.strokeRect(x + 2, y + 4, CELL - 4, CELL - 8);
 
       if (this.filled[i]) {
+        // Misma ranura que la rana del jugador, así que mismo halo: un nicho
+        // ocupado se lee encendido, que es justo lo que ya no hay que volver a
+        // mirar.
         ctx.fillStyle = p.frog;
+        if (p.glow) glow(ctx, p.frog, glowSpread(p));
         ctx.beginPath();
         ctx.ellipse(x + CELL / 2, y + CELL / 2, CELL / 2 - 9, CELL / 2 - 11, 0, 0, Math.PI * 2);
         ctx.fill();
+        if (p.glow) noGlow(ctx);
         continue;
       }
 
@@ -404,7 +512,11 @@ export class Homes {
   }
 
   private drawGator(ctx: CanvasRenderingContext2D, x: number, y: number, p: Palette): void {
-    ctx.fillStyle = tint(p.gator, ALPHA_GATOR);
+    // El 0,85 es del dibujo y el aura toma ese mismo `rgba`: el cocodrilo asoma
+    // translúcido y su resplandor asoma con él.
+    const hide = tint(p.gator, ALPHA_GATOR);
+    ctx.fillStyle = hide;
+    if (p.glow) glow(ctx, hide, glowSpread(p));
     // Dos triángulos: el hocico abierto asomando por el fondo del nicho.
     ctx.beginPath();
     ctx.moveTo(x + 7, y + 14);
@@ -418,7 +530,9 @@ export class Homes {
     ctx.lineTo(x + 7, y + 32);
     ctx.closePath();
     ctx.fill();
-    // Dientes.
+    // Dientes: recorte del color del fondo, igual que los ojos, así que el halo
+    // se suelta antes de pintarlos.
+    if (p.glow) noGlow(ctx);
     ctx.fillStyle = p.detail;
     for (let d = 0; d < 4; d++) {
       ctx.fillRect(x + 10 + d * 6, y + 20, 2, 4);
@@ -434,12 +548,17 @@ export class Homes {
   ): void {
     // Parpadea: es lo que la distingue de un adorno del nicho.
     if (cycleAt(t, 0.6) > 0.4) return;
+    // La mosca sí lleva halo y el marco del nicho no, así que en `retro` —donde
+    // los dos están en tenue— gana una separación que antes sólo daban la forma y
+    // el parpadeo.
     ctx.fillStyle = p.lady;
+    if (p.glow) glow(ctx, p.lady, glowSpread(p));
     ctx.beginPath();
     ctx.arc(x + CELL / 2, y + CELL / 2, 4, 0, Math.PI * 2);
     ctx.fill();
     ctx.fillRect(x + CELL / 2 - 8, y + CELL / 2 - 5, 5, 2);
     ctx.fillRect(x + CELL / 2 + 3, y + CELL / 2 - 5, 5, 2);
+    if (p.glow) noGlow(ctx);
   }
 }
 
@@ -479,7 +598,11 @@ export class Snake {
 
   draw(ctx: CanvasRenderingContext2D, p: Palette): void {
     const y = this.y;
-    ctx.fillStyle = tint(p.gator, ALPHA_GATOR);
+    // Misma ranura y mismo velo que el cocodrilo, así que mismo halo: las dos son
+    // la misma amenaza con dos formas.
+    const body = tint(p.gator, ALPHA_GATOR);
+    ctx.fillStyle = body;
+    if (p.glow) glow(ctx, body, glowSpread(p));
     // Cuerpo ondulado: cuatro tramos que alternan de altura.
     for (let s = 0; s < 4; s++) {
       const sx = this.x + s * 10;
@@ -489,6 +612,7 @@ export class Snake {
     // Cabeza, en el sentido de la marcha.
     const hx = this.dir === 1 ? this.x + CELL - 6 : this.x;
     ctx.fillRect(hx, y + 14, 6, 8);
+    if (p.glow) noGlow(ctx);
   }
 }
 
@@ -565,10 +689,13 @@ export class Bonus {
     const y = this.laneY;
 
     ctx.fillStyle = p.lady;
+    if (p.glow) glow(ctx, p.lady, glowSpread(p));
     ctx.beginPath();
     ctx.ellipse(x + CELL / 2, y + CELL / 2, CELL / 2 - 9, CELL / 2 - 10, 0, 0, Math.PI * 2);
     ctx.fill();
 
+    // Ojos: recorte, sin halo, y el de la dama se suelta antes.
+    if (p.glow) noGlow(ctx);
     ctx.fillStyle = p.detail;
     ctx.beginPath();
     ctx.arc(x + CELL / 2 - 4, y + CELL / 2 - 4, 2, 0, Math.PI * 2);

@@ -15,6 +15,9 @@
  * del recorte de su spritesheet y los siete resultaron ser colores válidos—, así
  * que se copian tal cual: convertirlos a hexadecimal sería un rediseño y la
  * partida dejaría de verse exactamente igual que antes de vestir la máquina.
+ *
+ * **Y desde el 2026-08-15 una piel es color más un rasgo de dibujo**: `glow` dice
+ * si la rejilla, la pala y la bola salen con halo. Ni un hex cambió ese día.
  */
 
 import type { SkinId } from "@/lib/games/skins";
@@ -37,6 +40,21 @@ export interface Palette {
    * colores viejos hasta el nivel siguiente.
    */
   blocks: Readonly<Record<BlockKind, string>>;
+  /**
+   * Si esta piel pinta la rejilla, la pala y la bola con halo de su propio
+   * color.
+   *
+   * Es un rasgo de dibujo y no un color, como el `glow` de Tetris y el de
+   * Asteroids. **La piel dice si hay halo; el motor dice de cuánto**, igual que
+   * con el alfa: aquí sólo está la decisión, y el radio lo miden las dos
+   * constantes de `entities.ts`. El fondo no lo lleva en ninguna piel —el halo
+   * de un `fillRect` que cubre el mundo mancharía el frame entero— y el
+   * `globalAlpha` del desgaste tampoco se toca: un bloque golpeado sale más
+   * apagado, y su aura con él.
+   *
+   * `false` en `clasico`, que es extracción y no se toca ni un píxel.
+   */
+  glow: boolean;
 }
 
 /**
@@ -56,6 +74,14 @@ export interface Palette {
  * bola—, medio la rejilla que hay que romper, tenue el gris que no se rompe
  * nunca. La distinción entre un bloque de un golpe y uno de tres se la queda el
  * `globalAlpha` del motor, que es quien ya la comunica al golpearlo.
+ *
+ * Las dos llevan `glow`, y por motivos distintos. En `neon` el halo es lo que
+ * convierte una rejilla de rectángulos planos en una pantalla de letreros, que
+ * es lo que la piel dice ser. En `retro` es el sangrado del fósforo de un
+ * monitor verde, corto y pegado al relleno. Los dos radios los miden las
+ * constantes de `entities.ts`, y no son el mismo: en `retro` el irrompible se
+ * separa de los rompibles por un solo escalón de brillo, y un halo largo se lo
+ * come por el borde.
  */
 export const PALETTES: Record<SkinId, Palette> = {
   clasico: {
@@ -73,6 +99,7 @@ export const PALETTES: Record<SkinId, Palette> = {
       2: "cyan",
       3: "magenta",
     },
+    glow: false,
   },
   neon: {
     bg: "#0a0a0f",
@@ -89,6 +116,7 @@ export const PALETTES: Record<SkinId, Palette> = {
       2: "#00f5ff",
       3: "#ff006e",
     },
+    glow: true,
   },
   retro: {
     bg: "#001100",
@@ -105,5 +133,6 @@ export const PALETTES: Record<SkinId, Palette> = {
       2: "#22aa22",
       3: "#22aa22",
     },
+    glow: true,
   },
 };
