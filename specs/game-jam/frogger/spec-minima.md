@@ -1,7 +1,7 @@
 # GAME JAM · FROGGER — version minima: una sola pantalla, cinco casas y se acabo
 
-> **Estado:** Borrador de jam — no aprobada, no implementada
-> **Alternativa de:** `specs/game-jam/frogger/spec-completa.md`. Se implementa una de las dos, nunca las dos.
+> **Estado:** Descartada — 2026-08-14. Se eligió la versión completa, hoy en `specs/14-frogger-rondas-infinitas.md`.
+> **Alternativa de:** `specs/14-frogger-rondas-infinitas.md` (antes `specs/game-jam/frogger/spec-completa.md`). Se implementa una de las dos, nunca las dos.
 > **Depende de:** SPEC 05, SPEC 07, SPEC 08
 > **Fecha:** 2026-08-13
 > **Objetivo:** Añadir `frogger` como quinta máquina del vault con el motor más barato que sigue siendo Frogger: una pantalla única de diez carriles, un tipo de vehículo, un tipo de tronco y cinco casas que llenar; sin rondas, sin cronómetro y sin fauna.

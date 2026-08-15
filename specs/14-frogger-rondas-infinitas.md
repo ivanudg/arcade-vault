@@ -1,6 +1,6 @@
 # GAME JAM · FROGGER — version completa: rondas infinitas, cronometro y la fauna del rio
 
-> **Estado:** Borrador de jam — no aprobada, no implementada
+> **Estado:** Aprobada
 > **Alternativa de:** `specs/game-jam/frogger/spec-minima.md`. Se implementa una de las dos, nunca las dos.
 > **Depende de:** SPEC 05, SPEC 07
 > **Fecha:** 2026-08-13

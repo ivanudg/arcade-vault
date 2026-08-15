@@ -20,9 +20,11 @@ El **sistema de skins ya existe** desde el 2026-08-13: `lib/games/skins.ts` tien
 vocabulario, `GameMount.skins` y `GameHandle.setSkin()` son dos campos opcionales del contrato,
 `lib/storage.ts` recuerda la elección por máquina y el gabinete pinta su selector. Lo montó la
 ronda que vistió `asteroids`, y ese mismo día las otras tres —`tetris`, `arkanoid` y `snake`—
-se vistieron en tres rondas paralelas, una por máquina. **Las cuatro máquinas con motor llevan
-sus tres pieles aplicadas**, así que las doce filas están en `aplicada` y ninguna tiene todavía
-veredicto humano: aplicada no es aprobada.
+se vistieron en tres rondas paralelas, una por máquina. `frogger` entró después, con SPEC 14, y
+se vistió el 2026-08-14 sin tocar ni una línea de la infraestructura: era justo la prueba de que
+ser opcional servía para algo. **Las cinco máquinas con motor llevan sus tres pieles
+aplicadas**, así que las quince filas están en `aplicada` y ninguna tiene todavía veredicto
+humano: aplicada no es aprobada.
 
 ## Cómo se lee la tabla
 
@@ -88,6 +90,7 @@ esto es lo que se mira primero.
 | tetris    | si      | clasico, neon, retro | clasico | 2026-08-13 | Segunda vestida; la infraestructura ya estaba y no se toco               |
 | arkanoid  | si      | clasico, neon, retro | clasico | 2026-08-13 | Block.color paso a Block.kind: el color se resuelve al dibujar           |
 | snake     | si      | clasico, neon, retro | clasico | 2026-08-13 | Sin ninguna fuga de color. `neon` y `retro` renuncian al atlas de frutas |
+| frogger   | si      | clasico, neon, retro | clasico | 2026-08-14 | 17 ranuras, la mas vestida. Nueve velos pasaron a `── Velos ──`          |
 
 `vestida` es `si` sólo cuando el motor tiene su `skins.ts` con las tres paletas y su
 `setSkin()`; `skins`, cuáles trae; `default`, la que sale sin elegir, que es `clasico` salvo
@@ -96,20 +99,23 @@ está, la fila miente y se corrige en la reconciliación.
 
 ## Skins
 
-| juego     | skin    | estado   | ranuras | cubiertas | alta       | revisado   | motivo                                                                                                           |
-| --------- | ------- | -------- | ------- | --------- | ---------- | ---------- | ---------------------------------------------------------------------------------------------------------------- |
-| asteroids | clasico | aplicada | 11      | 11        | 2026-08-13 | 2026-08-13 | Extraida del codigo: 5 constantes y 6 fugas. Los velos conservan su alfa                                         |
-| asteroids | neon    | aplicada | 11      | 11        | 2026-08-13 | 2026-08-13 | Los 5 power-ups y el propulsor toman los acentos; nave, balas, rocas y polvo, la rampa de grises                 |
-| asteroids | retro   | aplicada | 11      | 11        | 2026-08-13 | 2026-08-13 | Los 5 power-ups comparten el escalon vivo: se separan por su glifo, no por color. Revisable                      |
-| tetris    | clasico | aplicada | 11      | 11        | 2026-08-13 | 2026-08-13 | Extraida del codigo: 2 constantes y 4 fugas. El brillo conserva su 0,12                                          |
-| tetris    | neon    | aplicada | 11      | 11        | 2026-08-13 | 2026-08-13 | Siete piezas sin repetir color: 4 acentos y 3 escalones de la rampa de texto                                     |
-| tetris    | retro   | aplicada | 11      | 11        | 2026-08-13 | 2026-08-13 | Las 7 piezas comparten el escalon vivo: se separan por su forma, no por color. Revisable                         |
-| arkanoid  | clasico | aplicada | 12      | 12        | 2026-08-13 | 2026-08-13 | Extraida del codigo: 2 fugas y 10 constantes. Los 9 bloques son nombres CSS, copiados literales                  |
-| arkanoid  | neon    | aplicada | 12      | 12        | 2026-08-13 | 2026-08-13 | Los acentos van a los bloques; paddle y bola bajan a la rampa de grises y el irrompible a line-strong            |
-| arkanoid  | retro   | aplicada | 12      | 12        | 2026-08-13 | 2026-08-13 | Rompibles en medio y multi-golpe tambien: la cuenta de golpes la comunica el globalAlpha. Revisable              |
-| snake     | clasico | aplicada | 5       | 5         | 2026-08-13 | 2026-08-13 | Extraida del codigo: las 5 ranuras estaban en `constants.ts`, sin una sola fuga. La rejilla conserva su alfa 0,1 |
-| snake     | neon    | aplicada | 5       | 5         | 2026-08-13 | 2026-08-13 | SPEC 10 ya la pinto con tokens del vault: solo cambia la rejilla, que pasa de cian a `--av-amber`. Sin atlas     |
-| snake     | retro   | aplicada | 5       | 5         | 2026-08-13 | 2026-08-13 | Cuerpo medio, cabeza y fruta vivo, rejilla tenue. La fruta cae al circulo plano: el atlas no se recolorea (S7)   |
+| juego     | skin    | estado   | ranuras | cubiertas | alta       | revisado   | motivo                                                                                                            |
+| --------- | ------- | -------- | ------- | --------- | ---------- | ---------- | ----------------------------------------------------------------------------------------------------------------- |
+| asteroids | clasico | aplicada | 11      | 11        | 2026-08-13 | 2026-08-13 | Extraida del codigo: 5 constantes y 6 fugas. Los velos conservan su alfa                                          |
+| asteroids | neon    | aplicada | 11      | 11        | 2026-08-13 | 2026-08-13 | Los 5 power-ups y el propulsor toman los acentos; nave, balas, rocas y polvo, la rampa de grises                  |
+| asteroids | retro   | aplicada | 11      | 11        | 2026-08-13 | 2026-08-13 | Los 5 power-ups comparten el escalon vivo: se separan por su glifo, no por color. Revisable                       |
+| tetris    | clasico | aplicada | 11      | 11        | 2026-08-13 | 2026-08-13 | Extraida del codigo: 2 constantes y 4 fugas. El brillo conserva su 0,12                                           |
+| tetris    | neon    | aplicada | 11      | 11        | 2026-08-13 | 2026-08-13 | Siete piezas sin repetir color: 4 acentos y 3 escalones de la rampa de texto                                      |
+| tetris    | retro   | aplicada | 11      | 11        | 2026-08-13 | 2026-08-13 | Las 7 piezas comparten el escalon vivo: se separan por su forma, no por color. Revisable                          |
+| arkanoid  | clasico | aplicada | 12      | 12        | 2026-08-13 | 2026-08-13 | Extraida del codigo: 2 fugas y 10 constantes. Los 9 bloques son nombres CSS, copiados literales                   |
+| arkanoid  | neon    | aplicada | 12      | 12        | 2026-08-13 | 2026-08-13 | Los acentos van a los bloques; paddle y bola bajan a la rampa de grises y el irrompible a line-strong             |
+| arkanoid  | retro   | aplicada | 12      | 12        | 2026-08-13 | 2026-08-13 | Rompibles en medio y multi-golpe tambien: la cuenta de golpes la comunica el globalAlpha. Revisable               |
+| snake     | clasico | aplicada | 5       | 5         | 2026-08-13 | 2026-08-13 | Extraida del codigo: las 5 ranuras estaban en `constants.ts`, sin una sola fuga. La rejilla conserva su alfa 0,1  |
+| snake     | neon    | aplicada | 5       | 5         | 2026-08-13 | 2026-08-13 | SPEC 10 ya la pinto con tokens del vault: solo cambia la rejilla, que pasa de cian a `--av-amber`. Sin atlas      |
+| snake     | retro   | aplicada | 5       | 5         | 2026-08-13 | 2026-08-13 | Cuerpo medio, cabeza y fruta vivo, rejilla tenue. La fruta cae al circulo plano: el atlas no se recolorea (S7)    |
+| frogger   | clasico | aplicada | 17      | 17        | 2026-08-14 | 2026-08-14 | Extraida del codigo: 15 constantes y 2 fugas. Los nueve velos conservan su alfa, que paso a `── Velos ──`         |
+| frogger   | neon    | aplicada | 17      | 17        | 2026-08-14 | 2026-08-14 | Reparto por familias: magenta lo que mata, cian lo que sostiene, amarillo lo tuyo y el ambar para la dama-rana    |
+| frogger   | retro   | aplicada | 17      | 17        | 2026-08-14 | 2026-08-14 | Tortuga a flote viva contra sumergida media, separadas tambien por el velo. La dama baja a tenue: se pinta encima |
 
 ## Paletas
 
@@ -286,3 +292,60 @@ Dos decisiones que un humano puede revertir en modo veredicto:
   muda— y confundirlas no cuesta una vida. Lo separado por color es lo que mata: el cuerpo va en
   medio y la cabeza en vivo. La rejilla en tenue bajo el velo 0,1 queda muy discreta; subirla a
   `#33ff33` es un cambio de una linea.
+
+### frogger
+
+**Aplicada el 2026-08-14.** Espejo de `lib/games/frogger/skins.ts`; si algun dia discrepan, gana
+el archivo. La primera columna trae el identificador de hoy —la propiedad de `Palette`— y la
+segunda, de donde salio el hex de `clasico` antes de vestir la maquina. **Diecisiete ranuras: la
+maquina mas vestida del vault**, y dos de ellas eran fugas escritas a mano en `entities.ts`.
+
+| ranura         | de donde salia                           | que pinta                                 | clasico   | neon      | retro     |
+| -------------- | ---------------------------------------- | ----------------------------------------- | --------- | --------- | --------- |
+| `road`         | `constants.ts:141` `COLOR_ROAD`          | El asfalto, y con el el lienzo            | `#0a0a0f` | `#0a0a0f` | `#001100` |
+| `laneLine`     | `constants.ts:142` `COLOR_LANE_LINE`     | Marcas entre carriles (velo 0,16)         | `#ff006e` | `#ff006e` | `#116611` |
+| `water`        | `constants.ts:143` `COLOR_WATER`         | La franja del rio (velo 0,10)             | `#00f5ff` | `#00f5ff` | `#22aa22` |
+| `bank`         | `constants.ts:144` `COLOR_BANK`          | Orilla, mediana y acera (velo 0,16)       | `#ff006e` | `#6f7686` | `#116611` |
+| `car`          | `constants.ts:145` `COLOR_CAR`           | El coche, y la cabina del camion          | `#ff006e` | `#ff006e` | `#22aa22` |
+| `truck`        | `constants.ts:146` `COLOR_TRUCK`         | La caja del camion (velo 0,7)             | `#ff006e` | `#ff006e` | `#22aa22` |
+| `log`          | `constants.ts:147` `COLOR_LOG`           | El tronco del rio                         | `#00f5ff` | `#00f5ff` | `#33ff33` |
+| `grain`        | fuga `entities.ts:195`                   | Vetas del tronco (velo 0,35)              | `#0a0a0f` | `#0a0a0f` | `#001100` |
+| `turtle`       | `constants.ts:148` `COLOR_TURTLE`        | Tortuga a flote: sostiene (velo 0,75)     | `#00f5ff` | `#00f5ff` | `#33ff33` |
+| `turtleDiving` | `constants.ts:149` `COLOR_TURTLE_DIVING` | Tortuga sumergida y su aviso (velo 0,25)  | `#00f5ff` | `#00f5ff` | `#22aa22` |
+| `frog`         | `constants.ts:150` `COLOR_FROG`          | La rana, y las ya sentadas en su nicho    | `#f5ff00` | `#f5ff00` | `#33ff33` |
+| `lady`         | `constants.ts:151` `COLOR_LADY`          | Dama-rana, mosca y punto de escolta       | `#ff006e` | `#ff9d4d` | `#116611` |
+| `gator`        | `constants.ts:152` `COLOR_GATOR`         | Cocodrilo y serpiente (velo 0,85)         | `#f5ff00` | `#ff006e` | `#22aa22` |
+| `home`         | `constants.ts:153` `COLOR_HOME`          | Marco del nicho vacio (velo 0,45)         | `#00f5ff` | `#00f5ff` | `#116611` |
+| `timer`        | `constants.ts:154` `COLOR_TIMER`         | La barra del cronometro                   | `#f5ff00` | `#f5ff00` | `#116611` |
+| `timerLow`     | `constants.ts:155` `COLOR_TIMER_LOW`     | La barra bajo `TIME_LOW`, y la X de morir | `#ff006e` | `#ff006e` | `#22aa22` |
+| `detail`       | fuga `entities.ts:289`, `:411`, `:555`   | Ojos de las ranas y dientes del cocodrilo | `#0a0a0f` | `#0a0a0f` | `#001100` |
+
+**Nueve de las diecisiete son velos**, y ninguno es de la piel: se escribian dentro de un `rgba`
+entero o como un `globalAlpha`, y hoy viven en el bloque `── Velos ──` de `constants.ts` mientras
+el motor monta el `rgba` con `tint()`. Por eso la tabla va en `#rrggbb` de seis digitos y por eso
+`clasico` reproduce los mismos strings que habia antes, digito a digito
+—`tint("#00f5ff", 0.1)` es `rgba(0,245,255,0.1)`—.
+
+Los dos velos de la tortuga, 0,75 y 0,25, llevan **informacion de juego** y no adorno: pisar una
+sumergida mata. Por eso siguen intactos en las tres pieles y `retro` no depende solo de ellos:
+tambien separa por escalon.
+
+Tres decisiones que un humano puede revertir en modo veredicto:
+
+- **`neon` arregla tres coincidencias de `clasico`.** SPEC 14 pinto Frogger con tokens del vault,
+  como SPEC 10 hizo con Snake, asi que las dos pieles se parecen; lo que cambia es el reparto por
+  familias —magenta lo que mata, cian lo que sostiene, amarillo lo tuyo, ambar el premio—. Con el:
+  el cocodrilo y la serpiente dejan de ser del **mismo amarillo que la rana**; la dama-rana, la
+  mosca y el punto de escolta dejan de ser del **mismo magenta que los coches** y toman el
+  `--av-amber`, el cuarto acento que la maquina no usaba; y las tres franjas seguras bajan a
+  `--av-text-dim`, porque tenirlas del magenta de la carretera decia lo contrario de lo que son.
+- **`retro`: la dama-rana va en tenue, no en vivo.** Es la unica ranura que se pinta **encima de
+  otra entidad viva** —la dama sobre su plataforma y el punto de escolta sobre el lomo de la
+  rana—, asi que en vivo se habria borrado contra las dos. En tenue queda ademas separada del
+  cocodrilo, que es la confusion que si cuesta una vida: los dos asoman en la fila de casas y uno
+  premia y el otro mata. Contra el marco del nicho, tambien tenue, la separan el velo 0,45 del
+  marco y su parpadeo.
+- **`retro`: el cronometro se enciende al agotarse**, al reves que en las otras dos pieles.
+  `timer` es tenue y `timerLow` sube a medio: en monocromo una alarma no puede cambiar de tinte,
+  asi que cambia de brillo, y hacia arriba. Ese mismo medio es el de la X de la muerte, que se
+  pinta sobre la rana: en vivo habria desaparecido encima de ella.

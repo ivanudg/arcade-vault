@@ -1,6 +1,6 @@
 # SPEC — Frogger: integración core del juego
 
-> **Estado:** Propuesto
+> **Estado:** Descartada — 2026-08-14. Sustituida por `specs/14-frogger-rondas-infinitas.md`. Su numeración `01` chocaba con `specs/01-mvp-visual.md`, y su arquitectura no es la de este repo: habla de `components/games/FroggerGame.tsx`, `app/games/frogger/play/page.tsx`, `lib/supabase/types.ts` y un HUD doble, ninguno de los cuales existe aquí. Se conserva sólo como registro.
 > **Depende de:** 06-games-table-leaderboard-supabase
 > **Fecha:** 2026-05-20
 > **Objetivo:** Integrar Frogger (canvas puro, construido desde cero) como juego jugable en Arcade Vault con ID `frogger`, conectando score, vidas, nivel y game over con el HUD React y la play-page dedicada.

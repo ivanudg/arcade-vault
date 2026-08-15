@@ -14,12 +14,12 @@
  */
 
 /** Una máquina nueva entra añadiendo un literal aquí y su entrada en `GAMES`. */
-export type GameId = "asteroids" | "tetris" | "arkanoid" | "snake";
+export type GameId = "asteroids" | "tetris" | "arkanoid" | "snake" | "frogger";
 
 /**
  * Vocabulario cerrado de categorías, no inventario de lo que hay hoy: conserva
  * los seis valores aunque de momento sólo se usen `DISPAROS`, `PUZZLE`,
- * `ARCADE` y `CLASICOS`.
+ * `ARCADE`, `CLASICOS` y `REFLEJOS`, que estrenó Frogger.
  */
 export type GameCategory = "ARCADE" | "CLASICOS" | "DISPAROS" | "REFLEJOS" | "PUZZLE" | "LABERINTO";
 
@@ -83,6 +83,16 @@ export const GAMES: readonly Game[] = [
     desc: "Come fruta, crece y no te muerdas la cola.",
     long: "El clásico de la serpiente, con veintidós frutas de verdad en vez de un cuadrado. Cada fruta que comes te hace un segmento más largo y vale diez puntos por nivel, así que la misma manzana renta diez veces más en el nivel diez que en el primero. Cada cinco frutas el juego acelera, de ciento cincuenta milisegundos por celda a sesenta. La pared mata y tu propia cola también. Tres vidas: al perder una vuelves al centro con la puntuación y la velocidad intactas.",
     controls: "Flechas ← ↑ → ↓ giran · ESPACIO arranca",
+  },
+  {
+    id: "frogger",
+    title: "FROGGER",
+    cat: "REFLEJOS",
+    glow: "#ff006e",
+    playable: true,
+    desc: "Cruza el trafico y el rio y llena las casas ronda tras ronda.",
+    long: "El clásico de la rana, con todo lo que traía el salón. Abajo, cinco carriles de coches y camiones; arriba, cinco de río donde el agua mata y las plataformas te arrastran, y donde una de cada dos tortugas se sumerge justo cuando te has subido. Treinta segundos por travesía, y cada segundo que sobra vale diez puntos. Llenar los cinco nichos empieza otra ronda: todo va un doce por ciento más rápido y hay dos segundos menos, hasta más del doble de velocidad. Desde la tercera ronda un cocodrilo asoma en las casas y una serpiente patrulla la mediana. La mosca vale doscientos, y escoltar a la dama-rana hasta casa, otros doscientos.",
+    controls: "Flechas ← ↑ → ↓ saltan · ESPACIO sale de la orilla",
   },
 ];
 

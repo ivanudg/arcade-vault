@@ -30,8 +30,7 @@ const SECTIONS = [
   {
     href: "/biblioteca",
     label: "Biblioteca",
-    isActive: (path: string) =>
-      path.startsWith("/biblioteca") || path.startsWith("/juego"),
+    isActive: (path: string) => path.startsWith("/biblioteca") || path.startsWith("/juego"),
     navOn: "border-av-cyan text-av-cyan",
     drawerOn: "text-av-cyan",
   },
@@ -79,13 +78,36 @@ export function SiteHeader() {
     return () => window.removeEventListener("keydown", onKey);
   }, [menuOpen]);
 
+  // Con el cajón abierto, empujar el pulgar sobre el velo movía el artículo de
+  // detrás, que con el dedo es lo que hace que un menú parezca roto.
+  //
+  // Se congela `<html>` y no `<body>`, y eso es propio de este repo: el
+  // `html { overflow-x: hidden }` de globals.css hace que `<html>` compute
+  // (hidden, auto), y como deja de ser `visible` en los dos ejes, el `<body>`
+  // ya no propaga su overflow al viewport. Medido: con `overflow:hidden` sólo
+  // en el body, quien desplaza sigue siendo `document.scrollingElement`, que es
+  // `<html>`, y la página se mueve igual.
+  //
+  // Se restaura al cerrar **y al desmontar**: navegar desde un enlace del cajón
+  // desmonta esto con el menú aún abierto, y dejaría el sitio sin scroll.
+  useEffect(() => {
+    if (!menuOpen) return;
+    const root = document.documentElement;
+    const previous = root.style.overflow;
+    root.style.overflow = "hidden";
+    return () => {
+      root.style.overflow = previous;
+    };
+  }, [menuOpen]);
+
   return (
     <>
-      <header className="sticky top-0 z-40 flex items-center justify-between gap-4.5 border-b border-av-cyan/24 bg-(--av-header-bg) px-[clamp(14px,3vw,40px)] py-3.5 backdrop-blur-sm">
-        <Link
-          href="/"
-          className="font-display text-av-brand tracking-av text-av-cyan av-glow-cyan"
-        >
+      {/* Los cuatro lados se declaran enteros en vez de restar sobre `px`/`py`:
+          una utilidad no se anula con otra puesta después. El relleno de siempre
+          se conserva dentro del `calc()` y el inset se suma; en Android y en
+          escritorio `env()` vale 0 y no cambia ni un píxel. */}
+      <header className="sticky top-0 z-40 flex items-center justify-between gap-4.5 border-b border-av-cyan/24 bg-(--av-header-bg) pt-[calc(0.875rem+env(safe-area-inset-top))] pr-[calc(clamp(14px,3vw,40px)+env(safe-area-inset-right))] pb-3.5 pl-[calc(clamp(14px,3vw,40px)+env(safe-area-inset-left))] backdrop-blur-sm">
+        <Link href="/" className="font-display text-av-brand tracking-av text-av-cyan av-glow-cyan">
           ARCADE
           <span className="text-av-magenta av-glow-magenta"> VAULT</span>
         </Link>
@@ -128,9 +150,7 @@ export function SiteHeader() {
                     {user.name.slice(0, 1).toUpperCase()}
                   </div>
                   <div className="flex flex-col gap-0.5">
-                    <span className="text-[12px] tracking-av text-av-text-bright">
-                      {user.name}
-                    </span>
+                    <span className="text-[12px] tracking-av text-av-text-bright">{user.name}</span>
                     <button
                       type="button"
                       onClick={logout}
@@ -173,11 +193,9 @@ export function SiteHeader() {
           <div
             id="av-menu"
             onClick={(e) => e.stopPropagation()}
-            className="absolute inset-y-0 right-0 flex w-[min(78vw,300px)] animate-av-slide flex-col gap-5.5 border-l border-av-cyan/30 bg-[#0d0e16] px-5.5 py-6.5 shadow-[-18px_0_50px_rgba(0,245,255,0.12)]"
+            className="absolute inset-y-0 right-0 flex w-[min(78vw,300px)] animate-av-slide flex-col gap-5.5 overflow-y-auto overscroll-contain border-l border-av-cyan/30 bg-[#0d0e16] pt-[calc(1.625rem+env(safe-area-inset-top))] pr-[calc(1.375rem+env(safe-area-inset-right))] pb-[calc(1.625rem+env(safe-area-inset-bottom))] pl-5.5 shadow-[-18px_0_50px_rgba(0,245,255,0.12)]"
           >
-            <div className="font-display text-[10px] tracking-av text-av-line-strong">
-              MENU
-            </div>
+            <div className="font-display text-[10px] tracking-av text-av-line-strong">MENU</div>
             {/* Cada enlace cierra el cajón al navegar: si no, seguiría abierto
                 sobre la pantalla nueva. */}
             {SECTIONS.map((s) => (

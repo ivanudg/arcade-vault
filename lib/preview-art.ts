@@ -11,20 +11,23 @@
  * `u = W / 100`, así que las escenas escalan con el canvas.
  *
  * **Aquí hay arte sin máquina.** SPEC 07 vació el catálogo y dejó archivadas
- * las ocho escenas de las máquinas que salieron. Tres han hecho ya el viaje de
+ * las ocho escenas de las máquinas que salieron. Cuatro han hecho ya el viaje de
  * vuelta —salir de `ArchivedPreviewId` y entrar por `GameId`, **moviéndose** y
  * no copiándose—: la pantalla de Tetris en SPEC 08; `muro` en SPEC 09, que era
- * una pantalla de Arkanoid y hoy es el `case "arkanoid"`; y la rejilla con la
- * culebra en SPEC 10, hoy el `case "snake"` de abajo, con su aritmética intacta.
+ * una pantalla de Arkanoid y hoy es el `case "arkanoid"`; la rejilla con la
+ * culebra en SPEC 10, hoy el `case "snake"` de abajo; y en SPEC 14 la de las
+ * seis bandas horizontales, que ya era una travesía de carriles y hoy es el
+ * `case "frogger"`. Las cuatro conservan su aritmética intacta: el `case` sólo
+ * se renombró.
  *
- * Quedan cinco, y **ninguna espera ya máquina**: no tienen material del que
- * salir. Las cinco que quedan son escena y nada más.
+ * Quedan cuatro, y **ninguna espera ya máquina**: no tienen material del que
+ * salir. Las cuatro que quedan son escena y nada más.
  */
 
 import type { GameId } from "@/lib/games";
 
 /** Escenas que quedaron sin máquina cuando SPEC 07 vació el catálogo. */
-type ArchivedPreviewId = "invasores" | "rocas" | "duelo" | "corredor" | "laberinto";
+type ArchivedPreviewId = "invasores" | "rocas" | "duelo" | "laberinto";
 
 /** Toda máquina del catálogo tiene escena, y además hay escena sin máquina. */
 export type PreviewId = GameId | ArchivedPreviewId;
@@ -251,14 +254,14 @@ export function drawPreview(
       break;
     }
 
-    case "corredor": {
+    case "frogger": {
       for (let li = 1; li < 7; li++) {
         px("rgba(255,0,110,0.16)", 0, H * (0.55 + li * 0.06), W, 1); // autopista
       }
       px("#ff006e", 0, H * 0.84, W, u * 1.2); // suelo
       px("#00f5ff", W * 0.5, H * 0.62, u * 6, u * 12); // bloques
       px("#00f5ff", W * 0.74, H * 0.68, u * 5, u * 10);
-      px("#f5ff00", W * 0.16, H * 0.5, u * 8, u * 8); // corredor
+      px("#f5ff00", W * 0.16, H * 0.5, u * 8, u * 8); // la rana
       px("rgba(245,255,0,0.35)", W * 0.06, H * 0.56, u * 6, u * 2); // rastro
       break;
     }
