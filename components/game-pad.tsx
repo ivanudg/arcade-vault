@@ -56,6 +56,9 @@ export const ENGINE_KEYS: Partial<Record<GameId, readonly string[]>> = {
   // La primera del vault que usa el mando entero: las cuatro flechas giran y
   // `ESPACIO` arranca la serpiente.
   snake: ["ArrowLeft", "ArrowUp", "ArrowRight", "ArrowDown", "Space"],
+  // La segunda: las cuatro flechas saltan una celda y `ESPACIO` saca a la rana
+  // de la orilla, al empezar la partida y después de cada vida.
+  frogger: ["ArrowLeft", "ArrowUp", "ArrowRight", "ArrowDown", "Space"],
 };
 
 /** Un botón de acción: la tecla que inyecta y cómo se anuncia. */
@@ -85,6 +88,7 @@ const ENGINE_PAD: Partial<Record<GameId, { a: PadAction; b: PadAction | null }>>
   },
   arkanoid: { a: { code: "Space", aria: "Lanzar la bola" }, b: null },
   snake: { a: { code: "Space", aria: "Arrancar" }, b: null },
+  frogger: { a: { code: "Space", aria: "Salir de la orilla" }, b: null },
 };
 
 /**
