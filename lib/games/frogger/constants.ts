@@ -123,6 +123,19 @@ export const SNAKE_FROM = 3;
  */
 export const HIT_PAD = 6;
 
+/**
+ * Lo que tiene que quedar de la rana sobre una plataforma para que la sostenga,
+ * en píxeles a cada lado. Con 10, se apoya mientras la plataforma cubra algo de
+ * su franja central de 20.
+ *
+ * La spec pedía el **centro exacto**, sin ninguna tolerancia, y en la pantalla
+ * eso se juega mal: el salto dura `HOP_MS`, la plataforma deriva de 8 a 14 px
+ * mientras la rana vuela, y aterrizar con medio cuerpo encima —pero el centro
+ * un píxel fuera— se leía como caerse de un tronco en el que estabas. Es la
+ * indulgencia simétrica a la que `HIT_PAD` ya daba en la carretera.
+ */
+export const RIDE_PAD = 10;
+
 // ── Colores ──────────────────────────────────────────────────────────────────
 
 export const COLOR_ROAD = "#0a0a0f";

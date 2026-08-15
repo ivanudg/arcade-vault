@@ -33,6 +33,7 @@ import {
   HOMES,
   LADY_EVERY,
   LADY_FROM,
+  RIDE_PAD,
   ROW_HOMES,
   ROW_MEDIAN,
   SNAKE_SPEED,
@@ -118,20 +119,26 @@ export class Lane {
   }
 
   /**
-   * Extremo izquierdo de la plataforma **sólida** bajo el centro de la rana, o
+   * Extremo izquierdo de la plataforma **sólida** que sostiene a la rana, o
    * `null` si ahí no hay nada que la sostenga.
    *
-   * Mide por el centro y no con margen, al revés que `hits()`, porque el error
-   * que produce cada regla es distinto: en carretera la injusticia es morir sin
-   * tocar; en el río, ahogarse pareciendo estar encima.
+   * Se apoya mientras la plataforma cubra algo de su franja central —`RIDE_PAD`
+   * a cada lado—, que es la indulgencia simétrica a la que `hits()` da en la
+   * carretera. Las dos existen porque el error que produce cada una es distinto:
+   * en carretera la injusticia es morir sin tocar; en el río, ahogarse
+   * pareciendo estar encima. Y aquí pasaba de verdad: entre que el salto dura
+   * `HOP_MS` y que la plataforma deriva mientras la rana vuela, aterrizar con
+   * medio cuerpo sobre el tronco dejaba el centro un píxel fuera.
+   *
+   * Una tortuga sumergida no cuenta, pero tampoco descarta al resto: se sigue
+   * mirando por si hay otra plataforma debajo.
    */
   carrier(t: number, x: number): number | null {
-    const center = x + CELL / 2;
     const positions = this.positions(t);
     for (let i = 0; i < positions.length; i++) {
       const pos = positions[i];
-      if (center < pos || center >= pos + this.width) continue;
-      if (this.spec.kind === "turtle" && this.submerged(t, i)) return null;
+      if (!overlap(x + RIDE_PAD, CELL - 2 * RIDE_PAD, pos, this.width)) continue;
+      if (this.spec.kind === "turtle" && this.submerged(t, i)) continue;
       return pos;
     }
     return null;

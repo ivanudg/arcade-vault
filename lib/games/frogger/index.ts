@@ -211,13 +211,16 @@ export const froggerGame: GameMount = {
       r.phase = "ready";
     }
 
-    /** Arranca un salto de una celda, si el destino cae dentro del tablero. */
+    /**
+     * Arranca un salto de una celda, si el destino cae dentro del tablero.
+     *
+     * **No se cuadra la rana antes de saltar.** En el río su `x` es continua
+     * porque la plataforma la arrastra, y cuadrarla aquí la movería hasta media
+     * celda sin que se vea: el jugador apuntaría a un tronco y aterrizaría en el
+     * agua. El salto suma exactamente una celda a donde esté, y la rejilla sólo
+     * vuelve a mandar al pisar tierra firme.
+     */
     function startHop(r: Run, dx: number, dy: number) {
-      // Cuadrar antes de saltar: en el río la plataforma arrastra la rana y su
-      // `x` deja de ser múltiplo de la celda; sin esto el desfase se heredaría
-      // durante el resto de la travesía.
-      r.frog.snap();
-
       const fromX = r.frog.x;
       const fromRow = r.frog.row;
       const toX = Math.min(Math.max(fromX + dx * CELL, 0), W - CELL);
@@ -284,6 +287,12 @@ export const froggerGame: GameMount = {
       r.frog.x = hop.toX;
       r.frog.row = hop.toRow;
       r.frog.hop = null;
+
+      // Al pisar tierra firme la rejilla vuelve a mandar: el desfase que dejó el
+      // arrastre se pierde aquí, y no a mitad de río, donde mataba. En la fila
+      // de casas no se cuadra: ahí la puntería es el juego, e imantar la rana al
+      // nicho más cercano regalaría la travesía.
+      if (!inRiver(r.frog.row) && r.frog.row !== ROW_HOMES) r.frog.snap();
 
       if (r.frog.row < r.frog.best) {
         r.score += POINTS_ROW * (r.frog.best - r.frog.row);
