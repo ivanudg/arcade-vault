@@ -38,8 +38,11 @@ import {
   clearLines,
   collide,
   createBoard,
-  drawCell,
+  drawBoard,
+  drawPiece,
   ghostY,
+  glossFill,
+  glowSpread,
   merge,
   type Board,
 } from "@/lib/games/tetris/board";
@@ -102,6 +105,17 @@ export const tetrisGame: GameMount = {
      * Cada frame la vuelve a leer, así que cambiarla no obliga a repintar.
      */
     let palette = PALETTES[DEFAULT_SKIN];
+    /**
+     * El radio del halo en fracción de celda. Sólo depende de la piel, así que
+     * se resuelve aquí y en `setSkin()`, no dentro del bucle de celdas.
+     */
+    let spread = glowSpread(palette);
+    /**
+     * La banda de brillo de `clasico`, ya montada en `rgba`. Misma frontera que
+     * `spread`: sale de la paleta, así que se resuelve al fijarla y no una vez
+     * por celda dentro del bucle de dibujo.
+     */
+    let gloss = glossFill(palette);
 
     let run = createRun();
     let frame: number | null = null;
@@ -329,31 +343,33 @@ export const tetrisGame: GameMount = {
       }
     }
 
-    /** Las líneas interiores del tablero. Las de fuera son el borde del canvas. */
+    /**
+     * Las líneas interiores del tablero. Las de fuera son el borde del canvas.
+     *
+     * Las 28 —9 verticales y 19 horizontales— van en **un solo path**, como las
+     * 43 de Snake en `snake/index.ts:264-277`: la rejilla no cambia nunca, y
+     * antes costaba un `beginPath`+`stroke` por línea en cada frame. Sin el
+     * medio píxel de allí, que aquí movería el dibujo: estas líneas miden 0,5 de
+     * ancho y ya caen donde tienen que caer.
+     */
     function drawGrid() {
       ctx.strokeStyle = palette.grid;
       ctx.lineWidth = 0.5;
+      ctx.beginPath();
       for (let c = 1; c < COLS; c++) {
-        ctx.beginPath();
         ctx.moveTo(c * BLOCK, 0);
         ctx.lineTo(c * BLOCK, ROWS * BLOCK);
-        ctx.stroke();
       }
       for (let r = 1; r < ROWS; r++) {
-        ctx.beginPath();
         ctx.moveTo(0, r * BLOCK);
         ctx.lineTo(COLS * BLOCK, r * BLOCK);
-        ctx.stroke();
       }
+      ctx.stroke();
     }
 
     /** Una matriz de celdas, con su esquina superior izquierda en `(px, py)`. */
     function drawShape(shape: Cell[][], px: number, py: number, size: number, alpha = 1) {
-      for (let r = 0; r < shape.length; r++) {
-        for (let c = 0; c < shape[r].length; c++) {
-          drawCell(ctx, px + c * size, py + r * size, shape[r][c], palette, size, alpha);
-        }
-      }
+      drawPiece(ctx, shape, px, py, palette, spread, gloss, size, alpha);
     }
 
     /**
@@ -376,9 +392,11 @@ export const tetrisGame: GameMount = {
       ctx.lineTo(bandX, WORLD.height);
       ctx.stroke();
 
+      // `font` y `textAlign` no se escriben aquí: son constantes y nada más en
+      // este motor los toca, así que se fijan una vez al montar. `fillStyle`,
+      // `strokeStyle` y `lineWidth` sí se quedan, porque el dibujo del tablero
+      // y el de la rejilla los pisan dentro del mismo frame.
       ctx.fillStyle = palette.label;
-      ctx.font = "12px monospace";
-      ctx.textAlign = "center";
       ctx.fillText("SIG.", bandX + BAND / 2, NEXT_Y - 20);
 
       // Centrado del original: el hueco que sobra de la caja de 4 × 4 se
@@ -402,11 +420,7 @@ export const tetrisGame: GameMount = {
 
       drawGrid();
 
-      for (let row = 0; row < ROWS; row++) {
-        for (let col = 0; col < COLS; col++) {
-          drawCell(ctx, col * BLOCK, row * BLOCK, r.board[row][col], palette);
-        }
-      }
+      drawBoard(ctx, r.board, palette, spread, gloss);
 
       // La proyección va debajo de la pieza: se dibuja antes para que la activa
       // la tape cuando ya está aterrizando.
@@ -458,6 +472,14 @@ export const tetrisGame: GameMount = {
       run.held.ArrowDown = 0;
     }
 
+    // El único texto del canvas es el rótulo `SIG.`, siempre con la misma
+    // fuente y la misma alineación: se fijan aquí y no una vez por frame. El
+    // buffer del canvas no se redimensiona en vida de la partida
+    // (`components/game-canvas.tsx` lo dimensiona al montar), que es lo único
+    // que reiniciaría el estado del contexto.
+    ctx.font = "12px monospace";
+    ctx.textAlign = "center";
+
     // El HUD estrena las cifras de verdad en cuanto existe el canvas, sin
     // esperar a `start()`: hasta entonces React pinta su `FRESH_RUN`, que vale
     // tres vidas y aquí serían tres líneas que nadie ha hecho.
@@ -506,6 +528,8 @@ export const tetrisGame: GameMount = {
       // siguiente ya sale vestido porque `draw()` lee `palette` cada vez.
       setSkin(id) {
         palette = PALETTES[id];
+        spread = glowSpread(palette);
+        gloss = glossFill(palette);
       },
     };
   },

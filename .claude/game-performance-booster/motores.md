@@ -168,45 +168,56 @@ añada un halo invalida el «antes» de este agente sin tocar ni una línea suya
 
 ## Motores
 
-| motor     | estado   | piel | p95 antes | p95 despues | hallazgos | abiertos | alta       | revisado   | notas                                                                                                 |
-| --------- | -------- | ---- | --------- | ----------- | --------- | -------- | ---------- | ---------- | ----------------------------------------------------------------------------------------------------- |
-| asteroids | auditado | —    | —         | —           | 6         | 6        | 2026-08-15 | 2026-08-15 | El unico cuyo coste depende de como juegue el usuario: particulas sin tope                            |
-| tetris    | auditado | —    | —         | —           | 5         | 5        | 2026-08-15 | 2026-08-15 | El peor caso conocido: ~250 conmutaciones de halo y ~250 cadenas por frame con el tablero medio lleno |
-| arkanoid  | auditado | —    | —         | —           | 2         | 2        | 2026-08-15 | 2026-08-15 | El mas sano de los cinco: ya iza el blur para los bloques en entities.ts:350                          |
-| snake     | auditado | —    | —         | —           | 2         | 2        | 2026-08-15 | 2026-08-15 | Tiene los dos contraejemplos buenos del repo: rejilla de un solo path y blur izado                    |
-| frogger   | auditado | —    | —         | —           | 4         | 4        | 2026-08-15 | 2026-08-15 | El que mas primitivas pinta por frame, y el unico con arrays por llamada en tres caminos              |
+| motor     | estado     | piel | p95 antes | p95 despues | hallazgos | abiertos | alta       | revisado   | notas                                                                                                                                                                                                                                                                        |
+| --------- | ---------- | ---- | --------- | ----------- | --------- | -------- | ---------- | ---------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| asteroids | auditado   | —    | —         | —           | 7         | 7        | 2026-08-15 | 2026-08-15 | Peor caso acotado: ~250 particulas vivas (15 balas/s x 15 por asteroide grande x 1,1 s de TTL). El pico de nova NO se pinta: nextLevel() vacia particles en el mismo update(). Unico con Math.random() en su generacion: sus ventanas no son reproducibles                   |
+| tetris    | optimizado | neon | 0,70      | 0,60        | 6         | 0        | 2026-08-15 | 2026-08-15 | Optimizado con cuatro ventanas (neon y clasico, antes y despues). Sin firmar por un humano: movil, otra GPU, jank por GC, bateria, tacto del juego y competencia con React. R4 se resolvio SIN agrupar por color: agrupar mueve el 9,14% de los pixeles en neon y eso es R12 |
+| arkanoid  | auditado   | —    | —         | —           | 3         | 3        | 2026-08-15 | 2026-08-15 | El mas sano de los cinco: cero tint(), cero allocs en el camino caliente y el blur izado en entities.ts:350. Peor caso acotado y conocido: 60 bloques en LEVELS[9], y decreciente durante la partida                                                                         |
+| snake     | auditado   | —    | —         | —           | 4         | 4        | 2026-08-15 | 2026-08-15 | Contado sin medir: 2N asignaciones shadow por frame con N = longitud, N=48 al nivel 10 y techo 500. Unico de los cinco que pasa R5 limpio, y unico donde una sola piel no cubre el codigo de dibujo                                                                          |
+| frogger   | auditado   | —    | —         | —           | 6         | 6        | 2026-08-15 | 2026-08-15 | Satura en la ronda 3 y luego es plano: lanesForRound no toca count, asi que son 31 entidades de carril siempre. Peor caso 80 conmutaciones, 27 cadenas y 13 arrays por frame. Sin Math.random(): sus ventanas si son reproducibles                                           |
 
 ## Hallazgos
 
-| motor      | regla | ancla                                 | cadena                              | gravedad | coste | estado           | visto      | notas                                                                                                       |
-| ---------- | ----- | ------------------------------------- | ----------------------------------- | -------- | ----- | ---------------- | ---------- | ----------------------------------------------------------------------------------------------------------- |
-| tetris     | R4    | `lib/games/tetris/board.ts:157`       | `glow(ctx, color, size *`           | critico  | —     | abierto          | 2026-08-15 | Dentro de drawCell: ~250 pares glow/noGlow por frame con el tablero medio lleno. Agrupar por color de pieza |
-| tetris     | R6    | `lib/games/tetris/board.ts:157`       | `size * glowSpread(p)`              | serio    | —     | abierto          | 2026-08-15 | glowSpread recorre 6 comparaciones en board.ts:118 y solo depende de la piel. Izar como en arkanoid:350     |
-| tetris     | R7    | `lib/games/tetris/board.ts:162`       | `tint(p.gloss, 0.12)`               | critico  | —     | abierto          | 2026-08-15 | Cadena rgba constante fabricada por celda: hasta 250 identicas por frame                                    |
-| tetris     | R5    | `lib/games/tetris/index.ts:333`       | `function drawGrid()`               | serio    | —     | abierto          | 2026-08-15 | 28 beginPath+stroke por frame para una rejilla estatica. Snake lo hace con un solo path en index.ts:264     |
-| tetris     | R6    | `lib/games/tetris/index.ts:380`       | `ctx.font = "12px monospace"`       | menor    | —     | abierto          | 2026-08-15 | Una asignacion por frame para el rotulo SIG., que no cambia nunca                                           |
-| asteroids  | R7    | `lib/games/asteroids/entities.ts:341` | `Number(alpha.toFixed(2))`          | critico  | —     | abierto          | 2026-08-15 | Dos cadenas por particula y por frame: el toFixed fabrica una para tirarla. Tabla por alfa cuantizado       |
-| asteroids  | R4    | `lib/games/asteroids/entities.ts:346` | `glow(ctx, dust,`                   | critico  | —     | abierto          | 2026-08-15 | Una conmutacion por particula viva, y las particulas no tienen tope. Va con el R9 de abajo                  |
-| asteroids  | R6    | `lib/games/asteroids/entities.ts:87`  | `export function glowSpread`        | serio    | —     | abierto          | 2026-08-15 | Llamado en los diez sitios de dibujo del motor, ninguno izado                                               |
-| asteroids  | R9    | `lib/games/asteroids/index.ts:166`    | `function explode(`                 | critico  | —     | abierto          | 2026-08-15 | Sin MAX_PARTICLES. El power-up nova detona todos los asteroides a la vez: picos de cientos en un frame      |
-| asteroids  | R8    | `lib/games/asteroids/index.ts:261`    | `r.bullets.filter((b) => !b.dead)`  | serio    | —     | abierto          | 2026-08-15 | Cinco filter por frame en el update: :234, :261, :262 y :279. Compactar en el sitio                         |
-| asteroids  | R6    | `lib/games/asteroids/index.ts:321`    | `ctx.font = "15px monospace"`       | menor    | —     | abierto          | 2026-08-15 | drawPowerBar se llama hasta 4 veces por frame y escribe la misma fuente cada vez                            |
-| frogger    | R8    | `lib/games/frogger/entities.ts:150`   | `positions(t: number): number[]`    | serio    | —     | abierto          | 2026-08-15 | Array nuevo por llamada, y se llama desde hits(), carrier() y draw(). Buffer por carril                     |
-| frogger    | R4    | `lib/games/frogger/entities.ts:242`   | `glow(ctx, p.car,`                  | serio    | —     | abierto          | 2026-08-15 | Doce sitios de conmutacion por entidad en el archivo: coches, troncos, tortugas, casas, caiman              |
-| frogger    | R7    | `lib/games/frogger/entities.ts:256`   | `tint(p.truck, ALPHA_TRUCK)`        | serio    | —     | abierto          | 2026-08-15 | Seis tint() con alfa constante en el archivo, mas dos por frame en index.ts:458 y :462                      |
-| frogger    | R5    | `lib/games/frogger/index.ts:456`      | `tint(palette.laneLine`             | serio    | —     | abierto          | 2026-08-15 | ~125 fillRect de linea de carril, mas agua, asfalto y bancos: todo funcion de constantes                    |
-| snake      | R4    | `lib/games/snake/entities.ts:197`     | `if (p.glow) glow(ctx, color, blur` | menor    | —     | abierto          | 2026-08-15 | Una conmutacion por segmento. El blur ya esta izado en :192, que es el patron correcto                      |
-| snake      | R7    | `lib/games/snake/index.ts:266`        | `tint(palette.grid, GRID_ALPHA)`    | menor    | —     | abierto          | 2026-08-15 | Una cadena constante por frame. El resto del draw de Snake es el mas limpio del repo                        |
-| arkanoid   | R4    | `lib/games/arkanoid/entities.ts:357`  | `if (p.glow) glow(ctx, color, blur` | menor    | —     | abierto          | 2026-08-15 | Una conmutacion por bloque, hasta ~100. El blur si esta izado en :350                                       |
-| arkanoid   | R6    | `lib/games/arkanoid/entities.ts:367`  | `glowSpread(p));`                   | menor    | —     | abierto          | 2026-08-15 | Izado para los bloques en :350 pero no para el paddle ni la bola. Inconsistencia dentro del mismo archivo   |
-| (gabinete) | R10   | `components/play-cabinet.tsx:217`     | `const padProps = {`                | serio    | —     | fuera-de-alcance | 2026-08-15 | Objeto literal recreado en cada render, con closures nuevas. Los tres GamePad se rerenderizan enteros       |
-| (gabinete) | R10   | `components/game-pad.tsx:358`         | `export function GamePad({`         | menor    | —     | fuera-de-alcance | 2026-08-15 | Sin memo, y define cross() y action() por render. Cada flanco de tecla rerenderiza el arbol                 |
-| (gabinete) | R10   | `components/game-canvas.tsx:56`       | `canvas.width = game.world.width`   | serio    | —     | fuera-de-alcance | 2026-08-15 | Sin ResizeObserver: el buffer se fija al montar. En un movil se rellenan ~4x los pixeles visibles           |
+| motor      | regla | ancla                                 | cadena                                           | gravedad | coste | estado           | visto      | notas                                                                                                                                                                                                                                                                                                                                                                                     |
+| ---------- | ----- | ------------------------------------- | ------------------------------------------------ | -------- | ----- | ---------------- | ---------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| tetris     | R4    | `lib/games/tetris/board.ts:157`       | `glow(ctx, color, size *`                        | critico  | 0,04  | resuelto         | 2026-08-15 | Resuelto SIN agrupar por color. drawCell se parte en drawBoard y drawPiece: el halo se conmuta al cambiar de color y se suelta con un noGlow al salir del bucle. 328 -> 75 escrituras de estado con 82 celdas, y el tablero neon de 0,201 a 0,158 ms en banco aislado. Agrupar por color dejaba 23 escrituras pero movia el 9,14% de los pixeles (max 98 de 765): eso es R12, y R12 manda |
+| tetris     | R6    | `lib/games/tetris/board.ts:157`       | `size * glowSpread(p)`                           | serio    | —     | resuelto         | 2026-08-15 | Izado: glowSpread pasa a exportada y el motor la resuelve al fijar la piel (let spread, recalculado en setSkin); drawBoard y drawPiece la reciben por parametro y sacan el radio una vez por lote. Se arreglo el PRIMERO pese a ser serio, porque sin el radio fuera del bucle R4 no se puede tocar y es un Edit por hallazgo                                                             |
+| tetris     | R7    | `lib/games/tetris/board.ts:162`       | `tint(p.gloss, 0.12)`                            | critico  | 0,02  | resuelto         | 2026-08-15 | Precomputado: board.ts exporta glossFill(p) con su GLOSS_ALPHA y el motor guarda la cadena junto a la paleta, recalculada en setSkin. Cero cadenas por frame donde habia ~112 medio lleno; el tablero clasico de 0,078 a 0,057 ms en banco aislado. La ganancia de verdad es GC y no p95, como avisa R7: cerrado con las dos ventanas de clasico                                          |
+| tetris     | R5    | `lib/games/tetris/index.ts:333`       | `function drawGrid()`                            | serio    | 0,01  | resuelto         | 2026-08-15 | Un solo beginPath y un solo stroke para las 28 lineas, como snake/index.ts:264, y SIN su +0.5, que aqui movia el dibujo. De 0,030 a 0,019 ms en banco aislado. No hizo falta el canvas auxiliar: el primer escalon de P3.3 basto y no hay capa que invalidar en setSkin                                                                                                                   |
+| tetris     | R6    | `lib/games/tetris/index.ts:380`       | `ctx.font = "12px monospace"`                    | menor    | —     | resuelto         | 2026-08-15 | Izadas las dos que se pueden izar, font y textAlign, al cuerpo de mount(): son constantes y nada mas en el motor las toca. Las otras cinco se quedan y NO incumplen R6: drawBoard y drawGrid pisan fillStyle, strokeStyle y lineWidth dentro del mismo frame, asi que cada una se asigna una sola vez por lote. Su coste esta por debajo del ruido del reloj                              |
+| asteroids  | R7    | `lib/games/asteroids/entities.ts:341` | `Number(alpha.toFixed(2))`                       | critico  | —     | abierto          | 2026-08-15 | Contado: 2 cadenas por particula y frame, 500 por frame y ~30.000 por segundo con ~250 particulas vivas. Tabla de ~20 alfas cuantizados al fijar la paleta                                                                                                                                                                                                                                |
+| asteroids  | R4    | `lib/games/asteroids/entities.ts:346` | `glow(ctx, dust,`                                | critico  | —     | abierto          | 2026-08-15 | Contado: 250 pares glow/noGlow = ~1.000 asignaciones shadow por frame. NO se agrupa por color (cada particula lleva su alfa): el arreglo es un shadowBlur para el lote, solo shadowColor por particula y un noGlow al final                                                                                                                                                               |
+| asteroids  | R6    | `lib/games/asteroids/entities.ts:87`  | `export function glowSpread`                     | serio    | —     | abierto          | 2026-08-15 | Contado: 304 llamadas por frame en el peor caso, ~1.216 comparaciones. Se queda en serio pese a escalar con la pantalla: su coste unitario esta dos ordenes por debajo de un rgba o de un shadowBlur. El criterio del ledger mira escala y no coste unitario                                                                                                                              |
+| asteroids  | R9    | `lib/games/asteroids/index.ts:166`    | `function explode(`                              | serio    | —     | abierto          | 2026-08-15 | Baja de critico: el pico de nova no llega a draw() porque nextLevel() vacia r.particles en el mismo update (index.ts:201 tras :314). Techo real ~250 por cadencia de fuego. Propuesta: MAX_PARTICLES 400, descarte de las mas viejas                                                                                                                                                      |
+| asteroids  | R8    | `lib/games/asteroids/index.ts:261`    | `r.bullets.filter((b) => !b.dead)`               | serio    | —     | abierto          | 2026-08-15 | Correccion de la cuenta: 7 arrays y 9 closures por frame en fase playing (:261, :262, :265, :278 x2, :279, :293). El :234 solo corre en fase dead. Compactar en el sitio                                                                                                                                                                                                                  |
+| asteroids  | R6    | `lib/games/asteroids/index.ts:321`    | `ctx.font = "15px monospace"`                    | menor    | —     | abierto          | 2026-08-15 | drawPowerBar se llama hasta 4 veces por frame y escribe la misma fuente cada vez                                                                                                                                                                                                                                                                                                          |
+| frogger    | R8    | `lib/games/frogger/entities.ts:150`   | `positions(t: number): number[]`                 | serio    | —     | abierto          | 2026-08-15 | 13 arrays por frame: 10 en draw, uno por carril, y hasta 3 en update. En el rio carrier() se calcula dos veces con la misma t y la misma x                                                                                                                                                                                                                                                |
+| frogger    | R4    | `lib/games/frogger/entities.ts:242`   | `glow(ctx, p.car,`                               | critico  | —     | abierto          | 2026-08-15 | 80 escrituras de shadow por frame en neon con la ronda 3: 41 encendidos y 39 apagados sobre 31 entidades de carril. Sube de serio a critico al contarlo                                                                                                                                                                                                                                   |
+| frogger    | R7    | `lib/games/frogger/entities.ts:256`   | `tint(p.truck, ALPHA_TRUCK)`                     | serio    | —     | abierto          | 2026-08-15 | 27 cadenas rgba por frame, 22 dentro de bucles: 9 troncos, 7 tortugas, 5 marcos de nicho, 2 camiones, gator y serpiente. 1.620 por segundo                                                                                                                                                                                                                                                |
+| frogger    | R5    | `lib/games/frogger/index.ts:456`      | `tint(palette.laneLine`                          | serio    | —     | abierto          | 2026-08-15 | Son 100 fillRect de linea, no ~125: 4 filas x 25 columnas. Con fondos y bancos, 111 primitivas estaticas por frame de 177 totales                                                                                                                                                                                                                                                         |
+| snake      | R4    | `lib/games/snake/entities.ts:197`     | `if (p.glow) glow(ctx, color, blur`              | serio    | —     | abierto          | 2026-08-15 | Sube de menor a serio tras contar: 2N asignaciones shadow por frame, N crece toda la partida (3 al nacer, 48 al nivel 10, techo 500 del tablero). Con N=100 el area desenfocada es el 40% del canvas. No es critico porque N<20 en el primer minuto: es la constante mas lenta de los cinco                                                                                               |
+| snake      | R7    | `lib/games/snake/index.ts:266`        | `tint(palette.grid, GRID_ALPHA)`                 | menor    | —     | abierto          | 2026-08-15 | Confirmado menor: 1 llamada por frame que fabrica 2 cadenas (el slice y el template), 120 por segundo. No escala. Izar al fijar la paleta y recalcular en setSkin()                                                                                                                                                                                                                       |
+| arkanoid   | R4    | `lib/games/arkanoid/entities.ts:357`  | `if (p.glow) glow(ctx, color, blur`              | serio    | —     | abierto          | 2026-08-15 | 60 conmutaciones por frame en el peor caso (LEVELS[9], nivel 10), no ~100. Techo declarado y decreciente: por eso serio y no critico. El blur si esta izado en :350                                                                                                                                                                                                                       |
+| arkanoid   | R6    | `lib/games/arkanoid/entities.ts:367`  | `glow(ctx, p.paddle, glowSpread(p))`             | menor    | —     | abierto          | 2026-08-15 | Cadena corregida: la vieja (`glowSpread(p));`) daba 26 coincidencias en cuatro motores y no reconciliaba nada. Izado para los bloques en :350 pero no en :367 ni :374. Son 2 llamadas por frame: coste nulo, se arregla por consistencia del contraejemplo                                                                                                                                |
+| (gabinete) | R10   | `components/play-cabinet.tsx:217`     | `const padProps = {`                             | serio    | —     | fuera-de-alcance | 2026-08-15 | Objeto literal recreado en cada render, con closures nuevas. Los tres GamePad se rerenderizan enteros                                                                                                                                                                                                                                                                                     |
+| (gabinete) | R10   | `components/game-pad.tsx:358`         | `export function GamePad({`                      | menor    | —     | fuera-de-alcance | 2026-08-15 | Sin memo, y define cross() y action() por render. Cada flanco de tecla rerenderiza el arbol                                                                                                                                                                                                                                                                                               |
+| (gabinete) | R10   | `components/game-canvas.tsx:56`       | `canvas.width = game.world.width`                | serio    | —     | fuera-de-alcance | 2026-08-15 | Sin ResizeObserver: el buffer se fija al montar. En un movil se rellenan ~4x los pixeles visibles                                                                                                                                                                                                                                                                                         |
+| tetris     | R6    | `lib/games/tetris/board.ts:152`       | `ctx.globalAlpha = alpha`                        | serio    | —     | resuelto         | 2026-08-15 | drawBoard ya no toca globalAlpha y drawPiece solo lo escribe si alpha != 1: de ~224 escrituras por frame a 2, las de la proyeccion de aterrizaje, que es la unica que pide un alfa distinto de 1. El resto del dibujo puede asumir 1 porque quien lo cambia lo devuelve                                                                                                                   |
+| asteroids  | R6    | `lib/games/asteroids/entities.ts:186` | `ctx.lineJoin = "round";`                        | menor    | —     | abierto          | 2026-08-15 | Alta de la ronda de profundizacion: lineWidth y lineJoin reasignados por entidad en :185, :276, :347 y :389, ~300 asignaciones por frame para dos valores fijos. Van con los 34 pares save/restore de :180, :271 y :386                                                                                                                                                                   |
+| frogger    | R6    | `lib/games/frogger/entities.ts:111`   | `glowSpread(p));`                                | serio    | —     | abierto          | 2026-08-15 | Alta de la ronda de profundizacion: doce llamadas sin izar, 41 ejecuciones por frame de un valor que solo cambia en setSkin(). Faltaba en la siembra; tetris, asteroids y arkanoid si tienen su R6                                                                                                                                                                                        |
+| frogger    | R8    | `lib/games/frogger/index.ts:193`      | `lanes.find((lane) =>`                           | menor    | —     | abierto          | 2026-08-15 | Alta de la ronda de profundizacion: hasta 3 closures y 3 barridos de 10 carriles por frame. El grep de R8 no lo ve porque .find( no esta en el patron                                                                                                                                                                                                                                     |
+| snake      | R6    | `lib/games/snake/entities.ts:248`     | `glow(ctx, p.fruit, glowSpread(p))`              | menor    | —     | abierto          | 2026-08-15 | Alta de la ronda de profundizacion: glowSpread sin izar en Fruit.draw, 1 vez por frame. Misma inconsistencia intra-archivo que arkanoid:367, izado en Snake.draw:192 y no aqui                                                                                                                                                                                                            |
+| snake      | R8    | `lib/games/snake/entities.ts:174`     | `this.cells.some((cell, i)`                      | menor    | —     | abierto          | 2026-08-15 | Alta de la ronda de profundizacion: closure nuevo en hitsSelf, dentro del arbol de update(). Corre por tick y no por frame, 6,7 a 16,7 veces por segundo. Candidato a aceptado si la medicion no lo ve                                                                                                                                                                                    |
+| arkanoid   | R6    | `lib/games/arkanoid/entities.ts:355`  | `ctx.globalAlpha = 0.4 + 0.6 * (b.hp / b.maxHp)` | serio    | —     | abierto          | 2026-08-15 | Alta de la ronda de profundizacion: save/restore y globalAlpha por bloque, 60 pares por frame, y con la rejilla intacta los 60 alfas valen 1. Fijar por lote sin save/restore, cerrando con noGlow explicito                                                                                                                                                                              |
 
 ## Mediciones
 
-| fecha | motor | piel | momento | p50 | p95 | peor | doblados | frames | notas |
-| ----- | ----- | ---- | ------- | --- | --- | ---- | -------- | ------ | ----- |
+| fecha      | motor  | piel    | momento | p50 | p95 | peor | doblados | frames | notas                                                                                                                                                                                                                             |
+| ---------- | ------ | ------- | ------- | --- | --- | ---- | -------- | ------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 2026-08-15 | tetris | neon    | antes   | 0,5 | 0,7 | 1,7  | 0        | 1081   | 1280x900, 60 fps. Guion apartado del escrito: llenado con Space a ~11 filas de monton FUERA de la ventana, y dentro solo laterales alternos cada 150 ms. ArrowDown mantenido acaba en topout y la ventana contaria frames muertos |
+| 2026-08-15 | tetris | clasico | antes   | 0,5 | 0,8 | 2,9  | 0        | 1079   | Segunda piel obligatoria en Tetris: las dos ramas de drawCell son excluyentes y R7 solo se ejerce aqui. Mismo guion. Tablero de 48 celdas                                                                                         |
+| 2026-08-15 | tetris | neon    | despues | 0,4 | 0,6 | 1,5  | 0        | 1085   | Mismo escenario y mismo llenado que su antes (10 piezas, 48 celdas). Una ventana previa con el agrupado por color dio 0,4/0,6/1,4: identica, y por eso se descarto agrupar, que ademas rompia R12                                 |
+| 2026-08-15 | tetris | clasico | despues | 0,5 | 0,7 | 1,0  | 0        | 1081   | Mismo llenado exacto que su antes, 10 piezas y 48 celdas. Se descarto entera una ventana anterior por topout al arrancar (frames 0, con la pestana visible): no se parchea, se repite                                             |
 
 ## Notas
 
@@ -252,3 +263,107 @@ con el frame del motor en el mismo hilo; el `ResizeObserver` que falta en `GameC
 un teléfono se rellenen del orden de cuatro veces los píxeles visibles, que es probablemente el
 mayor coste de rendimiento de la pantalla de juego entera **y no se puede arreglar desde aquí**. Si
 alguien decide ampliar el alcance, la lista ya está hecha.
+
+### 2026-08-15 · La profundización, cinco motores en paralelo
+
+Cinco rondas de auditoría lanzadas a la vez, una por motor, **sin navegador y sin escribir**: cada
+una devolvió sus filas y se consolidaron aquí en una sola escritura. El paralelismo se pudo hacer
+porque la Fase 3 sólo lee; **la Fase 4 no se paraleliza** —un solo Chrome, y cinco partidas
+compitiendo por la CPU dan números falsos— y por eso la tabla de Mediciones **sigue vacía** y
+ningún motor pasó de `auditado`. Es R11.
+
+Lo que aporta sobre la siembra es la segunda columna del inventario: **cuántas veces por frame**,
+que no sale de ningún grep. Con ella, 22 hallazgos pasaron a **29** (26 en alcance y los 3 de
+`(gabinete)`), y cuatro cambiaron de gravedad.
+
+**Tres notas de la siembra resultaron falsas al contarlas, y ése es el valor de la ronda:**
+
+- **El pico de nova de Asteroids no existe.** `detonateNova()` vacía `r.asteroids`, así que
+  `nextLevel()` entra en el mismo `update()` y hace `r.particles = []` (`index.ts:201` tras `:314`):
+  las partículas que la nova crea **se descartan antes de que `draw()` las vea**. R9 baja a `serio`
+  y el techo real, ~250 partículas, lo pone la cadencia de fuego: 15 balas/s × 15 partículas × 1,1 s
+  de TTL.
+- **Arkanoid no llega a ~100 conmutaciones, llega a 60**, y salen de `LEVELS[9]`. El array `blocks`
+  no se compacta, así que las cuentas de recorrido son 60 se rompan o no.
+- **Frogger no pinta ~125 líneas de carril, pinta 100** exactas: 4 filas × 25 columnas.
+
+**Y una regla de medición nueva que sólo se ve contando: Tetris necesita dos ventanas por
+momento.** Las dos ramas de `drawCell` son excluyentes y las decide `p.glow`: con `neon`/`retro` se
+pagan R4 y R6 y **R7 cuesta cero**; con `clasico` se paga R7 y se pintan el doble de `fillRect`, y
+R4 cuesta cero. Como `clasico` es `DEFAULT_SKIN`, medir sólo la piel más cara **no vería R7 nunca**
+y ese hallazgo no se podría cerrar jamás. Snake tiene el mismo problema por otra vía: `clasico` es
+la única piel con atlas y la única sin halo, así que **ninguna piel cubre sola su código de
+dibujo**.
+
+**Reproducibilidad, que no es igual en los cinco.** Frogger no tiene ni un `Math.random()`: dos
+ventanas tomadas en el mismo `r.t` dibujan lo mismo y su antes/después es comparable de verdad.
+Asteroids está en el extremo contrario —forma y velocidad de cada roca, cada partícula y cada drop
+salen de `Math.random()`—: pide ventanas de 30 s y tratar como ruido cualquier diferencia por
+debajo del 15%.
+
+**El segundo contraejemplo estaba mal atribuido.** Arkanoid iza el radio igual de bien
+(`entities.ts:350`), pero suelta el halo con el `restore()` de un `save()`/`restore()` **por
+bloque**. **Snake (`entities.ts:191-200`) es el único de los cinco que hace las dos mitades del
+patrón**: iza el radio antes del bucle _y_ apaga con un solo `noGlow()` al salir. Si hay que citar
+uno, es ése.
+
+**Tres cosas contadas que NO son hallazgo**, escritas para que la ronda siguiente no las
+redescubra: el `ghostY()` de Tetris se recalcula por frame (~90-300 comparaciones) y su peor caso
+es el **tablero vacío**, al revés que todo lo demás del motor; la colisión de Asteroids es
+O(balas × asteroides) con `Math.hypot` (~36.500 por segundo) y ninguna de las doce reglas habla de
+coste algorítmico; y la serpiente de Snake **no es un hallazgo R9** —su tope es el tablero, y
+ponerle un `MAX_LENGTH` sería cambiar la mecánica, que es R12—.
+
+**El orden de la cola sale confirmado, y por sus números: `tetris` primero.** Arkanoid y Snake son
+los dos últimos, y en el caso de Snake hay un motivo de método además del número: **mientras esté
+sin tocar es el contraejemplo vivo del repo**, y optimizarlo el primero le quitaría a las otras
+cuatro rondas dónde mirar el patrón correcto en código real.
+
+### 2026-08-15 · Tetris optimizado, y la primera vez que R12 gana a un patrón
+
+Primera ronda de este agente que escribe código y la primera con números en la tabla de
+Mediciones. Seis hallazgos cerrados, cuatro ventanas de veinte segundos y dos archivos tocados:
+`lib/games/tetris/board.ts` y `lib/games/tetris/index.ts`. `constants.ts` y `skins.ts` salen sin
+diff, y las tres puertas —`tsc`, `lint`, `build`— pasaron antes de medir y después de escribir.
+
+**Lo importante de esta ronda no es el milisegundo, es una decisión: el patrón P3.4 no se pudo
+aplicar entero.** «Ordenar por color» deja el halo de Tetris en siete conmutaciones por frame, y es
+lo que la receta manda. Pero cambia **el orden de pintado**, y con `shadowBlur` de 10,2 px sobre
+celdas de 30 los halos de dos celdas vecinas se solapan. Se midió en vez de opinar, dibujando el
+mismo tablero dos veces en un canvas fuera de pantalla con la paleta `neon` real:
+
+| Variante                         | Escrituras de estado (82 celdas) | Píxeles distintos | Desviación máxima |
+| -------------------------------- | -------------------------------- | ----------------- | ----------------- |
+| La de antes, halo por celda      | 328                              | —                 | —                 |
+| Agrupada por color (P3.4 entero) | 23                               | **9,14%**         | 98 de 765         |
+| Conmutando al cambiar de color   | 75                               | **0%**            | 0                 |
+
+La tercera es la que está en el código. Cuesta 52 escrituras más por frame que agrupar y **dibuja
+exactamente lo mismo**; y cuando se midió en partida, la variante agrupada daba `0,4 / 0,6 / 1,4`
+contra `0,4 / 0,6 / 1,5` de la conservadora: dentro del ruido. O sea que el reordenamiento **no
+pagaba ni el píxel que costaba**. R12 no es una preferencia y aquí decidió el código.
+
+**Lo que Tetris ya no hace por frame**, con el tablero medio lleno: ~200 pares `glow`/`noGlow`,
+~200 llamadas a `glowSpread()`, ~112 cadenas `rgba` idénticas, ~224 escrituras de `globalAlpha`,
+27 `beginPath`/`stroke` de rejilla y dos asignaciones de `font`/`textAlign`.
+
+**Y la ganancia medida en escritorio es pequeña, que también hay que decirlo.** El p95 baja de 0,70
+a 0,60 ms en `neon` y de 0,80 a 0,70 en `clasico`, con el peor frame de 2,9 a 1,0. Son décimas, y
+las décimas son ruido salvo que apunten todas en la misma dirección —aquí lo hacen, en ocho
+métricas de dos pieles—. **El motivo de que sea pequeña es que Tetris ya cabía holgadísimo**: 0,7
+ms sobre un presupuesto de 8. El número honesto del ahorro sale del banco aislado, no de la
+partida: **0,054 ms por frame en `neon` y 0,032 en `clasico`**. Eso en un teléfono, donde
+`shadowBlur` escala peor y el hilo se comparte con React, es donde se cobra.
+
+**Tres cosas de método para la ronda siguiente:**
+
+- **El guion de `optimizar-motor.md` no llega al caso peor en Tetris, y con `ArrowDown` mantenido
+  llega al topout.** Lo que funciona: llenar con `Space` **fuera** de la ventana hasta un montón de
+  ~11 filas, y dentro de la ventana sólo laterales alternos. Con el montón por encima de la fila 8
+  la partida topea dentro de los 20 s y el resumen sale con `frames: 0`.
+- **`frames: 0` no siempre es la pestaña oculta.** Aquí salió con `visibilityState` en `visible`:
+  era `halt()` por topout. La comprobación de visibilidad no cubre ese caso, así que la ventana se
+  cierra mirando también `FIN DEL JUEGO`.
+- **El llenado se cuenta muestreando el canvas**, no adivinando: el estado vive en el closure y no
+  se puede leer desde la consola, pero el centro de cada celda sí. Las cuatro ventanas se tomaron
+  con 48 celdas para que compararan de verdad.

@@ -114,8 +114,13 @@ const GLOW_SPREAD_TIGHT = 0.1;
  * delante y no el nombre de la piel: lo que obliga a acortar el radio no es que
  * la piel se llame `retro`, es que sus siete piezas sean del mismo color. Así
  * una cuarta piel monocroma se resolvería sola, sin tocar este archivo.
+ *
+ * **Se exporta para poder izarla.** Sólo depende de la paleta, así que el motor
+ * la resuelve una vez al fijar la piel y pasa el resultado por parámetro: dentro
+ * de un bucle de celdas su cuerpo recorría seis comparaciones por celda, hasta
+ * doscientas veces por frame, para devolver siempre lo mismo.
  */
-function glowSpread(p: Palette): number {
+export function glowSpread(p: Palette): number {
   for (let i = 2; i <= 7; i++) {
     if (p.pieces[i] !== p.pieces[1]) return GLOW_SPREAD;
   }
@@ -123,8 +128,26 @@ function glowSpread(p: Palette): number {
 }
 
 /**
- * Una celda, en píxeles y no en coordenadas de rejilla: el tablero dibuja en el
- * origen, y la pieza siguiente en la banda derecha con otro tamaño.
+ * El alfa de la banda de brillo de `clasico`. Es del motor y no de la piel, que
+ * sólo pone el color: por eso vive aquí y no en `skins.ts`.
+ */
+const GLOSS_ALPHA = 0.12;
+
+/**
+ * La cadena `rgba` de esa banda, ya montada.
+ *
+ * Sólo depende de la paleta, así que el motor la resuelve una vez al fijar la
+ * piel: `tint()` hace un `parseInt` y un template string, o sea **una cadena
+ * nueva por llamada**, y llamarlo dentro del bucle de celdas fabricaba hasta
+ * doscientas cadenas idénticas por frame para tirarlas todas.
+ */
+export function glossFill(p: Palette): string {
+  return tint(p.gloss, GLOSS_ALPHA);
+}
+
+/**
+ * Los dos estilos de celda, en píxeles y no en coordenadas de rejilla: el
+ * tablero dibuja en el origen, y la pieza siguiente en la banda derecha.
  *
  * Dos de los cuatro estilos de bloque del original, elegidos por la piel. Sin
  * halo es su `drawBlockFlat` —relleno plano con margen de un píxel y banda de
@@ -134,33 +157,129 @@ function glowSpread(p: Palette): number {
  * propio color de la pieza y ninguna banda de brillo, porque el volumen ya lo
  * da el halo. Los otros dos estilos, el redondeado y el de píxel, no entran.
  *
+ * **El halo se conmuta por lote y no por celda**, que es lo que separa estas
+ * dos funciones de la `drawCell` que había antes: `shadowBlur` es la propiedad
+ * más cara del contexto y encenderla y apagarla una vez por celda costaba
+ * cuatro escrituras de estado por cuadrado pintado.
+ */
+
+/**
+ * El tablero consolidado. El halo se conmuta **cuando cambia el color**, no una
+ * vez por celda: se enciende en la primera celda ocupada y se suelta con un
+ * único `noGlow()` al final.
+ *
+ * **El recorrido sigue siendo fila por fila, y eso no es un descuido.** Agrupar
+ * las celdas por color deja el halo en siete conmutaciones por frame en vez de
+ * las ~25 que salen así, pero cambia el orden de pintado, y con un radio de
+ * 10,2 px sobre celdas de 30 los halos de dos celdas vecinas se solapan: medido
+ * sobre un montón de 82 celdas con la paleta `neon`, agrupar mueve el **9,14%**
+ * de los píxeles del tablero, hasta 98 de 765 de desviación. Conmutar sólo en
+ * el cambio de color dibuja **exactamente lo mismo** —0 píxeles distintos— y ya
+ * baja las escrituras de estado del contexto de 328 a 75. R12 manda sobre el
+ * milisegundo: un motor más rápido que se ve distinto es un motor roto.
+ */
+export function drawBoard(
+  ctx: CanvasRenderingContext2D,
+  board: Board,
+  p: Palette,
+  spread: number,
+  gloss: string,
+): void {
+  if (p.glow) {
+    const blur = BLOCK * spread;
+    let lit = "";
+    for (let r = 0; r < ROWS; r++) {
+      const row = board[r];
+      for (let c = 0; c < COLS; c++) {
+        const color = p.pieces[row[c]];
+        if (!color) continue;
+        // Las celdas de una misma pieza vienen seguidas, así que un tablero real
+        // encadena rachas del mismo color y esto conmuta unas pocas veces.
+        if (color !== lit) {
+          lit = color;
+          ctx.fillStyle = color;
+          glow(ctx, color, blur);
+        }
+        ctx.fillRect(c * BLOCK + 2, r * BLOCK + 2, BLOCK - 4, BLOCK - 4);
+      }
+    }
+    // El halo es estado global del contexto: se suelta al salir del bucle, o lo
+    // hereda la rejilla del frame siguiente. Un tablero vacío no lo encendió.
+    if (lit) noGlow(ctx);
+    return;
+  }
+  for (let r = 0; r < ROWS; r++) {
+    const row = board[r];
+    for (let c = 0; c < COLS; c++) {
+      const color = p.pieces[row[c]];
+      if (!color) continue;
+      const x = c * BLOCK;
+      const y = r * BLOCK;
+      ctx.fillStyle = color;
+      ctx.fillRect(x + 1, y + 1, BLOCK - 2, BLOCK - 2);
+      ctx.fillStyle = gloss;
+      ctx.fillRect(x + 1, y + 1, BLOCK - 2, 4);
+    }
+  }
+}
+
+/**
+ * Una matriz de pieza con su esquina superior izquierda en `(px, py)`: la
+ * activa, su proyección de aterrizaje y la de la banda derecha.
+ *
+ * Las celdas de una pieza comparten color, así que el halo se enciende una vez
+ * para las cuatro y el orden de pintado no cambia ni un píxel respecto de
+ * conmutarlo por celda.
+ *
  * El `alpha` es de quien dibuja, no de la piel: con él se pinta translúcida la
  * proyección de aterrizaje, y se conserva igual en las dos ramas. El 0,12 del
  * brillo tampoco es de la piel, que sólo pone su color.
  */
-export function drawCell(
+export function drawPiece(
   ctx: CanvasRenderingContext2D,
-  x: number,
-  y: number,
-  cell: Cell,
+  shape: Cell[][],
+  px: number,
+  py: number,
   p: Palette,
+  spread: number,
+  gloss: string,
   size: number = BLOCK,
   alpha: number = 1,
 ): void {
-  const color = p.pieces[cell];
-  if (!color) return;
-  ctx.globalAlpha = alpha;
-  ctx.fillStyle = color;
+  // De las tres piezas que se pintan por frame sólo la proyección de
+  // aterrizaje pide un alfa distinto de 1: las otras dos no tocan el contexto.
+  if (alpha !== 1) ctx.globalAlpha = alpha;
   if (p.glow) {
-    // El halo es estado global del contexto: se suelta aquí mismo, o lo hereda
-    // la rejilla del frame siguiente.
-    glow(ctx, color, size * glowSpread(p));
-    ctx.fillRect(x + 2, y + 2, size - 4, size - 4);
-    noGlow(ctx);
+    const blur = size * spread;
+    let lit = "";
+    for (let r = 0; r < shape.length; r++) {
+      const row = shape[r];
+      for (let c = 0; c < row.length; c++) {
+        const color = p.pieces[row[c]];
+        if (!color) continue;
+        if (color !== lit) {
+          lit = color;
+          ctx.fillStyle = color;
+          glow(ctx, color, blur);
+        }
+        ctx.fillRect(px + c * size + 2, py + r * size + 2, size - 4, size - 4);
+      }
+    }
+    if (lit) noGlow(ctx);
   } else {
-    ctx.fillRect(x + 1, y + 1, size - 2, size - 2);
-    ctx.fillStyle = tint(p.gloss, 0.12);
-    ctx.fillRect(x + 1, y + 1, size - 2, 4);
+    for (let r = 0; r < shape.length; r++) {
+      const row = shape[r];
+      for (let c = 0; c < row.length; c++) {
+        const color = p.pieces[row[c]];
+        if (!color) continue;
+        const x = px + c * size;
+        const y = py + r * size;
+        ctx.fillStyle = color;
+        ctx.fillRect(x + 1, y + 1, size - 2, size - 2);
+        ctx.fillStyle = gloss;
+        ctx.fillRect(x + 1, y + 1, size - 2, 4);
+      }
+    }
   }
-  ctx.globalAlpha = 1;
+  if (alpha !== 1) ctx.globalAlpha = 1;
 }
