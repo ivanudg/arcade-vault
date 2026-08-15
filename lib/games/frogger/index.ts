@@ -27,8 +27,18 @@
 
 import {
   CELL,
+  DEATH_MS,
+  HOP_MS,
   LIVES,
+  POINTS_ROW,
+  ROW_MEDIAN,
+  ROW_RIVER_BOTTOM,
+  ROW_RIVER_TOP,
+  ROW_ROAD_BOTTOM,
+  ROW_ROAD_TOP,
   ROW_START,
+  SPEED_MAX,
+  SPEED_STEP,
   START_COL,
   TIME_MIN,
   TIME_START,
@@ -81,6 +91,19 @@ const MAX_DT = 0.05;
 function timeForRound(round: number): number {
   return Math.max(TIME_START - (round - 1) * TIME_STEP, TIME_MIN);
 }
+
+/** Multiplicador de velocidad de la ronda, el mismo que aplica `lanesForRound`. */
+function speedMult(round: number): number {
+  return Math.min(SPEED_STEP ** (round - 1), SPEED_MAX);
+}
+
+/** Las cuatro direcciones, en el orden en que se resuelven si llegan juntas. */
+const HOPS: readonly { code: string; dx: number; dy: number }[] = [
+  { code: "ArrowUp", dx: 0, dy: -1 },
+  { code: "ArrowDown", dx: 0, dy: 1 },
+  { code: "ArrowLeft", dx: -1, dy: 0 },
+  { code: "ArrowRight", dx: 1, dy: 0 },
+];
 
 export const froggerGame: GameMount = {
   world: { width: W, height: H },
@@ -140,10 +163,155 @@ export const froggerGame: GameMount = {
       cb.onState(emitted);
     }
 
+    // ── Sucesos de partida ───────────────────────────────────────────────────
+
+    /** El carril de una fila, o `null` si esa fila es orilla o mediana. */
+    function laneAt(r: Run, row: number): Lane | null {
+      return r.lanes.find((lane) => lane.spec.row === row) ?? null;
+    }
+
+    const inRiver = (row: number) => row >= ROW_RIVER_TOP && row <= ROW_RIVER_BOTTOM;
+    const inRoad = (row: number) => row >= ROW_ROAD_TOP && row <= ROW_ROAD_BOTTOM;
+
+    /**
+     * La rana se ha quedado sin travesía.
+     *
+     * La vida se descuenta ya, pero la partida no termina aquí: pasa por
+     * `"dead"` durante `DEATH_MS` para que se vea **qué** la mató, y sólo al
+     * acabar esa fase se decide si reaparece o si se acabó.
+     */
+    function die(r: Run) {
+      r.lives -= 1;
+      // La dama-rana se pierde con la vida que la llevaba.
+      r.frog.escorting = false;
+      r.frog.hop = null;
+      r.phase = "dead";
+      r.timer = DEATH_MS / 1000;
+    }
+
+    /** Vuelta a la acera conservando puntuación, ronda y nichos ya ocupados. */
+    function respawn(r: Run) {
+      r.frog = new Frog(START_COL * CELL, ROW_START);
+      r.time = timeForRound(r.round);
+      r.phase = "ready";
+    }
+
+    /** Arranca un salto de una celda, si el destino cae dentro del tablero. */
+    function startHop(r: Run, dx: number, dy: number) {
+      // Cuadrar antes de saltar: en el río la plataforma arrastra la rana y su
+      // `x` deja de ser múltiplo de la celda; sin esto el desfase se heredaría
+      // durante el resto de la travesía.
+      r.frog.snap();
+
+      const fromX = r.frog.x;
+      const fromRow = r.frog.row;
+      const toX = Math.min(Math.max(fromX + dx * CELL, 0), W - CELL);
+      const toRow = Math.min(Math.max(fromRow + dy, 0), ROW_START);
+      if (toX === fromX && toRow === fromRow) return;
+
+      r.frog.hop = { fromX, fromRow, toX, toRow, k: 0 };
+    }
+
+    /** Fin del salto: se resuelve el aterrizaje y se cobran las filas nuevas. */
+    function land(r: Run) {
+      const hop = r.frog.hop;
+      if (!hop) return;
+      r.frog.x = hop.toX;
+      r.frog.row = hop.toRow;
+      r.frog.hop = null;
+
+      if (r.frog.row < r.frog.best) {
+        r.score += POINTS_ROW * (r.frog.best - r.frog.row);
+        r.frog.best = r.frog.row;
+      }
+    }
+
     // ── Simulación ───────────────────────────────────────────────────────────
 
     function update(dt: number) {
-      run.t += dt;
+      const r = run;
+      if (r.phase === "gameover") return;
+
+      // El mundo corre también en `"ready"` y en `"dead"`: los carriles no se
+      // paran porque la rana esté esperando o acabe de morir.
+      r.t += dt;
+      if (r.snake) r.snake.update(dt, speedMult(r.round));
+
+      if (r.phase === "ready") {
+        if (input.pressed("Space")) r.phase = "playing";
+        return;
+      }
+
+      if (r.phase === "dead") {
+        r.timer -= dt;
+        if (r.timer > 0) return;
+        if (r.lives <= 0) {
+          r.lives = 0;
+          r.phase = "gameover";
+          // El bucle se detiene aquí; el aviso sale al final de este frame, con
+          // el HUD ya cuadrado.
+          halt();
+          return;
+        }
+        respawn(r);
+        return;
+      }
+
+      // ── A partir de aquí, `"playing"` ──
+
+      // 1. El salto en curso. La colisión se resuelve **al aterrizar**: pasar
+      //    por encima de un coche mientras se salta no mata.
+      if (r.frog.hop) {
+        r.frog.hop.k += (dt * 1000) / HOP_MS;
+        if (r.frog.hop.k >= 1) land(r);
+      } else {
+        // 2. En el río, la plataforma arrastra a la rana.
+        const lane = inRiver(r.frog.row) ? laneAt(r, r.frog.row) : null;
+        if (lane && lane.carrier(r.t, r.frog.x) !== null) {
+          r.frog.x += lane.spec.speed * dt;
+        }
+      }
+
+      // 3. La entrada. Los cuatro flancos se consumen siempre, aunque el salto
+      //    se descarte: uno sin leer se aplicaría solo en el frame siguiente,
+      //    como un salto fantasma. Cabe uno por frame y gana el primero de la
+      //    lista; mantener la flecha no encadena saltos.
+      let hopped = false;
+      for (const dir of HOPS) {
+        const edge = input.pressed(dir.code);
+        if (edge && !hopped && !r.frog.hop) {
+          startHop(r, dir.dx, dir.dy);
+          hopped = true;
+        }
+      }
+
+      // 4. El cronómetro corre sólo mientras se juega.
+      r.time -= dt;
+
+      // 5. Y las cinco formas de perder una vida, en este orden. Ninguna se
+      //    comprueba a mitad de salto.
+      if (!r.frog.hop) {
+        const row = r.frog.row;
+        const lane = laneAt(r, row);
+
+        // Atropello.
+        if (inRoad(row) && lane && lane.hits(r.t, r.frog.x)) return die(r);
+
+        // Ahogo: sin plataforma sólida bajo el centro, el río mata.
+        if (inRiver(row) && (!lane || lane.carrier(r.t, r.frog.x) === null)) return die(r);
+
+        // Arrastrada fuera del tablero por su propia plataforma.
+        if (r.frog.x < 0 || r.frog.x > W - CELL) return die(r);
+
+        // La serpiente de la mediana.
+        if (row === ROW_MEDIAN && r.snake && r.snake.hits(r.frog.x)) return die(r);
+      }
+
+      // Agotar el cronómetro mata también a mitad de salto: el tiempo no espera.
+      if (r.time <= 0) {
+        r.time = 0;
+        return die(r);
+      }
     }
 
     // ── Dibujo ───────────────────────────────────────────────────────────────
