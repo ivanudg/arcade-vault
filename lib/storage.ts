@@ -1,13 +1,16 @@
 /**
  * Persistencia del vault en `localStorage`.
  *
- * Nadie más toca `localStorage` directamente. Aquí ya sólo quedan la sesión y
- * el identificador de este navegador: desde SPEC 06 las puntuaciones viven en
- * Supabase.
+ * Nadie más toca `localStorage` directamente. Aquí ya sólo quedan el
+ * identificador de este navegador y la piel elegida en cada máquina: desde
+ * SPEC 06 las puntuaciones viven en Supabase, y desde SPEC 15 la sesión también
+ * —en las cookies de Supabase Auth, que es lo que permite que el servidor la
+ * vea—.
  *
- * La clave sigue siendo la del prototipo. Estrenar una `v2` para tirar el campo
- * `scores` habría cerrado la sesión a todo el mundo por un campo que ya no lee
- * nadie; lo que hubiera guardado se queda ahí hasta que el navegador lo tire.
+ * La clave sigue siendo la del prototipo. Estrenar una `v2` cada vez que se
+ * jubila un campo cerraría la sesión y borraría las pieles de todo el mundo por
+ * algo que ya no lee nadie; lo que un navegador viejo tenga guardado en `scores`
+ * o en `user` se queda ahí hasta que él mismo lo tire.
  */
 
 import type { SkinId } from "@/lib/games/skins";
@@ -15,13 +18,7 @@ import type { SkinId } from "@/lib/games/skins";
 /** La versión va en la clave: un cambio de esquema estrena clave y olvida lo viejo. */
 const KEY = "arcadevault:v1";
 
-export interface VaultUser {
-  name: string;
-  guest: boolean;
-}
-
 export interface VaultData {
-  user?: VaultUser | null;
   /** UUID de este navegador. Lo crea `deviceId()` la primera vez. */
   deviceId?: string;
   /**
