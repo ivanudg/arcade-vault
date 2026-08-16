@@ -5,7 +5,7 @@
 > **Fecha:** 2026-08-16
 > **Objetivo:** Sustituir la sesión simulada de `localStorage` por cuentas reales de Supabase Auth con correo y contraseña, un `username` único por jugador en `public.profiles`, y marcas firmadas con `user_id`.
 
-## Por qué existe esta spec
+## Por qué existe esta  spec
 
 Desde SPEC 01 el vault tiene una sesión de mentira: `/cuenta` escribe un nombre
 en `localStorage`, la contraseña se descarta sin mirarla y los dos botones de
