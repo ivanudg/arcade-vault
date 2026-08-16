@@ -8,8 +8,10 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 **Arcade Vault**: plataforma para jugar online y competir por la mayor cantidad de
 puntos. Ya no es el scaffold de `create-next-app`: hoy son **siete pantallas**, cinco
-máquinas jugables con motor propio y un marcador compartido en Supabase. Lo construido
-llega hasta **SPEC 14**.
+máquinas jugables con motor propio —las cinco vestidas con sus tres pieles— y un
+marcador compartido en Supabase. Lo construido por spec llega hasta **SPEC 14**; lo que
+ha entrado después no lleva número, porque lo escriben los agentes (ver «Lo que ha
+pasado sin spec»).
 
 El flujo de trabajo del proyecto es **Spec Driven Design** vía las skills `/spec` y `/spec-impl` de [Klerith/fernando-skills](https://github.com/Klerith/fernando-skills) (`npx skills@latest add Klerith/fernando-skills`). Antes de implementar una feature nueva, espera/produce la spec correspondiente en lugar de escribir código directamente.
 
@@ -18,8 +20,9 @@ el subagente **`game-planner`** (`.claude/agents/game-planner.md`), que decide *
 Con el material de `references/started-games/` agotado, elegir la siguiente máquina dejó de
 ser obvio, así que el agente puntúa candidatos contra el contrato del motor, recomienda uno y
 para. Recuerda lo que ya propuso en `.claude/game-planner/memoria.md`, porque arranca en frío
-en cada invocación. La cadena completa es **`game-planner` → `/spec-game` → `/spec-impl`**;
-los detalles, en «Herramientas del repo».
+en cada invocación. La cadena completa es **`game-planner` → `/spec-game` → `/spec-impl-game`**,
+y el último eslabón encadena a su vez `skin-designer` y `mobile-porter`; los detalles, en
+«Herramientas del repo».
 
 Las specs viven en `specs/NN-<slug>.md` y llevan su estado en la segunda línea. El
 historial cuenta el producto mejor que el código:
@@ -41,8 +44,29 @@ historial cuenta el producto mejor que el código:
 | 13   | El mando se viste: chasis, cruz con flechas SVG y hub, `B`/`A` con relieve; `game-pad.tsx` |
 | 14   | Frogger: rondas infinitas, cronómetro en el canvas y la fauna del río; estrena `REFLEJOS`  |
 
-Ojo: la spec 02 sigue marcada como `Aprobado` aunque la portada está implementada; el
-estado del encabezado no siempre se actualizó al cerrar.
+Ojo: **el estado del encabezado no siempre se actualiza al cerrar**. La spec 02 sigue
+marcada como `Aprobado` con la portada implementada, y la 14 como `Aprobada` con Frogger
+ya jugable en el catálogo. La verdad de qué hay implementado la dicen `lib/games.ts` y
+`references/implemented-games.md`, no la línea de estado.
+
+### Lo que ha pasado sin spec
+
+Desde SPEC 14 el repo se mueve por **rondas de subagente**, y ésas no numeran: cada una
+deja su rastro en el ledger de su agente y no en `specs/`. Lo hecho hasta hoy:
+
+| Agente                     | Qué dejó                                                                                                                 | Ledger                                        |
+| -------------------------- | ------------------------------------------------------------------------------------------------------------------------ | --------------------------------------------- |
+| `skin-designer`            | Las cinco máquinas vestidas con `clasico`/`neon`/`retro`, el selector `PIEL` y el halo como rasgo de piel; una por ronda | `.claude/skin-designer/skins.md`              |
+| `mobile-porter`            | `Pie` y `Ficha` en `adaptada`; `Cabecera` en `en-curso` con dos defectos abiertos que piden una decisión                 | `.claude/mobile-porter/pantallas.md`          |
+| `game-performance-booster` | Los cinco motores auditados y `tetris` **optimizado**, con cuatro mediciones                                             | `.claude/game-performance-booster/motores.md` |
+
+Y hay una decisión **pendiente de humano**: `game-jam` dejó las dos specs de Amidar en
+`specs/game-jam/amidar/` —`spec-minima.md` y `spec-completa.md`, las dos en `Borrador de
+jam`—. Aprobar una es mudarla a `specs/15-<slug>.md` y cerrar la hermana. Junto a ellas
+está `specs/game-jam/frogger/`, que es el registro de la jam que sí se cerró: su
+`spec-minima.md` quedó `Descartada` y la completa se mudó a `specs/14-*`; el
+`01-frogger-core.md` que la acompaña también está `Descartada`, y se conserva sólo como
+registro de una spec que no era de este repo.
 
 No hay framework de tests configurado. Si se añade uno, documenta aquí cómo correr un test individual.
 
@@ -95,6 +119,7 @@ URL**: existe para que `/jugar/[id]` quede fuera y monte su cabecera reducida
 - **Las dos rutas por máquina son cerradas**: `/juego/[id]` y `/jugar/[id]` declaran `generateStaticParams()` sobre `GAMES` y `dynamicParams = false`, así que un id inventado es 404 sin ejecutar código. `getGame()` devuelve `undefined` —no la primera máquina— justamente para eso.
 - **`?juego=` sólo existe en `/salon`** y sólo elige la pestaña inicial; un valor inventado abre en `asteroids` en vez de dar 404. A partir de ahí las pestañas son estado de cliente y la URL no cambia. Lo mismo con el buscador y los filtros de `/biblioteca`: estado de cliente, no `searchParams`, para no navegar en cada pulsación.
 - **El ancho máximo va dentro y el relleno fuera.** Las plantillas de `references/templates/` miden en `content-box`; con el `border-box` de Tailwind, juntar ancho y relleno en el mismo elemento encoge la rejilla.
+- **`SiteHeader` y `SiteFooter` ya no son sólo de escritorio.** Las rondas de `mobile-porter` les escribieron el relleno de muesca —los cuatro lados declarados enteros con `calc(... + env(safe-area-inset-*))`, sin restar sobre el `px`/`py`, así que hoy, con `env()` a 0, a 1280 no cambia ni un píxel—, y el cajón del móvil **congela `<html>`** mientras está abierto, restaurándolo al cerrar y al desmontar. Se congela `<html>` y no `<body>` porque el `html { overflow-x: hidden }` de `globals.css` le quita a `body` la propagación de su overflow al viewport. Ojo: el relleno de `env()` ya no es exclusivo de `/jugar/[id]`; lo que sigue siendo sólo suyo es el `viewport` propio con escala fija.
 
 ## Motores de juego
 
@@ -112,13 +137,16 @@ resumen derivado de `lib/games.ts`, que sigue siendo la fuente de verdad; al añ
 máquina, se actualiza también esa tabla.
 
 - `tetris` entró en SPEC 08 y es la primera que ejerce la regla; su motor vive en
-  `lib/games/tetris/` y es el Tetris clásico de
-  `references/started-games/03-tetris/`, sin la capa moderna de puntuación, los
-  power-ups, las habilidades ni los modos, que esperan a su propia spec.
+  `lib/games/tetris/` —`constants.ts`, `pieces.ts`, `board.ts`, `skins.ts` e
+  `index.ts`— y es el Tetris clásico de `references/started-games/03-tetris/`,
+  sin la capa moderna de puntuación, los power-ups, las habilidades ni los modos,
+  que esperan a su propia spec. Es también el **único motor optimizado** hasta
+  hoy: la ronda de `game-performance-booster` partió su `drawCell` en `drawBoard`
+  y `drawPiece`, izó `glowSpread()` y precomputó `glossFill()` fuera del bucle.
 - `arkanoid` entró en SPEC 09 y es la primera que **no toca el contrato**: tiene
   puntuación, vidas y niveles de verdad, así que declara los mismos tres rótulos
   que Asteroids y no pide nada más. Su motor vive en `lib/games/arkanoid/`
-  —`constants.ts`, `levels.ts`, `entities.ts` e `index.ts`— y es el Arkanoid de
+  —`constants.ts`, `levels.ts`, `entities.ts`, `skins.ts` e `index.ts`— y es el Arkanoid de
   `references/started-games/04-arkanoid/` **redibujado sin su spritesheet**:
   paddle y bloques son `fillRect`, la bola es un `arc`, y los siete nombres de
   `COLOR_MAP` resultaron ser nombres de color CSS válidos, así que la tabla se
@@ -133,8 +161,8 @@ máquina, se actualiza también esa tabla.
   original del que copiar el equilibrio, lo fija la spec y vive junto en
   `lib/games/snake/constants.ts` —150 ms por celda que bajan a 60, cinco frutas
   por nivel, `10 × nivel` por fruta, tres vidas, celda de 32 en una rejilla de
-  25 × 20—: se ajusta ahí sin tocar el motor. Su directorio son cinco archivos,
-  `constants.ts`, `sprites.ts`, `math.ts`, `entities.ts` e `index.ts`, y declara
+  25 × 20—: se ajusta ahí sin tocar el motor. Su directorio son seis archivos,
+  `constants.ts`, `sprites.ts`, `math.ts`, `entities.ts`, `skins.ts` e `index.ts`, y declara
   los mismos tres rótulos que Asteroids y Arkanoid, así que es la **tercera
   seguida que no toca el contrato**. La pared mata y la cola también; al perder
   una vida se vuelve al centro conservando puntuación y nivel, y se arranca con
@@ -151,8 +179,8 @@ máquina, se actualiza también esa tabla.
   `lanesForRound(round)`, que es una **función pura de la ronda**: multiplica la
   velocidad por 1,12 con tope en ×2,2, y decide desde qué ronda hay camiones y
   qué tortugas se sumergen. Ajustar la dificultad es cambiar un número en uno de
-  esos dos archivos; el motor no se toca. Su directorio son cinco archivos
-  —`constants.ts`, `lanes.ts`, `math.ts`, `entities.ts` e `index.ts`—, y es la
+  esos dos archivos; el motor no se toca. Su directorio son seis archivos
+  —`constants.ts`, `lanes.ts`, `math.ts`, `entities.ts`, `skins.ts` e `index.ts`—, y es la
   **segunda que usa los cinco botones** del mando, porque `ESPACIO` saca a la
   rana de la orilla al empezar y después de cada vida. **No hay ni un
   `Math.random()`**: carriles, tortugas, cocodrilo, mosca y dama-rana son
@@ -205,6 +233,34 @@ máquina, se actualiza también esa tabla.
   `PlayCabinet` saca el motor que monta. Sigue siendo `Partial` por tipo, y por
   eso el gabinete conserva una guarda que devuelve `null` si faltara: es una
   guarda de tipos, no la vieja bifurcación.
+- **Las cinco máquinas están vestidas**, cada una con su `skins.ts` y sus tres
+  pieles obligatorias —`clasico`, `neon` y `retro`—, aplicadas por
+  `skin-designer` a razón de una máquina por ronda. El vocabulario está en
+  `lib/games/skins.ts` (`SkinId`, `SKIN_IDS`, `DEFAULT_SKIN`, `SKIN_LABELS`) y el
+  contrato lo lleva en dos campos **opcionales**, `GameMount.skins` y
+  `GameHandle.setSkin()`; siguen siendo opcionales aunque ya no falte nadie,
+  porque son lo que permite que una máquina nueva entre sin vestir. `clasico` es
+  **extracción y no diseño**: son los hex que el motor ya pintaba, así que
+  elegirla deja la partida como estaba.
+- **El selector `PIEL` es del gabinete, no del motor.** Vive en
+  `components/play-cabinet.tsx`, bajo el marco y nunca dentro —el ancho de ese
+  marco lo calcula el ratio del mundo y cualquier cosa dentro lo descuadra—, y
+  pinta deshabilitados los ids que la máquina no declara, igual que el mando con
+  las teclas que no usa. La elección **se recuerda por máquina** en
+  `localStorage` (`skins` de `VaultData`) y se aplica en cuanto llega el
+  `GameHandle`, antes de que termine el superpuesto de carga: no hay ni un frame
+  con el color equivocado. Cambiar de piel **no toca la partida**: `setSkin()`
+  cambia lo que se dibuja, no lo que se juega, y `GameCanvas` ni se entera porque
+  su efecto de montaje depende sólo del `GameMount`.
+- **Una piel es color y, si el motor lo pide, un rasgo de dibujo booleano.** Hay
+  seis en el repo: el `useAtlas` de Snake —que dice si las frutas salen del atlas
+  o se dibujan— y **cinco `glow`, uno por máquina**, que dicen si las entidades
+  llevan halo. La frontera es la misma que con el alfa: **la piel dice si hay
+  halo, el motor dice de cuánto**, y el radio lo resuelve en cada motor una
+  `glowSpread(p)` que elige **por la paleta y nunca por el nombre de la piel**.
+  Para eso `lib/games.ts` tiene ahora `glow()` y `noGlow()` al lado de `tint()`,
+  y los cinco motores los importan de ahí. Ninguna de las rondas del halo cambió
+  ni un hex de ninguna paleta.
 - **El bucle no vive en React.** `requestAnimationFrame`, el estado de partida y
   las entidades están dentro del closure de `mount()`; en el ámbito de módulo de
   un motor no hay ni una variable mutable. Un motor no importa `react` ni `next`.
@@ -245,7 +301,9 @@ máquina, se actualiza también esa tabla.
   `ENGINE_KEYS`, dentro de `components/game-pad.tsx`, y reparte sus dos botones
   de acción en `ENGINE_PAD`, que está al lado. Y añade su fila a
   `references/implemented-games.md`, que es la tabla que se consulta para saber
-  qué hay implementado.
+  qué hay implementado. **La piel no es uno de esos sitios**: la máquina entra
+  con los colores que le dé la spec y la viste `skin-designer` después, que es lo
+  que hace `/spec-impl-game` al cerrar.
 - **`lib/preview-art.ts` guarda arte sin máquina.** Su `PreviewId` es
   `GameId | ArchivedPreviewId`, y `ArchivedPreviewId` son las escenas de las
   máquinas que salieron del catálogo en SPEC 07: eran ocho y hoy son **cuatro**,
@@ -472,7 +530,7 @@ SPEC 10 la de `snake` y SPEC 14 la de `frogger` —la tabla tiene **cinco**, con
 
 - **Un solo contexto**, `SessionProvider` de `lib/session.tsx`, montado en el layout raíz: la cabecera, `/cuenta` y `/jugar` leen el mismo usuario en vez de tocar el almacenamiento cada una por su cuenta. `useSession()` lanza si no hay proveedor por encima.
 - **`ready` se deduce, no se guarda**: el estado es `VaultUser | null | undefined` y `undefined` significa «aún no se ha leído `localStorage`». Hasta que `ready` sea `true` nadie pinta estado de sesión —el servidor no tiene almacenamiento y pintarlo antes sería un desajuste de hidratación—.
-- **`lib/storage.ts` es el único que toca `localStorage`.** La clave es `arcadevault:v1` (la versión va dentro: un cambio de esquema estrena clave). Dentro sólo quedan `user` y `deviceId`; desde SPEC 06 las puntuaciones viven en Supabase, y el campo `scores` que hubiera guardado un navegador viejo se queda ahí sin que lo lea nadie. Todo va envuelto en `try/catch`: en modo privado la interfaz funciona igual, sólo que no persiste.
+- **`lib/storage.ts` es el único que toca `localStorage`.** La clave es `arcadevault:v1` (la versión va dentro: un cambio de esquema estrena clave). Dentro hay tres campos, `user`, `deviceId` y `skins` —la piel elegida en cada máquina, que estrenó el selector del gabinete—; desde SPEC 06 las puntuaciones viven en Supabase, y el campo `scores` que hubiera guardado un navegador viejo se queda ahí sin que lo lea nadie. `skins` entró **sin subir a `v2`** a propósito: es opcional, no invalida lo ya guardado, y estrenar clave habría cerrado la sesión de todo el mundo por un color. Se teclea `Record<string, SkinId>` y no `Record<GameId, SkinId>` para que este archivo no importe del catálogo. Todo va envuelto en `try/catch`: en modo privado la interfaz funciona igual, sólo que no persiste.
 - **El nombre se normaliza igual en los dos sitios**: mayúsculas y 12 caracteres, en `login()` y otra vez en la Server Action que guarda la marca.
 - **`deviceId()` puede devolver `undefined`.** `crypto.randomUUID()` sólo existe en contexto seguro, así que probando desde el móvil por `http://192.168.x.x` no está. La marca se guarda igual, sin dueño: se pierde un color en la tabla, no una puntuación.
 
@@ -488,13 +546,14 @@ El formulario de `/acerca-de` envía por la Server Action `app/(vault)/acerca-de
 ## Herramientas del repo
 
 - **`.claude/agents/game-planner.md`** es el eslabón de **antes** de la spec: un subagente que decide **qué** máquina entra. Reconstruye el catálogo desde `lib/games.ts`, puntúa entre cinco y ocho candidatos con los doce criterios de `.claude/game-planner/rubrica.md` —siete eliminatorios contra el contrato del motor, cinco ponderados— y devuelve una terna con un ganador y su ficha. **Para ahí**: no escribe specs ni código, y cierra con un `/spec-game <juego>` literal.
-- **`.claude/game-planner/memoria.md`** es lo que hace que ese agente no se repita. Un subagente arranca en frío —no ve el hilo que lo llamó ni lo que se habló ayer—, así que cada candidato queda escrito ahí con su nota y su veredicto (`propuesta`, `no-encaja`, `descartada`, `aparcada`, `elegida`, `en-spec`, `implementada`, `desincronizada`). Se versiona en git a propósito, es el único archivo que el agente escribe, y **el repo manda sobre él**: si la tabla y `lib/games.ts` no coinciden, se corrige la tabla. Para que anote un veredicto tuyo, pásaselo literal («descarta Pong porque…»): entonces sólo reconcilia y escribe. Nota: el CLI trae una memoria nativa de agente (`memory: project`); se descartó a propósito por ser de forma libre y de índice truncable, pero podría sumarse encima del ledger, nunca en su lugar.
-- **`.claude/agents/game-jam.md`** es el subagente que desarrolla **la decisión de alcance**, una vez la máquina ya está decidida. **Se le da el juego** —«haz una jam de Galaga»— y escribe **dos specs alternativas de él**, `specs/game-jam/<game-id>/spec-minima.md` y `spec-completa.md`. **No elige la máquina**: eso es de `game-planner`, y sin argumento para y lo pide. De la máquina dada sólo comprueba que **cabe**, con la pasada eliminatoria C1-C7 de `.claude/game-planner/rubrica.md`; si falla un criterio en sus dos versiones, para y cita cuál. Antes de separar fija lo que las dos comparten —`id`, `title`, `cat`, `glow`, miniatura y `sort_order`—, así que lo único que varía es el alcance y se pueden comparar. Detecta solo si hay material en `references/started-games/` o `source-assets/`: con él las constantes se copian, sin él se fijan en cada spec como hizo SPEC 10. Las dos salen enteras, al nivel de las specs 09 y 10: ocho secciones, plan por pasos, criterios de aceptación sin marcar y riesgos. Va **del tirón**, sin preguntar. Es la decisión que más se pelea aquí —SPEC 08 dejó fuera 31 de las 45 features de su original— y hasta ahora se tomaba antes de saber qué costaba cada camino. **Las dos son excluyentes**: se implementa una, y sus dos `insert` llevan el mismo `id`. Sus specs **no llevan número** —la numeración de `specs/NN-*.md` está reservada para lo que sí se implementa— y salen en estado `Borrador de jam`; aprobar una significa mudarla a `specs/NN-<slug>.md`, y cerrar la hermana, antes de `/spec-impl`. **Lee `.claude/game-planner/memoria.md` para avisar de veredictos anteriores y nunca escribe en él**: el ledger es de `game-planner`.
-- **`.claude/skills/spec-game/`** es una skill local del proyecto: `/spec-game` diseña la spec de una máquina nueva —motor, catálogo, miniatura, mando y migración— y la guarda en `specs/NN-<slug>.md` en estado `Borrador`. **No escribe código de juego**; implementar sigue siendo trabajo de `/spec-impl` con la spec ya aprobada por un humano. Sus dos apoyos son `contact-points.md` (los sitios que toca una máquina nueva) y `engine-contract.md`.
-- **`.claude/agents/skin-designer.md`** es el subagente que se ocupa del **vestido** de las máquinas, y es transversal a la cadena anterior: no decide qué máquina entra ni con qué alcance, sino que comprueba que cada motor de `ENGINES` tenga sus **tres skins obligatorias** —`clasico` (la paleta que el motor ya tiene hoy, extraída del código y no rediseñada), `neon` (sólo tokens `--av-*`) y `retro` (fósforo verde monocromo, donde las entidades se distinguen por brillo y no por tinte)—, diseña hex por hex las que falten y **las aplica al código de la máquina que se le diga**. Es el único agente del repo que escribe en `lib/` y `components/`, y por eso va acotado: **una máquina por invocación**, y verifica con `tsc` y `lint` antes de responder. Lo que lo hace fiable es que **inventaria las ranuras de color leyendo el código**, incluidas las que no están en `constants.ts` —los literales sueltos de `asteroids/entities.ts`, el `"#000"` de fondo, el brillo de `tetris/board.ts`—, que una auditoría a ojo se deja. Sus tres apoyos son `contrato-skin.md` (qué es una skin y las ocho reglas S1-S8), `aplicar-skins.md` (la receta de la aplicación: qué archivos, con qué forma) y el ledger `skins.md`, que lleva el control de qué máquina está vestida y se versiona como la memoria de `game-planner`. Ojo con lo que **no** toca: `components/game-canvas.tsx`, nunca, porque su efecto de montaje depende sólo de `[game]` y meter ahí la skin reiniciaría la partida al cambiarla; la skin viaja por el `GameHandle` que el gabinete ya guarda.
-- **El sistema de skins es aditivo y opcional a propósito.** `lib/games/skins.ts` tiene el vocabulario (`SkinId`, `SKIN_IDS`, `DEFAULT_SKIN`), y el contrato gana dos campos **opcionales**: `GameMount.skins` y `GameHandle.setSkin()`. Que sean opcionales es lo que permite vestir las máquinas de una en una sin romper las que aún no lo están, y `mount()` no cambia de firma. La skin activa vive en el closure de `mount()` —en el ámbito de módulo de un motor sigue sin haber una variable mutable— y el default es `clasico`, así que estrenar el sistema no cambia el aspecto de ninguna partida.
-- **`.claude/agents/mobile-porter.md`** es el que se ocupa de que el sitio **se vea y se toque en un teléfono**, y es el **segundo agente que escribe en `app/` y `components/`** —`skin-designer` escribe en `lib/`—. Su alcance son las **nueve piezas** que las SPEC 11 y 12 dejaron fuera: las siete pantallas que no son `/jugar/[id]`, más `SiteHeader` y `SiteFooter`. La pantalla de juego **no es suya**: ya está portada, sigue con diez criterios sin firmar, y sólo la lee para copiar patrones. Audita, **mide en Chrome a 390 y a 360** —que no es un lujo: `html { overflow-x: hidden }` de `globals.css` hace que un desbordamiento no dé scroll lateral sino recorte silencioso, así que a ojo no se ve—, escribe el arreglo de **una pantalla por invocación** y verifica con `tsc`, `lint` y `build`. Sus tres apoyos son `reglas-movil.md` (las doce reglas M1-M12, eliminatorias y sin nota ponderada), `portar-pantalla.md` (los ocho patrones y los ocho pasos de verificación) y el ledger `pantallas.md`, con dos tablas —Pantallas y Defectos— y una columna `cadena` en vez de fiarse del número de línea, porque el hook de Prettier los mueve. Lo que **no** toca: `lib/games/`, `/jugar/[id]`, `components/play-*.tsx`, el texto editorial, y nada de PWA, manifiesto ni service worker —el alcance es el navegador de un teléfono y nada más—. Y hay un estado que **no puede poner nunca**: `firmada`, que es de un dedo sobre un aparato; él llega a `adaptada`.
-- **`.claude/agents/game-performance-booster.md`** es el que se ocupa de **lo que cuesta un frame**, y es el **tercer agente que escribe código** —`skin-designer` en `lib/games/<juego>/`, `mobile-porter` en `app/` y `components/`, y éste otra vez en `lib/games/<juego>/`, pero en su bucle y no en su paleta—. Su alcance son los **cinco motores** y nada más. Audita el código, **mide el frame time en Chrome con la partida corriendo** —inyectando un parche de `requestAnimationFrame` desde la consola, que no entra en el repo: un contador de FPS dentro de `lib/games/` acabaría emitiendo por frame hacia el HUD y costaría más que lo que se gana—, escribe la optimización de **un motor por invocación** y verifica con `tsc`, `lint`, `build` y **una segunda medición**. Sus tres apoyos son `reglas-rendimiento.md` (las doce reglas R1-R12, eliminatorias y con el presupuesto de frame en una tabla), `optimizar-motor.md` (el instrumento, el escenario de medición con su guion de teclas por máquina, los cinco patrones y los ocho pasos de verificación) y el ledger `motores.md`, con **tres** tablas —Motores, Hallazgos y Mediciones—, la misma columna `cadena` que `mobile-porter` y una regla propia: **una medición nunca se sobrescribe**, porque es lo único que deja ver una regresión. Lo que **no** toca: `lib/games/engine.ts`, `lib/games.ts` —donde viven `tint()`, `glow()` y `noGlow()`, que llaman los cinco motores desde su bucle—, los `skins.ts` de las máquinas, `components/`, `app/`, y ni una constante de equilibrio: `git diff` de `constants.ts` sale vacío, con la única excepción de un tope nuevo donde no había ninguno. Y hay un estado que **no puede poner nunca**: `firmado`, que es de alguien jugando en un aparato de verdad; él llega a `optimizado`.
+- **`.claude/game-planner/memoria.md`** es lo que hace que ese agente no se repita. Un subagente arranca en frío —no ve el hilo que lo llamó ni lo que se habló ayer—, así que cada candidato queda escrito ahí con su nota y su veredicto (`propuesta`, `no-encaja`, `descartada`, `aparcada`, `elegida`, `en-spec`, `implementada`, `desincronizada`). Se versiona en git a propósito, es el único archivo que el agente escribe, y **el repo manda sobre él**: si la tabla y `lib/games.ts` no coinciden, se corrige la tabla. Para que anote un veredicto tuyo, pásaselo literal («descarta Pong porque…»): entonces sólo reconcilia y escribe. Hoy la tabla **está desincronizada y lo estará hasta la próxima ronda**: `frogger` sigue como `propuesta` aunque su clave lleve en `GameId` desde SPEC 14, y `amidar` como `propuesta` con dos specs de jam escritas. Se corrige la tabla, nunca el repo. Nota: el CLI trae una memoria nativa de agente (`memory: project`); se descartó a propósito por ser de forma libre y de índice truncable, pero podría sumarse encima del ledger, nunca en su lugar.
+- **`.claude/agents/game-jam.md`** es el subagente que desarrolla **la decisión de alcance**, una vez la máquina ya está decidida. **Se le da el juego** —«haz una jam de Galaga»— y escribe **dos specs alternativas de él**, `specs/game-jam/<game-id>/spec-minima.md` y `spec-completa.md`. **No elige la máquina**: eso es de `game-planner`, y sin argumento para y lo pide. De la máquina dada sólo comprueba que **cabe**, con la pasada eliminatoria C1-C7 de `.claude/game-planner/rubrica.md`; si falla un criterio en sus dos versiones, para y cita cuál. Antes de separar fija lo que las dos comparten —`id`, `title`, `cat`, `glow`, miniatura y `sort_order`—, así que lo único que varía es el alcance y se pueden comparar. Detecta solo si hay material en `references/started-games/` o `source-assets/`: con él las constantes se copian, sin él se fijan en cada spec como hizo SPEC 10. Las dos salen enteras, al nivel de las specs 09 y 10: ocho secciones, plan por pasos, criterios de aceptación sin marcar y riesgos. Va **del tirón**, sin preguntar. Es la decisión que más se pelea aquí —SPEC 08 dejó fuera 31 de las 45 features de su original— y hasta ahora se tomaba antes de saber qué costaba cada camino. **Las dos son excluyentes**: se implementa una, y sus dos `insert` llevan el mismo `id`. Sus specs **no llevan número** —la numeración de `specs/NN-*.md` está reservada para lo que sí se implementa— y salen en estado `Borrador de jam`; aprobar una significa mudarla a `specs/NN-<slug>.md`, y cerrar la hermana, antes de `/spec-impl-game`. Ha corrido dos veces: la jam de Frogger, que acabó en SPEC 14 con la versión completa, y la de Amidar, cuyas dos specs **siguen en borrador y esperan decisión**. **Lee `.claude/game-planner/memoria.md` para avisar de veredictos anteriores y nunca escribe en él**: el ledger es de `game-planner`.
+- **`.claude/skills/spec-game/`** es una skill local del proyecto: `/spec-game` diseña la spec de una máquina nueva —motor, catálogo, miniatura, mando y migración— y la guarda en `specs/NN-<slug>.md` en estado `Borrador`. **No escribe código de juego**; implementar sigue siendo trabajo de `/spec-impl-game` con la spec ya aprobada por un humano. Sus dos apoyos son `contact-points.md` (los sitios que toca una máquina nueva) y `engine-contract.md`.
+- **`.claude/skills/spec-impl-game/`** es la otra skill local, y es la que hoy cierra la cadena: `/spec-impl-game NN-slug` **no reemplaza a `/spec-impl`, lo especializa** para las specs que traen máquina. Sus fases 1, 2, 4 y 5 son las de `/spec-impl` —mismo bloqueo si el estado no significa «Aprobado», misma rama `spec-NN-slug`, mismo ritmo de un paso y una pausa—; lo que añade son tres: comprueba que la spec **trae máquina** (motor en `lib/games/<id>/`, línea en `ENGINES` y migración a `public.games`, las tres o para y remite a `/spec-impl`), pone una **puerta de verificación** con `tsc`, `lint` y `build` antes de llamar a nadie, y **encadena los dos subagentes que hasta ahora se pedían a mano y se olvidaban**: `skin-designer` sobre la máquina y después `mobile-porter` sobre `/juego/<id>`. **Uno detrás de otro y nunca en el mismo mensaje**: los dos escriben en el árbol y comparten el hook de formateo. Al terminar recuerda las tres cosas que son de humano —cambiar el estado de la spec, el commit final y firmar la pantalla en un teléfono de verdad—. Es la skill donde está escrito, además, que las specs de `specs/game-jam/` **no cuentan**: no llevan número y por definición no están aprobadas.
+- **`.claude/agents/skin-designer.md`** es el subagente que se ocupa del **vestido** de las máquinas, y es transversal a la cadena anterior: no decide qué máquina entra ni con qué alcance, sino que comprueba que cada motor de `ENGINES` tenga sus **tres skins obligatorias** —`clasico` (la paleta que el motor ya tiene hoy, extraída del código y no rediseñada), `neon` (sólo tokens `--av-*`) y `retro` (fósforo verde monocromo, donde las entidades se distinguen por brillo y no por tinte)—, diseña hex por hex las que falten y **las aplica al código de la máquina que se le diga**. Es el único agente del repo que escribe en `lib/` y `components/`, y por eso va acotado: **una máquina por invocación**, y verifica con `tsc` y `lint` antes de responder. Lo que lo hace fiable es que **inventaria las ranuras de color leyendo el código**, incluidas las que no están en `constants.ts` —los literales sueltos de `asteroids/entities.ts`, el `"#000"` de fondo, el brillo de `tetris/board.ts`—, que una auditoría a ojo se deja. Sus tres apoyos son `contrato-skin.md` (qué es una skin y las ocho reglas S1-S8), `aplicar-skins.md` (la receta de la aplicación: qué archivos, con qué forma) y el ledger `skins.md`, que lleva el control de qué máquina está vestida y se versiona como la memoria de `game-planner`. **Su trabajo de fondo está hecho**: las quince filas —cinco máquinas por tres pieles— están en `aplicada`, y la serie del halo se cerró con Frogger; lo que queda es veredicto humano, porque `aplicada` no es aprobada. Ojo con lo que **no** toca: `components/game-canvas.tsx`, nunca, porque su efecto de montaje depende sólo de `[game]` y meter ahí la skin reiniciaría la partida al cambiarla; la skin viaja por el `GameHandle` que el gabinete ya guarda.
+- **El sistema de skins es aditivo y opcional a propósito**, y hoy lo usan las cinco máquinas (los detalles, en «Motores de juego»). `lib/games/skins.ts` tiene el vocabulario y el contrato gana dos campos **opcionales**: `GameMount.skins` y `GameHandle.setSkin()`. Que sean opcionales es lo que permitió vestirlas de una en una, y lo que permitirá que la sexta entre sin vestir; `mount()` nunca cambió de firma. La skin activa vive en el closure de `mount()` —en el ámbito de módulo de un motor sigue sin haber una variable mutable— y el default es `clasico`, así que estrenar el sistema no cambió el aspecto de ninguna partida.
+- **`.claude/agents/mobile-porter.md`** es el que se ocupa de que el sitio **se vea y se toque en un teléfono**, y es el **segundo agente que escribe en `app/` y `components/`** —`skin-designer` escribe en `lib/`—. Su alcance son las **nueve piezas** que las SPEC 11 y 12 dejaron fuera: las siete pantallas que no son `/jugar/[id]`, más `SiteHeader` y `SiteFooter`. La pantalla de juego **no es suya**: ya está portada, sigue con diez criterios sin firmar, y sólo la lee para copiar patrones. Audita, **mide en Chrome a 390 y a 360** —que no es un lujo: `html { overflow-x: hidden }` de `globals.css` hace que un desbordamiento no dé scroll lateral sino recorte silencioso, así que a ojo no se ve—, escribe el arreglo de **una pantalla por invocación** y verifica con `tsc`, `lint` y `build`. Sus tres apoyos son `reglas-movil.md` (las doce reglas M1-M12, eliminatorias y sin nota ponderada), `portar-pantalla.md` (los ocho patrones y los ocho pasos de verificación) y el ledger `pantallas.md`, con dos tablas —Pantallas y Defectos— y una columna `cadena` en vez de fiarse del número de línea, porque el hook de Prettier los mueve. **Va por la mitad**: `Pie` y `Ficha` están en `adaptada`, `Cabecera` en `en-curso` —con un M2 y un M4 que se bloquean entre sí y piden una decisión humana, porque subir la marca a 44px crecería la cabecera en escritorio y movería el `100svh-61px` escrito a mano en la Portada—, cinco pantallas siguen sólo `auditada` y el 404 sin auditar. Los dos únicos defectos `critico` del repo están en el Salón. Lo que **no** toca: `lib/games/`, `/jugar/[id]`, `components/play-*.tsx`, el texto editorial, y nada de PWA, manifiesto ni service worker —el alcance es el navegador de un teléfono y nada más—. Y hay un estado que **no puede poner nunca**: `firmada`, que es de un dedo sobre un aparato; él llega a `adaptada`.
+- **`.claude/agents/game-performance-booster.md`** es el que se ocupa de **lo que cuesta un frame**, y es el **tercer agente que escribe código** —`skin-designer` en `lib/games/<juego>/`, `mobile-porter` en `app/` y `components/`, y éste otra vez en `lib/games/<juego>/`, pero en su bucle y no en su paleta—. Su alcance son los **cinco motores** y nada más. Audita el código, **mide el frame time en Chrome con la partida corriendo** —inyectando un parche de `requestAnimationFrame` desde la consola, que no entra en el repo: un contador de FPS dentro de `lib/games/` acabaría emitiendo por frame hacia el HUD y costaría más que lo que se gana—, escribe la optimización de **un motor por invocación** y verifica con `tsc`, `lint`, `build` y **una segunda medición**. Sus tres apoyos son `reglas-rendimiento.md` (las doce reglas R1-R12, eliminatorias y con el presupuesto de frame en una tabla), `optimizar-motor.md` (el instrumento, el escenario de medición con su guion de teclas por máquina, los cinco patrones y los ocho pasos de verificación) y el ledger `motores.md`, con **tres** tablas —Motores, Hallazgos y Mediciones—, la misma columna `cadena` que `mobile-porter` y una regla propia: **una medición nunca se sobrescribe**, porque es lo único que deja ver una regresión. **Los cinco están auditados y sólo `tetris` está `optimizado`**: seis hallazgos cerrados, cuatro ventanas de veinte segundos y un p95 de 0,70 a 0,60 ms en `neon`. De ahí salieron dos cosas que valen para las rondas siguientes: que la ganancia honesta se mide en banco aislado y no en partida —Tetris ya cabía holgadísimo en su presupuesto—, y que **R12 gana a un patrón de la receta**: agrupar el halo por color dejaba 23 escrituras de estado en vez de 75, pero movía el 9,14% de los píxeles, así que se descartó. Los otros cuatro motores tienen 20 hallazgos abiertos, tres de ellos `critico`. Lo que **no** toca: `lib/games/engine.ts`, `lib/games.ts` —donde viven `tint()`, `glow()` y `noGlow()`, que llaman los cinco motores desde su bucle—, los `skins.ts` de las máquinas, `components/`, `app/`, y ni una constante de equilibrio: `git diff` de `constants.ts` sale vacío, con la única excepción de un tope nuevo donde no había ninguno. Y hay un estado que **no puede poner nunca**: `firmado`, que es de alguien jugando en un aparato de verdad; él llega a `optimizado`.
 - **`.mcp.json`** declara el servidor MCP de Supabase apuntando al proyecto `nlfwqnmidfdohuyhklqp`. Sirve para consultar e inspeccionar; las migraciones siguen yendo por `npx supabase db push` (ver «El marcador»).
 - **`.env.example`** documenta las cinco variables: `RESEND_API_KEY`, `SUPABASE_DB_PASSWORD` y las tres de Supabase. Al añadir una variable nueva, se añade ahí.
 - **`demos/demo.tsx`** no forma parte de la app: nadie lo importa y no cuelga de ninguna ruta.
@@ -505,8 +564,10 @@ Usa siempre `/frontend-design` para diseñar interfaces de usuario.
 
 Para una máquina nueva del vault la cadena son tres eslabones, y ninguno se salta
 (ver «Herramientas del repo»): el subagente `game-planner` decide **cuál**, la skill
-local `/spec-game` escribe su spec y `/spec-impl` la implementa. Si el juego ya está
-elegido, se entra por `/spec-game`; escribir el motor directamente, nunca.
+local `/spec-game` escribe su spec y `/spec-impl-game` la implementa y, al terminar,
+llama a `skin-designer` y después a `mobile-porter`. Si el juego ya está elegido, se
+entra por `/spec-game`; escribir el motor directamente, nunca. `/spec-impl` se queda
+para las specs que **no** traen máquina, como la 11, la 12 y la 13.
 
 Al margen de esa cadena está el subagente `game-jam`, que entra **entre el primer y
 el segundo eslabón**: con la máquina ya decidida, se le da el juego y deja dos specs
