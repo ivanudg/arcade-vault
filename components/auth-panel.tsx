@@ -55,7 +55,12 @@ function readable(message: string): string {
   return "NO SE HA PODIDO. INTENTALO OTRA VEZ";
 }
 
-export function AuthPanel() {
+export function AuthPanel({
+  /** Aviso con el que se llega de fuera, hoy sólo el del enlace caducado. */
+  notice,
+}: {
+  notice?: string;
+}) {
   const { user, ready, logout } = useSession();
   const router = useRouter();
 
@@ -65,7 +70,10 @@ export function AuthPanel() {
   const [password, setPassword] = useState("");
 
   const [sending, setSending] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  // El aviso de fuera es el primer error de la pantalla, y el primer intento
+  // propio lo sustituye: quien vuelve a probar ya no necesita que le repitan
+  // que el enlace anterior no valía.
+  const [error, setError] = useState<string | null>(notice ?? null);
   /** Correo al que se acaba de mandar la confirmación. `null` mientras no. */
   const [sent, setSent] = useState<string | null>(null);
 
