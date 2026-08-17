@@ -10,9 +10,9 @@ import { usePathname } from "next/navigation";
 import { GAME_IDS } from "@/lib/games";
 
 /**
- * El remate del catálogo, que ya no vive en `/`. Contaba las máquinas desde
- * `GAMES`, y desde SPEC 07 no cuenta ninguna: un pie que anuncia «1 MÁQUINAS»
- * no lo arregla ni la cifra correcta.
+ * El remate del catálogo, que ya no vive en `/`. Contaba las máquinas, y desde
+ * SPEC 07 no cuenta ninguna: un pie que anuncia «1 MÁQUINAS» no lo arregla ni
+ * la cifra correcta.
  */
 const LIBRARY_TEXT = "ARCADE VAULT · BIBLIOTECA · INSERTA UNA MONEDA";
 

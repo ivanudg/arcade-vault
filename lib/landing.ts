@@ -48,10 +48,12 @@ export const FEATURES: readonly Feature[] = [
   {
     icon: "GAMEPAD",
     title: "JUEGOS CLASICOS",
-    // Sólo se nombra lo que está en `GAMES`: SPEC 07 quitó de aquí a Arkanoid y
-    // a Tetris, que volvieron al entrar con motor —Tetris en SPEC 08, Arkanoid
-    // en SPEC 09, Snake llegó en SPEC 10 y Frogger en SPEC 14—. Ninguna promesa
-    // de máquina que no esté en el catálogo.
+    // Sólo se nombra lo que está en el catálogo: SPEC 07 quitó de aquí a
+    // Arkanoid y a Tetris, que volvieron al entrar con motor —Tetris en
+    // SPEC 08, Arkanoid en SPEC 09, Snake llegó en SPEC 10 y Frogger en
+    // SPEC 14—. Ninguna promesa de máquina que no se pueda jugar. Ojo desde
+    // SPEC 17: el catálogo vive en `public.games` y esta lista no, así que
+    // retirar una máquina desde el panel no la borra de aquí.
     desc: "Asteroids, Tetris, Arkanoid, Snake y Frogger, cinco clásicos enteros y jugables en el navegador. Sin descargas ni emuladores.",
     accent: "cyan",
   },
@@ -76,11 +78,10 @@ export const FEATURES: readonly Feature[] = [
 ];
 
 /**
- * Las tres cifras de la franja. La primera decía `9 JUEGOS Y CONTANDO` desde
- * `GAMES.length`, que con el catálogo de SPEC 07 habría quedado en un absurdo
- * `1 JUEGOS`. Sigue escrita a mano, y se actualiza con cada máquina que entra:
- * presumir de las que se juegan de verdad es más honesto que presumir de nueve
- * que no.
+ * Las tres cifras de la franja. La primera decía `9 JUEGOS Y CONTANDO` contando
+ * el catálogo, que con el de SPEC 07 habría quedado en un absurdo `1 JUEGOS`.
+ * Sigue escrita a mano, y se actualiza con cada máquina que entra: presumir de
+ * las que se juegan de verdad es más honesto que presumir de nueve que no.
  */
 export const STATS: readonly Stat[] = [
   { value: "5", unit: "MAQUINAS", note: "JUGABLES DE VERDAD" },
