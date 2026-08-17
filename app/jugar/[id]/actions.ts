@@ -5,9 +5,9 @@
  *
  * Es la única escritura del vault. Vive en el servidor y no en el navegador por
  * tres razones: aquí se normaliza el nombre igual que lo hace la sesión, aquí
- * se comprueba que la máquina existe antes de chocar contra la clave ajena, y
- * aquí es donde `revalidatePath` puede hacer que la marca aparezca en el salón
- * sin recargar a mano.
+ * se comprueba contra `public.games` que la máquina existe y sigue jugable
+ * antes de chocar contra la clave ajena, y aquí es donde `revalidatePath` puede
+ * hacer que la marca aparezca en el salón sin recargar a mano.
  *
  * La acción vuelve a validar lo que el gabinete ya comprobó, y no por
  * desconfianza del cliente: una Server Action es una URL pública que responde a
@@ -30,7 +30,7 @@
  */
 
 import { revalidatePath } from "next/cache";
-import { getGame } from "@/lib/games";
+import { game as findGame } from "@/lib/catalog";
 import { createClient } from "@/lib/supabase/server";
 
 /** Los mismos topes que los `CHECK` de la tabla. Si cambian, cambian los dos. */
@@ -52,9 +52,19 @@ export async function saveScore(
   score: number,
   deviceId?: string,
 ): Promise<SaveScoreResult> {
-  // Una máquina que no está en el catálogo choca contra la clave ajena y
-  // devuelve un 500 ilegible. Mejor pararlo aquí y decir qué pasó.
-  if (!getGame(gameId)) {
+  // Desde SPEC 17 el catálogo lo manda `public.games`, así que la comprobación
+  // deja de ser contra el código y pasa a ser una consulta. Sigue haciendo dos
+  // cosas: parar aquí una máquina que no está —que contra la clave ajena
+  // devolvería un 500 ilegible— y, ahora, rechazar una **retirada**. Sin esto,
+  // una máquina cuya pantalla de juego responde 404 seguiría aceptando marcas
+  // por POST y su tabla del salón seguiría creciendo.
+  const machine = await findGame(gameId);
+  // Que no se pueda preguntar no es lo mismo que no exista: la marca no entra,
+  // pero tampoco se le dice a quien acaba de jugar que su máquina no existe.
+  if (machine === null) {
+    return { ok: false, error: "No hay conexión con el catálogo." };
+  }
+  if (machine === undefined || !machine.playable) {
     return { ok: false, error: "Esa máquina no está en el catálogo." };
   }
 
