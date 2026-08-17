@@ -19,14 +19,12 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { PASSWORD_HINT, passwordProblem, WEAK_PASSWORD } from "@/lib/password";
 import { createClient } from "@/lib/supabase/client";
 
 const FIELD =
   "border border-av-cyan/30 bg-av-void p-3.25 text-[14px] text-av-text-bright outline-none focus:border-av-cyan focus:shadow-[0_0_18px_rgba(0,245,255,0.45)] disabled:opacity-55";
 const LABEL = "flex flex-col gap-2 text-[12px] tracking-av text-av-text-muted";
-
-/** El mismo mínimo que aplica el registro: el que trae Supabase de fábrica. */
-const MIN_PASSWORD = 6;
 
 export function NewPasswordForm() {
   const router = useRouter();
@@ -42,9 +40,12 @@ export function NewPasswordForm() {
     setError(null);
 
     // Las dos comprobaciones se hacen aquí y no al volver: son de forma, y
-    // gastar una llamada de red para que Supabase diga lo mismo es peor.
-    if (password.length < MIN_PASSWORD) {
-      setError(`LA CONTRASENA NECESITA ${MIN_PASSWORD} CARACTERES`);
+    // gastar una llamada de red para que Supabase diga lo mismo es peor. La
+    // primera es la misma regla que aplica el registro, y sale del mismo módulo:
+    // aquí no hay login que proteger, así que corre siempre.
+    const problem = passwordProblem(password);
+    if (problem) {
+      setError(problem);
       return;
     }
     if (password !== repeat) {
@@ -57,13 +58,22 @@ export function NewPasswordForm() {
       const supabase = createClient();
       const { error } = await supabase.auth.updateUser({ password });
       if (error) {
-        // El más habitual: la nueva es la misma de siempre. Lo demás sale como
-        // fallo genérico, que un mensaje de la librería no lo entiende nadie.
-        setError(
-          error.message.toLowerCase().includes("different")
-            ? "ESA YA ERA TU CONTRASENA. ESCRIBE OTRA"
-            : "NO SE HA PODIDO. INTENTALO OTRA VEZ",
-        );
+        // Se discrimina por `error.code` y no por la frase: aquí el error viene
+        // siempre de `updateUser()`, así que siempre es un `AuthError` y trae
+        // código. Mirar si el mensaje incluye `different` funcionaba hasta el
+        // día que Supabase reescriba la frase.
+        //
+        // No se comparte el `readable()` de `AuthPanel` a propósito: esa función
+        // no es un diccionario sino un **orden** calibrado para los flujos del
+        // acceso, y aquí seis de sus ramas son inalcanzables. Lo que las dos
+        // pantallas comparten es el vocabulario, que sale de `lib/password.ts`.
+        if (error.code === "same_password") {
+          setError("ESA YA ERA TU CONTRASENA. ESCRIBE OTRA");
+        } else if (error.code === "weak_password") {
+          setError(WEAK_PASSWORD);
+        } else {
+          setError("NO SE HA PODIDO. INTENTALO OTRA VEZ");
+        }
         return;
       }
 
@@ -107,12 +117,20 @@ export function NewPasswordForm() {
           type="password"
           placeholder="••••••••"
           autoComplete="new-password"
+          aria-describedby="password-hint"
           required
           autoFocus
           disabled={sending}
           className={FIELD}
         />
       </label>
+
+      {/* Hermano del `<label>` y no hijo: dentro pasaría a formar parte del
+          nombre accesible del campo. Aquí sin condición, que las dos veces que
+          se llega a esta pantalla es para escribir una contraseña nueva. */}
+      <p id="password-hint" className="-mt-2 text-[11px] leading-relaxed text-av-text-faint">
+        {PASSWORD_HINT}
+      </p>
 
       <label className={LABEL}>
         Repite la contraseña

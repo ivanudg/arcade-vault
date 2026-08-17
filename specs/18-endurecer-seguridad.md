@@ -275,17 +275,17 @@ Van al final por eso.
 
 ### El módulo y el cliente
 
-- [ ] `lib/password.ts` existe, no contiene `"use client"` y no importa nada.
-- [ ] `grep -rn "MIN_PASSWORD = " components/ lib/` devuelve **una** línea, y es la de
+- [x] `lib/password.ts` existe, no contiene `"use client"` y no importa nada.
+- [x] `grep -rn "MIN_PASSWORD = " components/ lib/` devuelve **una** línea, y es la de
       `lib/password.ts`, con el valor `8`.
-- [ ] `PASSWORD_SYMBOLS` tiene **32** caracteres e incluye la barra invertida.
-- [ ] En `components/auth-panel.tsx`, la llamada a `passwordProblem()` está **dentro** del
+- [x] `PASSWORD_SYMBOLS` tiene **32** caracteres e incluye la barra invertida.
+- [x] En `components/auth-panel.tsx`, la llamada a `passwordProblem()` está **dentro** del
       bloque `if (isRegister)`.
-- [ ] En `readable()`, la línea que casa `at least one character` va **antes** que la que casa
+- [x] En `readable()`, la línea que casa `at least one character` va **antes** que la que casa
       `password`.
-- [ ] `components/new-password-form.tsx` no importa `readable` y contiene
+- [x] `components/new-password-form.tsx` no importa `readable` y contiene
       `error.code === "weak_password"`.
-- [ ] El párrafo de ayuda es hermano del `<label>` y el `<input>` lo referencia con
+- [x] El párrafo de ayuda es hermano del `<label>` y el `<input>` lo referencia con
       `aria-describedby`.
 - [ ] `npx tsc --noEmit`, `npm run lint` y `npm run build` pasan después de **cada** paso.
 

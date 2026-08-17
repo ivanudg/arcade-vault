@@ -6,7 +6,7 @@
  * del servidor. Esto existe para que un alta no falle por sorpresa y para que el
  * rótulo diga **qué** falta, que es algo que la frase de Supabase no dice.
  *
- * Isomorfo y sin `"use client"` a propósito: es TypeScript puro, sin React, sin
+ * Isomorfo y sin directiva de cliente a propósito: es TypeScript puro, sin React, sin
  * DOM y sin imports —el precedente es `lib/storage.ts`, que sólo funciona en el
  * navegador y tampoco lleva directiva—. Así el día que haya que revalidar la
  * contraseña en una Server Action, como ya hace
