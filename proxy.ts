@@ -12,15 +12,35 @@
  * acabaría viendo a un invitado donde hay una cuenta. Aquí sí se pueden
  * escribir: la respuesta se construye con las cookies actualizadas.
  *
- * Qué **no** hace: proteger rutas. Hoy no hay ninguna que lo pida —el vault se
- * juega desde el primer clic, sin cuenta— y la documentación de Next avisa de
- * que el proxy no es el sitio para la autorización. La comprobación de verdad
- * vive donde se escribe: en la Server Action que guarda la marca y en la RLS.
+ * Qué hace **además** desde SPEC 18: pre-filtrar las rutas que sin sesión no
+ * llevan a ninguna parte. Es un *optimistic check* en el sentido de la
+ * documentación de Next, que admite el proxy para «permission-based redirects»
+ * y avisa en la misma frase de que no es una solución de autorización: **la
+ * comprobación de verdad se queda donde estaba**, en la página, en la Server
+ * Action que guarda la marca y en la RLS. Aquí sólo se ahorra pintar una
+ * pantalla que va a rebotar.
+ *
+ * Y no cuesta ni una llamada de red: el `getUser()` que refresca la sesión ya
+ * se hacía en cada petición, y hasta ahora su respuesta se tiraba.
  */
 
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 import { isSupabaseConfigured, supabasePublishableKey, supabaseUrl } from "@/lib/supabase/env";
+
+/**
+ * Las rutas que sin sesión no tienen nada que enseñar.
+ *
+ * Hoy es **una**: el vault se juega desde el primer clic y sin cuenta, así que
+ * las otras siete pantallas son públicas por diseño y ninguna entra aquí. Es
+ * una lista y no un `if` para que la siguiente sea una línea.
+ *
+ * Coincidencia exacta y no prefijo: `/cuenta` es pública y lo seguirá siendo.
+ */
+const PROTEGIDAS = ["/cuenta/nueva-contrasena"];
+
+/** A donde rebota quien llega sin sesión. Lo mismo que dice la página. */
+const SIN_SESION = "/cuenta?error=recuperacion";
 
 export async function proxy(request: NextRequest) {
   // Sin credenciales, la petición pasa tal cual. Es lo contrario de lo que hace
@@ -50,15 +70,25 @@ export async function proxy(request: NextRequest) {
   });
 
   // `getUser()` y no `getSession()`: éste va al servidor de Supabase a validar
-  // el token, y de paso es lo que dispara la renovación. Llamarlo es el trabajo
-  // entero; su respuesta no se usa aquí.
+  // el token, y de paso es lo que dispara la renovación.
   //
   // Si Supabase no contesta, la petición sigue su camino sin sesión refrescada.
   // Un fallo de red no puede dejar el sitio en blanco.
+  let contesto = false;
+  let user = null;
   try {
-    await supabase.auth.getUser();
+    const { data } = await supabase.auth.getUser();
+    user = data.user;
+    contesto = true;
   } catch (error) {
     console.error("[proxy] no se pudo refrescar la sesión:", error);
+  }
+
+  // Se rebota sólo cuando Supabase **contestó** que no hay nadie. Si la llamada
+  // falló no se sabe si hay sesión, así que pasa y decide la página: rebotar por
+  // un fallo de red echaría de su propia cuenta a quien la tiene.
+  if (contesto && !user && PROTEGIDAS.includes(request.nextUrl.pathname)) {
+    return NextResponse.redirect(new URL(SIN_SESION, request.url));
   }
 
   return response;

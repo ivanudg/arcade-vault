@@ -335,7 +335,7 @@ Van al final por eso.
       a propósito.
 - [x] `pg_default_acl` del esquema `public` para el rol `postgres` ya no menciona `anon` ni
       `authenticated`.
-- [ ] `npx supabase db reset` contra el stack local aplica las trece migraciones sin error e
+- [x] `npx supabase db reset` contra el stack local aplica las trece migraciones sin error e
       imprime el aviso de que `rls_auto_enable()` no existe en esa base.
 - [x] Aplicar la migración dos veces sobre la base remota tampoco falla.
 
