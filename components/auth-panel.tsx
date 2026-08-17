@@ -181,7 +181,7 @@ export function AuthPanel({
 
       {/* Nada de estado de sesión hasta que conteste Supabase: si no, a quien ya
           tiene sesión le parpadearía el formulario antes del perfil. */}
-      {!ready ? null : user ? (
+      {!ready ? null : user?.username ? (
         <div className="flex flex-col gap-4 text-center">
           <div className="grid place-items-center gap-3 border border-av-magenta/35 bg-av-void p-5">
             <div className="grid size-13 place-items-center bg-av-magenta font-display text-[16px] text-av-bg shadow-[0_0_18px_rgba(255,0,110,0.6)]">

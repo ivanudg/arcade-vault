@@ -147,12 +147,24 @@ export function SiteHeader() {
               (user ? (
                 <div className="flex items-center gap-2.5">
                   <div className="grid size-8.5 place-items-center bg-av-magenta font-display text-[11px] text-av-bg av-halo-magenta">
-                    {user.username.slice(0, 1)}
+                    {user.username ? user.username.slice(0, 1) : "?"}
                   </div>
                   <div className="flex flex-col gap-0.5">
-                    <span className="text-[12px] tracking-av text-av-text-bright">
-                      {user.username}
-                    </span>
+                    {/* Sin nombre no se enseña el correo: sería poner una
+                        dirección en pantalla sin que nadie lo haya pedido. Lo
+                        que se enseña es lo que falta por hacer. */}
+                    {user.username ? (
+                      <span className="text-[12px] tracking-av text-av-text-bright">
+                        {user.username}
+                      </span>
+                    ) : (
+                      <Link
+                        href="/cuenta"
+                        className="font-display text-[9px] tracking-av text-av-yellow hover:text-av-cyan"
+                      >
+                        ELIGE NOMBRE
+                      </Link>
+                    )}
                     <button
                       type="button"
                       onClick={logout}

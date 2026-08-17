@@ -30,11 +30,19 @@ import { isSupabaseConfigured } from "@/lib/supabase/env";
  * Ya no viene de `lib/storage.ts`: el nombre es el `username` de
  * `public.profiles`, único en todo el vault y ya normalizado por la base de
  * datos —mayúsculas y doce caracteres—, y el `id` es el de `auth.users`, que es
- * lo que firma las marcas desde esta spec.
+ * lo que firma las marcas desde SPEC 15.
  */
 export interface VaultUser {
   id: string;
-  username: string;
+  /**
+   * `null` mientras la cuenta no tenga fila en `profiles`.
+   *
+   * Desde SPEC 16 el trigger no crea perfil cuando el alta no trae nombre, que
+   * es lo que pasa con Google y con GitHub. El nulo **es** el estado —hay sesión
+   * de verdad y lo que falta es el nombre—, y decirlo en el tipo es lo que
+   * obliga a `tsc` a que nadie se lo salte.
+   */
+  username: string | null;
   email: string;
 }
 
@@ -46,9 +54,6 @@ interface Session {
 }
 
 const SessionContext = createContext<Session | null>(null);
-
-/** Nombre de emergencia si el perfil no se puede leer. Nunca debería verse. */
-const FALLBACK_NAME = "JUGADOR";
 
 export function SessionProvider({ children }: { children: React.ReactNode }) {
   const router = useRouter();
@@ -117,10 +122,11 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
       .then(({ data, error }) => {
         if (!alive) return;
         if (error) console.error("[sesion] no se pudo leer el perfil:", error);
-        // Con sesión abierta y sin perfil legible se entra igual: el trigger
-        // garantiza que la fila existe, así que esto sólo pasa si la red falla,
-        // y decir INVITADO a quien ha entrado sería peor que decir JUGADOR.
-        setUser({ id: authId, username: data?.username ?? FALLBACK_NAME, email });
+        // Sin fila no se inventa un nombre: desde SPEC 16 la ausencia es un
+        // estado legítimo —una cuenta de proveedor recién creada—, y el nombre
+        // lo elige quien juega en `/cuenta`. Inventarlo aquí sería firmar
+        // marcas con un nombre que nadie eligió.
+        setUser({ id: authId, username: data?.username ?? null, email });
       });
 
     return () => {

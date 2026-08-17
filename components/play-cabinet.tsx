@@ -205,7 +205,10 @@ export function PlayCabinet({ game }: { game: Game }) {
 
   /** Las tres cifras del HUD, de la partida en curso. */
   const run = live ?? FRESH_RUN;
-  const playerName = ready && user ? user.username : "INVITADO";
+  // Sin sesión, y también con sesión pero sin nombre elegido, se firma como
+  // INVITADO: desde SPEC 16 hay cuentas de proveedor que todavía no tienen
+  // `username`, y perder la partida por eso sería peor.
+  const playerName = ready && user?.username ? user.username : "INVITADO";
   /** Teclas vivas del mando: las que no están se pintan deshabilitadas. */
   const padKeys = ENGINE_KEYS[game.id];
   /**
@@ -583,7 +586,7 @@ export function PlayCabinet({ game }: { game: Game }) {
         <GameOverOverlay
           score={run.score}
           note={
-            user
+            user?.username
               ? `Sesión de ${user.username}: tu marca entra en el salón.`
               : "Modo invitado: la marca entra en el salón firmada como INVITADO."
           }
