@@ -34,6 +34,14 @@ const LABEL = "flex flex-col gap-2 text-[12px] tracking-av-wide text-av-text-mut
 /** Lo que admite `profiles.username_format`: mayúsculas, dígitos y `_`. */
 const USERNAME = /^[A-Z0-9_]{3,12}$/;
 
+/** Los dos proveedores de SPEC 16. Cada uno más es otra app externa. */
+const PROVIDERS = [
+  { id: "google", label: "GOOGLE" },
+  { id: "github", label: "GITHUB" },
+] as const;
+
+type OAuthProvider = (typeof PROVIDERS)[number]["id"];
+
 /** El mínimo que Supabase Auth trae de fábrica. */
 const MIN_PASSWORD = 6;
 
@@ -170,6 +178,42 @@ export function AuthPanel({
       console.error("[cuenta] el envío falló:", cause);
       setError("NO SE HA PODIDO. INTENTALO OTRA VEZ");
     } finally {
+      setSending(false);
+    }
+  }
+
+  /**
+   * Salir hacia Google o GitHub.
+   *
+   * No hay nada que esperar aquí: si la llamada sale bien, el navegador se va a
+   * la pantalla del proveedor y vuelve a `/auth/callback`, que es quien canjea
+   * el código. `sending` se queda puesto a propósito —la pestaña está a punto de
+   * navegar— y sólo se suelta si la llamada falla, que es cuando el panel sigue
+   * en pantalla y tiene que poder decirlo.
+   */
+  async function enterWith(provider: OAuthProvider) {
+    if (sending) return;
+    setError(null);
+    setSending(true);
+    try {
+      const supabase = createClient();
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider,
+        options: {
+          redirectTo: `${window.location.origin}/auth/callback`,
+          // GitHub no da el correo de quien lo tiene en privado si no se pide.
+          // Se pide desde aquí y no en el panel de Supabase para que quede en el
+          // repo, que es donde se lee por qué.
+          scopes: provider === "github" ? "user:email" : undefined,
+        },
+      });
+      if (error) {
+        setError(readable(error.message));
+        setSending(false);
+      }
+    } catch (cause) {
+      console.error("[cuenta] no se pudo salir hacia el proveedor:", cause);
+      setError("NO SE HA PODIDO. INTENTALO OTRA VEZ");
       setSending(false);
     }
   }
@@ -446,24 +490,21 @@ export function AuthPanel({
             </div>
 
             <div className="grid grid-cols-2 gap-3">
-              <button
-                type="button"
-                disabled
-                className="border border-white/14 bg-av-panel px-2 py-3.5 font-display text-[8px] tracking-av text-av-text-soft opacity-45"
-              >
-                GOOGLE
-              </button>
-              <button
-                type="button"
-                disabled
-                className="border border-white/14 bg-av-panel px-2 py-3.5 font-display text-[8px] tracking-av text-av-text-soft opacity-45"
-              >
-                GITHUB
-              </button>
+              {PROVIDERS.map((p) => (
+                <button
+                  key={p.id}
+                  type="button"
+                  onClick={() => void enterWith(p.id)}
+                  disabled={sending}
+                  className="cursor-pointer border border-white/14 bg-av-panel px-2 py-3.5 font-display text-[8px] tracking-av text-av-text-soft active:scale-97 hover:border-av-cyan/60 hover:text-av-cyan disabled:cursor-wait disabled:opacity-45"
+                >
+                  {p.label}
+                </button>
+              ))}
             </div>
 
             <p className="mt-1 text-center text-[11px] tracking-av text-av-line">
-              Google y GitHub llegan en la SPEC 16, junto con recuperar la contraseña.
+              Con Google o GitHub eliges tu nombre de jugador al entrar.
             </p>
           </form>
         </div>
