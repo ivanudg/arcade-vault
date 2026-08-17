@@ -19,6 +19,11 @@
  * otro con un POST a mano. Sin sesión se conserva el camino de siempre: el
  * nombre recibido, sus tres validaciones y `user_id` nulo.
  *
+ * Y desde SPEC 16 hay un tercer caso: **sesión sin perfil**, que es como nace
+ * una cuenta de Google o de GitHub. Ahí no hay nombre que poner todavía, así que
+ * la marca entra como `INVITADO` y sin dueño. El nombre lo sigue poniendo el
+ * servidor; simplemente aún no hay ninguno, y perder la partida sería peor.
+ *
  * Lo que **no** hace, a propósito: comprobar que la puntuación sea alcanzable.
  * El marcador es falsificable y se acepta; los límites de aquí son de forma, no
  * de honestidad.
@@ -31,6 +36,9 @@ import { createClient } from "@/lib/supabase/server";
 /** Los mismos topes que los `CHECK` de la tabla. Si cambian, cambian los dos. */
 const MAX_SCORE = 10_000_000;
 const MAX_NAME = 12;
+
+/** Con quién se firma cuando no hay nombre que poner. */
+const GUEST_NAME = "INVITADO";
 
 /** Lo que la acción devuelve al gabinete: o entró, o hay algo que enseñar. */
 export type SaveScoreResult = { ok: true } | { ok: false; error: string };
@@ -70,20 +78,27 @@ export async function saveScore(
     } = await supabase.auth.getUser();
 
     let player: string;
+    /** Quién firma la marca: la cuenta sólo cuando además tiene nombre. */
+    let signer: string | null = null;
+
     if (user) {
       const { data: profile, error: lookup } = await supabase
         .from("profiles")
         .select("username")
         .eq("id", user.id)
         .maybeSingle();
-      // Sin perfil legible no se firma con un nombre inventado ni con el del
-      // cliente: la marca se pierde y se dice. El trigger garantiza la fila, así
-      // que esto sólo pasa si la base no contesta.
-      if (lookup || !profile) {
-        console.error("[marcador] sesión sin perfil legible:", lookup);
+      // Que la consulta falle no es lo mismo que no haya fila. Lo primero es la
+      // base que no contesta: no se firma con un nombre inventado ni con el del
+      // cliente, la marca se pierde y se dice.
+      if (lookup) {
+        console.error("[marcador] no se pudo leer el perfil:", lookup);
         return { ok: false, error: "No se pudo leer tu perfil." };
       }
-      player = profile.username;
+      // Lo segundo es una cuenta que todavía no ha elegido nombre. La marca
+      // entra como invitado y sin `user_id`: sin nombre no hay a quién
+      // atribuirla, y el salón la resalta por dispositivo como siempre.
+      player = profile?.username ?? GUEST_NAME;
+      signer = profile ? user.id : null;
     } else {
       // La misma norma que aplica el registro: mayúsculas y doce caracteres. Un
       // nombre de sólo espacios se queda en nada y no entra.
@@ -100,7 +115,7 @@ export async function saveScore(
       player_name: player,
       score,
       device_id: owner,
-      user_id: user?.id ?? null,
+      user_id: signer,
     });
 
     if (error) {

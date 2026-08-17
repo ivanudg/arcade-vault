@@ -45,9 +45,12 @@ export function ContactForm() {
   // hidratar. Sólo se rellena una vez, y nunca encima de lo ya escrito.
   const seeded = useRef(false);
   useEffect(() => {
-    if (seeded.current || !ready || !user) return;
+    // Con sesión pero sin nombre elegido no hay nada que prerrellenar: el campo
+    // se queda vacío, como para un invitado.
+    if (seeded.current || !ready || !user?.username) return;
     seeded.current = true;
-    setValues((prev) => (prev.name ? prev : { ...prev, name: user.username }));
+    const username = user.username;
+    setValues((prev) => (prev.name ? prev : { ...prev, name: username }));
   }, [ready, user]);
 
   // Lo que el cliente dejó pasar y la acción sí rechazó: misma respuesta que

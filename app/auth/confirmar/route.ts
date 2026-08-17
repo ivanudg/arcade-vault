@@ -1,10 +1,18 @@
 /**
- * Confirmación del correo de registro.
+ * Canje de los enlaces que llegan por correo.
  *
- * Aquí apunta el enlace que Supabase manda al registrarse: el `signUp()` de
- * `AuthPanel` lo pide con `emailRedirectTo`. Llega con `token_hash` y `type` en
- * la query, se canjea por una sesión con `verifyOtp()` y se acaba en `/cuenta`,
- * ya dentro.
+ * Aquí apuntan los dos: el de confirmar el registro —que pide el `signUp()` de
+ * `AuthPanel` con `emailRedirectTo`— y, desde SPEC 16, el de recuperar la
+ * contraseña. Los dos llegan con `token_hash` y `type` en la query y los dos se
+ * canjean con el **mismo** `verifyOtp()`; lo único que cambia es a dónde se sale
+ * después, y eso lo dice el `type`.
+ *
+ * Que el enlace traiga `token_hash` y no el `code` de PKCE depende de las
+ * plantillas de correo del panel de Supabase, que apuntan aquí con
+ * `{{ .RedirectTo }}?token_hash={{ .TokenHash }}&type=…`. Con las plantillas de
+ * fábrica el enlace pasa por `/auth/v1/verify`, que rebota con un `code` que
+ * esta ruta no entiende: la cuenta se confirma igual, pero quien lo pulsa ve el
+ * aviso de enlace caducado.
  *
  * Es un Route Handler y no una página porque quien tiene que escribir las
  * cookies de la sesión es el servidor, y un Server Component no puede. El
@@ -23,12 +31,14 @@ import { createClient } from "@/lib/supabase/server";
 /** A dónde se llega, con sesión o con el aviso de que el enlace no valía. */
 const OK = "/cuenta";
 const FAIL = "/cuenta?error=confirmacion";
+/** El de `recovery`: hay sesión, pero lo que hace falta es un formulario. */
+const NEW_PASSWORD = "/cuenta/nueva-contrasena";
 
 export async function GET(request: NextRequest) {
   const params = request.nextUrl.searchParams;
   const tokenHash = params.get("token_hash");
-  // `signup` es el del registro; los demás tipos llegarán con las specs que los
-  // estrenen —recuperar contraseña es de la 16—, y el enlace dice cuál es.
+  // `signup` es el del registro y `recovery` el de la contraseña; los demás
+  // tipos llegarán con las specs que los estrenen, y el enlace dice cuál es.
   const type = params.get("type") as EmailOtpType | null;
 
   if (!isSupabaseConfigured() || !tokenHash || !type) redirect(FAIL);
@@ -44,5 +54,7 @@ export async function GET(request: NextRequest) {
     redirect(FAIL);
   }
 
-  redirect(OK);
+  // El enlace de recuperación abre sesión de verdad, así que salir a `/cuenta`
+  // enseñaría el perfil justo cuando hace falta un formulario.
+  redirect(type === "recovery" ? NEW_PASSWORD : OK);
 }

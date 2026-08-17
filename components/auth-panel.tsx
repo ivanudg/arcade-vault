@@ -13,7 +13,12 @@
  * fallar de cuatro formas distintas —nombre cogido, correo repetido, contraseña
  * mala, correo sin confirmar— y cada una tiene que poder decirse en pantalla.
  *
- * Con sesión activa el formulario se sustituye por el perfil.
+ * Con sesión activa el formulario se sustituye por el perfil —o, desde SPEC 16,
+ * por el formulario de nombre de jugador, que es como llega una cuenta de Google
+ * o de GitHub: sesión de verdad y sin fila en `profiles`—. El orden de los
+ * bloques **es** la lógica: «sesión con perfil» va antes que «revisa tu correo»
+ * para que quien confirma su correo y vuelve con sesión vea el perfil y no un
+ * aviso viejo.
  */
 
 import Link from "next/link";
@@ -28,6 +33,17 @@ const LABEL = "flex flex-col gap-2 text-[12px] tracking-av-wide text-av-text-mut
 
 /** Lo que admite `profiles.username_format`: mayúsculas, dígitos y `_`. */
 const USERNAME = /^[A-Z0-9_]{3,12}$/;
+
+/** Los dos proveedores de SPEC 16. Cada uno más es otra app externa. */
+const PROVIDERS = [
+  { id: "google", label: "GOOGLE" },
+  { id: "github", label: "GITHUB" },
+] as const;
+
+type OAuthProvider = (typeof PROVIDERS)[number]["id"];
+
+/** Los tres bloques que se pintan cuando no hay sesión. */
+type PanelMode = "login" | "register" | "recuperar";
 
 /** El mínimo que Supabase Auth trae de fábrica. */
 const MIN_PASSWORD = 6;
@@ -48,10 +64,14 @@ function readable(message: string): string {
   if (m.includes("invalid login credentials")) return "CORREO O CONTRASENA INCORRECTOS";
   if (m.includes("email not confirmed")) return "CONFIRMA TU CORREO ANTES DE ENTRAR";
   if (m.includes("already registered")) return "ESE CORREO YA ESTA REGISTRADO";
-  if (m.includes("password")) return `LA CONTRASENA NECESITA ${MIN_PASSWORD} CARACTERES`;
-  if (m.includes("email")) return "ESE CORREO NO VALE";
+  // La cuota va **antes** que las dos de abajo: el mensaje de Supabase es
+  // `email rate limit exceeded`, así que la comprobación de `email` lo cazaba
+  // primero y salía ESE CORREO NO VALE por un correo que estaba perfecto. Con
+  // dos flujos de correo desde SPEC 16 se choca contra ella mucho más.
   if (m.includes("rate limit") || m.includes("too many"))
     return "DEMASIADOS INTENTOS. ESPERA UN POCO";
+  if (m.includes("password")) return `LA CONTRASENA NECESITA ${MIN_PASSWORD} CARACTERES`;
+  if (m.includes("email")) return "ESE CORREO NO VALE";
   return "NO SE HA PODIDO. INTENTALO OTRA VEZ";
 }
 
@@ -61,10 +81,10 @@ export function AuthPanel({
 }: {
   notice?: string;
 }) {
-  const { user, ready, logout } = useSession();
+  const { user, ready, logout, refreshProfile } = useSession();
   const router = useRouter();
 
-  const [tab, setTab] = useState<"login" | "register">("login");
+  const [mode, setMode] = useState<PanelMode>("login");
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -74,14 +94,15 @@ export function AuthPanel({
   // propio lo sustituye: quien vuelve a probar ya no necesita que le repitan
   // que el enlace anterior no valía.
   const [error, setError] = useState<string | null>(notice ?? null);
-  /** Correo al que se acaba de mandar la confirmación. `null` mientras no. */
+  /** Correo al que se acaba de mandar un enlace. `null` mientras no. */
   const [sent, setSent] = useState<string | null>(null);
 
-  const isRegister = tab === "register";
+  const isRegister = mode === "register";
+  const isRecover = mode === "recuperar";
 
-  /** Cambiar de pestaña no arrastra el error ni el aviso de la otra. */
-  function pick(next: "login" | "register") {
-    setTab(next);
+  /** Cambiar de bloque no arrastra el error ni el aviso del anterior. */
+  function pick(next: PanelMode) {
+    setMode(next);
     setError(null);
     setSent(null);
   }
@@ -169,6 +190,136 @@ export function AuthPanel({
     }
   }
 
+  /**
+   * Pedir el enlace para escribir una contraseña nueva.
+   *
+   * Sale al mismo `/auth/confirmar` que el correo de registro, porque el canje
+   * **es** el mismo `verifyOtp()`; lo que cambia es a dónde se sale después, y
+   * eso lo decide el `type` del enlace.
+   *
+   * El aviso es el mismo exista o no ese correo, y no por descuido:
+   * `resetPasswordForEmail()` responde igual a propósito, y distinguirlo aquí
+   * convertiría el formulario en un detector de qué direcciones tienen cuenta.
+   */
+  async function sendRecovery(e: React.FormEvent) {
+    e.preventDefault();
+    if (sending) return;
+    setError(null);
+    setSending(true);
+    try {
+      const supabase = createClient();
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/auth/confirmar`,
+      });
+      if (error) {
+        setError(readable(error.message));
+        return;
+      }
+      setSent(email);
+    } catch (cause) {
+      console.error("[cuenta] el enlace de recuperación no salió:", cause);
+      setError("NO SE HA PODIDO. INTENTALO OTRA VEZ");
+    } finally {
+      setSending(false);
+    }
+  }
+
+  /**
+   * Salir hacia Google o GitHub.
+   *
+   * No hay nada que esperar aquí: si la llamada sale bien, el navegador se va a
+   * la pantalla del proveedor y vuelve a `/auth/callback`, que es quien canjea
+   * el código. `sending` se queda puesto a propósito —la pestaña está a punto de
+   * navegar— y sólo se suelta si la llamada falla, que es cuando el panel sigue
+   * en pantalla y tiene que poder decirlo.
+   */
+  async function enterWith(provider: OAuthProvider) {
+    if (sending) return;
+    setError(null);
+    setSending(true);
+    try {
+      const supabase = createClient();
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider,
+        options: {
+          redirectTo: `${window.location.origin}/auth/callback`,
+          // GitHub no da el correo de quien lo tiene en privado si no se pide.
+          // Se pide desde aquí y no en el panel de Supabase para que quede en el
+          // repo, que es donde se lee por qué.
+          scopes: provider === "github" ? "user:email" : undefined,
+        },
+      });
+      if (error) {
+        setError(readable(error.message));
+        setSending(false);
+      }
+    } catch (cause) {
+      console.error("[cuenta] no se pudo salir hacia el proveedor:", cause);
+      setError("NO SE HA PODIDO. INTENTALO OTRA VEZ");
+      setSending(false);
+    }
+  }
+
+  /**
+   * Elegir el nombre de una cuenta que todavía no lo tiene.
+   *
+   * Es el `insert` que la política `"crear mi perfil"` permite, y el único que
+   * la app hace sobre `profiles`. La comprobación previa es cortesía, igual que
+   * en el registro: quien decide de verdad es el `unique` de la columna.
+   */
+  async function chooseName(e: React.FormEvent) {
+    e.preventDefault();
+    if (sending || !user) return;
+    setError(null);
+
+    const username = name.toUpperCase().slice(0, 12);
+
+    if (!USERNAME.test(username)) {
+      setError("EL NOMBRE VA DE 3 A 12: LETRAS, CIFRAS Y _");
+      return;
+    }
+
+    setSending(true);
+    try {
+      const supabase = createClient();
+
+      const { data: taken, error: lookup } = await supabase
+        .from("profiles")
+        .select("username")
+        .eq("username", username)
+        .maybeSingle();
+      if (lookup) {
+        setError(readable(lookup.message));
+        return;
+      }
+      if (taken) {
+        setError("ESE NOMBRE YA ESTA COGIDO");
+        return;
+      }
+
+      const { error } = await supabase.from("profiles").insert({ id: user.id, username });
+      if (error) {
+        // `23505` es el choque contra el `unique`: dos personas eligiendo el
+        // mismo nombre en la misma fracción de segundo, que es lo que la
+        // comprobación de arriba no puede cubrir.
+        setError(error.code === "23505" ? "ESE NOMBRE YA ESTA COGIDO" : readable(error.message));
+        return;
+      }
+
+      // La fila la ha escrito el navegador, así que Supabase no emite ningún
+      // evento de auth: el contexto hay que avisarlo a mano. `router.refresh()`
+      // es para los Server Components, que pintaron esta pantalla sin nombre.
+      await refreshProfile();
+      router.refresh();
+      setName("");
+    } catch (cause) {
+      console.error("[cuenta] el nombre no se pudo guardar:", cause);
+      setError("NO SE HA PODIDO. INTENTALO OTRA VEZ");
+    } finally {
+      setSending(false);
+    }
+  }
+
   return (
     <div className="w-[min(100%,440px)] border border-av-cyan/28 bg-[rgba(13,15,22,0.92)] p-[clamp(22px,4vw,36px)] shadow-[0_0_44px_rgba(0,245,255,0.12)]">
       <div className="text-center font-display text-[15px] tracking-av text-av-cyan [text-shadow:0_0_12px_rgba(0,245,255,0.8)]">
@@ -181,7 +332,7 @@ export function AuthPanel({
 
       {/* Nada de estado de sesión hasta que conteste Supabase: si no, a quien ya
           tiene sesión le parpadearía el formulario antes del perfil. */}
-      {!ready ? null : user ? (
+      {!ready ? null : user?.username ? (
         <div className="flex flex-col gap-4 text-center">
           <div className="grid place-items-center gap-3 border border-av-magenta/35 bg-av-void p-5">
             <div className="grid size-13 place-items-center bg-av-magenta font-display text-[16px] text-av-bg shadow-[0_0_18px_rgba(255,0,110,0.6)]">
@@ -209,6 +360,56 @@ export function AuthPanel({
             CERRAR SESION
           </button>
         </div>
+      ) : user ? (
+        /* Hay sesión de verdad y lo que falta es el nombre: así nace una cuenta
+           de Google o de GitHub, que no traen ninguno. El acento es el amarillo
+           con el que la cabecera dice ELIGE NOMBRE —queda algo por hacer—, y no
+           el magenta de los errores: aquí no ha fallado nada. */
+        <form onSubmit={chooseName} className="flex flex-col gap-4">
+          <div className="grid place-items-center gap-3 border border-av-yellow/35 bg-av-void p-5 text-center">
+            <span className="font-display text-[11px] tracking-av text-av-yellow [text-shadow:0_0_12px_rgba(245,255,0,0.7)]">
+              ELIGE TU NOMBRE
+            </span>
+            <span className="text-[12px] tracking-av text-av-text-dim">
+              Es con el que firmas tus marcas en el salón. Se elige una vez y no se puede cambiar.
+            </span>
+          </div>
+
+          <label className={LABEL}>
+            Nombre de jugador
+            <input
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="jugador_01"
+              autoComplete="username"
+              maxLength={12}
+              autoFocus
+              disabled={sending}
+              className={FIELD}
+            />
+          </label>
+
+          {error && (
+            <p
+              role="alert"
+              className="border border-av-magenta/45 bg-av-magenta/10 p-3 text-center font-display text-[9px] leading-relaxed tracking-av text-av-magenta"
+            >
+              {error}
+            </p>
+          )}
+
+          <button
+            type="submit"
+            disabled={sending}
+            className="cursor-pointer border-none bg-av-cyan p-4 font-display text-[10px] tracking-av text-av-bg shadow-[0_0_22px_rgba(0,245,255,0.5)] active:scale-97 hover:bg-av-yellow disabled:cursor-wait disabled:opacity-60"
+          >
+            {sending ? "GUARDANDO..." : "GUARDAR NOMBRE"}
+          </button>
+
+          <p className="text-center text-[11px] tracking-av text-av-text-faint">
+            Hasta que lo elijas, tus marcas entran firmadas como INVITADO.
+          </p>
+        </form>
       ) : sent ? (
         <div className="flex flex-col gap-4 text-center">
           <div className="grid place-items-center gap-3 border border-av-cyan/35 bg-av-void p-5">
@@ -216,8 +417,9 @@ export function AuthPanel({
               REVISA TU CORREO
             </span>
             <span className="text-[12px] tracking-av text-av-text-dim">
-              Hemos enviado el enlace de confirmación a {sent}. La cuenta no entra hasta que lo
-              pulses.
+              {isRecover
+                ? `Si ${sent} tiene cuenta aquí, le hemos enviado un enlace para escribir una contraseña nueva.`
+                : `Hemos enviado el enlace de confirmación a ${sent}. La cuenta no entra hasta que lo pulses.`}
             </span>
           </div>
           <button
@@ -228,6 +430,56 @@ export function AuthPanel({
             VOLVER AL ACCESO
           </button>
         </div>
+      ) : isRecover ? (
+        <form onSubmit={sendRecovery} className="flex flex-col gap-4">
+          <div className="grid place-items-center gap-3 border border-av-cyan/35 bg-av-void p-5 text-center">
+            <span className="font-display text-[11px] tracking-av text-av-cyan [text-shadow:0_0_12px_rgba(0,245,255,0.7)]">
+              RECUPERAR ACCESO
+            </span>
+            <span className="text-[12px] tracking-av text-av-text-dim">
+              Escribe tu correo y te enviamos un enlace para poner una contraseña nueva.
+            </span>
+          </div>
+
+          <label className={LABEL}>
+            Correo electrónico
+            <input
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="tu@correo.com"
+              type="email"
+              autoComplete="email"
+              required
+              disabled={sending}
+              className={FIELD}
+            />
+          </label>
+
+          {error && (
+            <p
+              role="alert"
+              className="border border-av-magenta/45 bg-av-magenta/10 p-3 text-center font-display text-[9px] leading-relaxed tracking-av text-av-magenta"
+            >
+              {error}
+            </p>
+          )}
+
+          <button
+            type="submit"
+            disabled={sending}
+            className="cursor-pointer border-none bg-av-cyan p-4 font-display text-[10px] tracking-av text-av-bg shadow-[0_0_22px_rgba(0,245,255,0.5)] active:scale-97 hover:bg-av-yellow disabled:cursor-wait disabled:opacity-60"
+          >
+            {sending ? "ENVIANDO..." : "ENVIAR ENLACE"}
+          </button>
+
+          <button
+            type="button"
+            onClick={() => pick("login")}
+            className="cursor-pointer border border-av-magenta/50 bg-transparent p-3.75 font-display text-[9px] tracking-av text-av-magenta active:scale-97 hover:bg-av-magenta/16 hover:text-white"
+          >
+            VOLVER AL ACCESO
+          </button>
+        </form>
       ) : (
         <div>
           <div className="grid grid-cols-2 border border-av-cyan/25">
@@ -314,6 +566,18 @@ export function AuthPanel({
               {sending ? "ENVIANDO..." : isRegister ? "CREAR MI CUENTA" : "ENTRAR AL VAULT"}
             </button>
 
+            {/* Sólo bajo el acceso: en el registro no hay contraseña que haber
+                olvidado todavía. */}
+            {!isRegister && (
+              <button
+                type="button"
+                onClick={() => pick("recuperar")}
+                className="cursor-pointer bg-transparent font-display text-[9px] tracking-av text-av-text-muted underline underline-offset-4 hover:text-av-cyan"
+              >
+                OLVIDASTE TU CONTRASENA?
+              </button>
+            )}
+
             <Link
               href="/"
               className="border border-av-magenta/50 p-3.75 text-center font-display text-[9px] tracking-av text-av-magenta hover:bg-av-magenta/16 hover:text-white"
@@ -331,24 +595,21 @@ export function AuthPanel({
             </div>
 
             <div className="grid grid-cols-2 gap-3">
-              <button
-                type="button"
-                disabled
-                className="border border-white/14 bg-av-panel px-2 py-3.5 font-display text-[8px] tracking-av text-av-text-soft opacity-45"
-              >
-                GOOGLE
-              </button>
-              <button
-                type="button"
-                disabled
-                className="border border-white/14 bg-av-panel px-2 py-3.5 font-display text-[8px] tracking-av text-av-text-soft opacity-45"
-              >
-                GITHUB
-              </button>
+              {PROVIDERS.map((p) => (
+                <button
+                  key={p.id}
+                  type="button"
+                  onClick={() => void enterWith(p.id)}
+                  disabled={sending}
+                  className="cursor-pointer border border-white/14 bg-av-panel px-2 py-3.5 font-display text-[8px] tracking-av text-av-text-soft active:scale-97 hover:border-av-cyan/60 hover:text-av-cyan disabled:cursor-wait disabled:opacity-45"
+                >
+                  {p.label}
+                </button>
+              ))}
             </div>
 
             <p className="mt-1 text-center text-[11px] tracking-av text-av-line">
-              Google y GitHub llegan en la SPEC 16, junto con recuperar la contraseña.
+              Con Google o GitHub eliges tu nombre de jugador al entrar.
             </p>
           </form>
         </div>
