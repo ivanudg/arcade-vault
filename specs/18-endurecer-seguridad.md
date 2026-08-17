@@ -341,10 +341,10 @@ Van al final por eso.
 
 ### La configuración de Auth
 
-- [ ] `supabase/config.toml` dice `minimum_password_length = 8`,
+- [x] `supabase/config.toml` dice `minimum_password_length = 8`,
       `password_requirements = "lower_upper_letters_digits_symbols"` y
       `sign_in_sign_ups = 10`, y esos tres valores coinciden con lo que muestra el panel.
-- [ ] El historial de la rama no contiene ni un `supabase config push`, y `config.toml`
+- [x] El historial de la rama no contiene ni un `supabase config push`, y `config.toml`
       conserva su `site_url` y sus `additional_redirect_urls` sin tocar.
 
 ## Decisiones tomadas y descartadas
