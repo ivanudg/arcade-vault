@@ -1,6 +1,6 @@
 # SPEC 16 — OAuth con Google y GitHub, nombre de jugador y recuperar contraseña
 
-> **Estado:** Aprobado
+> **Estado:** Implementado
 > **Depende de:** SPEC 04, SPEC 06, SPEC 15
 > **Fecha:** 2026-08-17
 > **Objetivo:** Completar las cuentas de SPEC 15 con acceso por Google y GitHub —incluida la pantalla de nombre de jugador que OAuth no puede pedir en el formulario— y con el flujo de recuperar la contraseña por correo.
@@ -227,48 +227,48 @@ viejo.
 
 ## Criterios de aceptación
 
-- [ ] `npx tsc --noEmit`, `npm run lint` y `npm run build` pasan sin errores.
-- [ ] Registrarse con correo y contraseña sigue creando la fila de `profiles` con
+- [x] `npx tsc --noEmit`, `npm run lint` y `npm run build` pasan sin errores.
+- [x] Registrarse con correo y contraseña sigue creando la fila de `profiles` con
       el `username` en mayúsculas.
-- [ ] Un alta sin metadato `username` crea la cuenta en `auth.users` y **no** crea
+- [x] Un alta sin metadato `username` crea la cuenta en `auth.users` y **no** crea
       fila en `profiles`, en vez de fallar.
-- [ ] Entrar con `GOOGLE` por primera vez acaba en `/cuenta` con sesión abierta y
+- [x] Entrar con `GOOGLE` por primera vez acaba en `/cuenta` con sesión abierta y
       con el panel pidiendo el nombre de jugador.
-- [ ] Entrar con `GITHUB` por primera vez hace lo mismo.
-- [ ] Cancelar en la pantalla del proveedor acaba en `/cuenta` con un aviso y sin
+- [x] Entrar con `GITHUB` por primera vez hace lo mismo.
+- [x] Cancelar en la pantalla del proveedor acaba en `/cuenta` con un aviso y sin
       sesión.
-- [ ] Elegir un nombre libre crea la fila en `profiles` y el panel pasa a enseñar
+- [x] Elegir un nombre libre crea la fila en `profiles` y el panel pasa a enseñar
       el perfil sin recargar a mano.
-- [ ] Elegir un nombre ya cogido no crea ninguna fila y el panel enseña
+- [x] Elegir un nombre ya cogido no crea ninguna fila y el panel enseña
       `ESE NOMBRE YA ESTA COGIDO`.
-- [ ] Elegir un nombre con formato inválido enseña el aviso sin llegar a consultar
+- [x] Elegir un nombre con formato inválido enseña el aviso sin llegar a consultar
       la base de datos.
-- [ ] Mientras la cuenta no tiene nombre, `SiteHeader` enseña `ELIGE NOMBRE` y
+- [x] Mientras la cuenta no tiene nombre, `SiteHeader` enseña `ELIGE NOMBRE` y
       lleva a `/cuenta`.
-- [ ] Mientras la cuenta no tiene nombre, terminar una partida y guardar mete la
+- [x] Mientras la cuenta no tiene nombre, terminar una partida y guardar mete la
       marca como `INVITADO` con `user_id` nulo.
-- [ ] Con el nombre ya elegido, la marca entra con `user_id` y con ese `username`.
-- [ ] Quien se registró con un correo y después entra con Google usando ese mismo
+- [x] Con el nombre ya elegido, la marca entra con `user_id` y con ese `username`.
+- [x] Quien se registró con un correo y después entra con Google usando ese mismo
       correo cae en la **misma** cuenta: una sola fila en `auth.users` y el mismo
       `username`.
-- [ ] Entrar con un proveedor y recargar mantiene la sesión: el servidor la ve.
-- [ ] Pedir el enlace de recuperación con un correo dado de alta enseña
+- [x] Entrar con un proveedor y recargar mantiene la sesión: el servidor la ve.
+- [x] Pedir el enlace de recuperación con un correo dado de alta enseña
       `REVISA TU CORREO` y el mensaje llega.
-- [ ] Pedir el enlace con un correo que no existe enseña el **mismo** aviso, sin
+- [x] Pedir el enlace con un correo que no existe enseña el **mismo** aviso, sin
       dejar saber si esa cuenta existe.
-- [ ] El enlace del correo de recuperación lleva a `/cuenta/nueva-contrasena`, no
+- [x] El enlace del correo de recuperación lleva a `/cuenta/nueva-contrasena`, no
       a `/cuenta`.
-- [ ] Las dos contraseñas de esa pantalla tienen que coincidir; si no, el aviso
+- [x] Las dos contraseñas de esa pantalla tienen que coincidir; si no, el aviso
       sale sin llamar a Supabase.
-- [ ] Cambiar la contraseña acaba en `/cuenta` con la sesión abierta.
-- [ ] La contraseña nueva sirve para entrar y la anterior deja de servir.
-- [ ] Abrir `/cuenta/nueva-contrasena` sin sesión redirige a `/cuenta` con un
+- [x] Cambiar la contraseña acaba en `/cuenta` con la sesión abierta.
+- [x] La contraseña nueva sirve para entrar y la anterior deja de servir.
+- [x] Abrir `/cuenta/nueva-contrasena` sin sesión redirige a `/cuenta` con un
       aviso.
-- [ ] Abrir `/cuenta/nueva-contrasena` con una sesión normal —sin venir del
+- [x] Abrir `/cuenta/nueva-contrasena` con una sesión normal —sin venir del
       correo— deja cambiar la contraseña igualmente.
-- [ ] Un enlace de recuperación caducado o ya usado lleva a `/cuenta` con un aviso
+- [x] Un enlace de recuperación caducado o ya usado lleva a `/cuenta` con un aviso
       y sin sesión.
-- [ ] Con las variables de Supabase ausentes, el sitio sigue construyendo y
+- [x] Con las variables de Supabase ausentes, el sitio sigue construyendo y
       ninguna de las dos rutas de canje rompe.
 
 ## Decisiones

@@ -44,6 +44,7 @@ historial cuenta el producto mejor que el código:
 | 13   | El mando se viste: chasis, cruz con flechas SVG y hub, `B`/`A` con relieve; `game-pad.tsx`    |
 | 14   | Frogger: rondas infinitas, cronómetro en el canvas y la fauna del río; estrena `REFLEJOS`     |
 | 15   | Cuentas reales: Supabase Auth, `public.profiles`, `proxy.ts` y la marca firmada con `user_id` |
+| 16   | OAuth con Google y GitHub, la cuenta sin nombre y recuperar la contraseña                     |
 
 Ojo: **el estado del encabezado no siempre se actualiza al cerrar**. La spec 02 sigue
 marcada como `Aprobado` con la portada implementada, y la 14 como `Aprobada` con Frogger
@@ -100,22 +101,24 @@ npx supabase db push   # aplica las migraciones de supabase/migrations/
 
 ## Rutas y pantallas
 
-Siete pantallas y dos rutas sin pintura: el diagnóstico de conexión y la
-confirmación del correo. El grupo `app/(vault)/` **no aparece en la
+Ocho pantallas y tres rutas sin pintura: el diagnóstico de conexión y los dos
+canjes, el del correo y el de OAuth. El grupo `app/(vault)/` **no aparece en la
 URL**: existe para que `/jugar/[id]` quede fuera y monte su cabecera reducida
 (`PlayHeader`) sin heredar el `SiteHeader` ni el `SiteFooter` de `app/(vault)/layout.tsx`.
 
-| Ruta                   | Archivo                            | Qué es                                                 |
-| ---------------------- | ---------------------------------- | ------------------------------------------------------ |
-| `/`                    | `app/(vault)/page.tsx`             | Portada: hero, ventajas, cifras, plan, FAQ y actividad |
-| `/biblioteca`          | `app/(vault)/biblioteca/page.tsx`  | Catálogo con buscador y filtros                        |
-| `/juego/[id]`          | `app/(vault)/juego/[id]/page.tsx`  | Ficha: miniatura, descripción, controles y top 10      |
-| `/salon`               | `app/(vault)/salon/page.tsx`       | Salón de la fama, una pestaña por máquina              |
-| `/cuenta`              | `app/(vault)/cuenta/page.tsx`      | `AuthPanel`: registro, acceso y perfil                 |
-| `/acerca-de`           | `app/(vault)/acerca-de/page.tsx`   | Misión y formulario de contacto                        |
-| `/jugar/[id]`          | `app/jugar/[id]/page.tsx`          | El gabinete: HUD, canvas y mando                       |
-| `/api/supabase-health` | `app/api/supabase-health/route.ts` | Diagnóstico de conexión                                |
-| `/auth/confirmar`      | `app/auth/confirmar/route.ts`      | Canjea el enlace del correo y redirige a `/cuenta`     |
+| Ruta                       | Archivo                                        | Qué es                                                            |
+| -------------------------- | ---------------------------------------------- | ----------------------------------------------------------------- |
+| `/`                        | `app/(vault)/page.tsx`                         | Portada: hero, ventajas, cifras, plan, FAQ y actividad            |
+| `/biblioteca`              | `app/(vault)/biblioteca/page.tsx`              | Catálogo con buscador y filtros                                   |
+| `/juego/[id]`              | `app/(vault)/juego/[id]/page.tsx`              | Ficha: miniatura, descripción, controles y top 10                 |
+| `/salon`                   | `app/(vault)/salon/page.tsx`                   | Salón de la fama, una pestaña por máquina                         |
+| `/cuenta`                  | `app/(vault)/cuenta/page.tsx`                  | `AuthPanel`: acceso, registro, nombre de jugador y perfil         |
+| `/cuenta/nueva-contrasena` | `app/(vault)/cuenta/nueva-contrasena/page.tsx` | Escribir una contraseña nueva; sin sesión, rebota a `/cuenta`     |
+| `/acerca-de`               | `app/(vault)/acerca-de/page.tsx`               | Misión y formulario de contacto                                   |
+| `/jugar/[id]`              | `app/jugar/[id]/page.tsx`                      | El gabinete: HUD, canvas y mando                                  |
+| `/api/supabase-health`     | `app/api/supabase-health/route.ts`             | Diagnóstico de conexión                                           |
+| `/auth/confirmar`          | `app/auth/confirmar/route.ts`                  | Canjea el `token_hash` del correo; con `recovery`, a la de arriba |
+| `/auth/callback`           | `app/auth/callback/route.ts`                   | Canjea el `code` de Google y GitHub y acaba en `/cuenta`          |
 
 - **`app/layout.tsx` es de todas**: fuentes, `metadata` con plantilla `"%s · Arcade Vault"`, `VaultBackdrop` y `SessionProvider`. Su contenedor no lleva `z-index` a propósito, para no crear contexto de apilamiento: los z de dentro compiten con los del fondo (rejilla 0, cabecera 40, scanlines 50, superpuestos 55 y 60).
 - **`app/not-found.tsx` vive en la raíz, fuera del grupo**, y monta cabecera y pie por su cuenta: un `not-found` dentro de un grupo de rutas no atiende las URLs que no corresponden a ninguna ruta.
@@ -461,7 +464,21 @@ El proyecto está conectado a Supabase (`nlfwqnmidfdohuyhklqp`) desde SPEC 04, y
 - **`lib/supabase/database.types.ts` es generado; no se edita a mano.** Se regenera con `npm run supabase:types` contra el proyecto enlazado.
 - **`/api/supabase-health`** dice si hay conexión: `200 {ok:true}` o `503 {ok:false, reason}`. Nunca imprime claves.
 - **`proxy.ts` está en la raíz y sólo refresca la sesión.** Llama a `auth.getUser()` y devuelve la respuesta con las cookies actualizadas; sin eso el token caducaría y el servidor acabaría viendo a un invitado donde hay una cuenta. **No protege rutas**: hoy no hay ninguna que lo pida y la documentación de Next avisa de que el proxy no es el sitio para la autorización. Su `matcher` excluye `_next/static`, `_next/image`, `favicon.ico` y `snake/fruits.png`, y si faltan las credenciales deja pasar la petición sin tocarla —lo contrario que `env.ts`, y a propósito: lanzar ahí tumbaría el sitio entero—.
-- **Hay configuración que no está en el repo.** La autenticación por correo necesita, una vez, en el panel de Supabase: la confirmación de correo activada, la **Site URL** del despliegue y, en las **URLs de redirección**, `<origen>/auth/confirmar` para cada origen desde el que se pruebe (`http://localhost:3000` incluido). Sin eso el enlace del correo apunta a donde no debe. `.env.example` no cambia: la autenticación usa las tres variables de siempre.
+- **Hay configuración que no está en el repo, y desde SPEC 16 son cuatro cosas.** Todas se hacen una vez en el panel de Supabase, y `.env.example` **no cambia** con ninguna: la autenticación usa las tres variables de siempre, y el cliente y el secreto de cada proveedor viven en el panel, que es quien habla con Google y con GitHub.
+
+  1. **La confirmación de correo activada** y la **Site URL** del despliegue.
+  2. **Las URLs de redirección**: `<origen>/auth/confirmar` **y** `<origen>/auth/callback`, para cada origen desde el que se pruebe (`http://localhost:3000` incluido). Sin eso el enlace del correo, o la vuelta del proveedor, apunta a donde no debe.
+  3. **Los dos proveedores activados** —Google y GitHub— con su cliente y su secreto. Las dos apps externas se dan de alta fuera: una credencial OAuth de tipo aplicación web en Google Cloud y una OAuth App en GitHub, las dos con la **misma** URL de redirección, que es la de Supabase y no la del sitio: `https://<ref>.supabase.co/auth/v1/callback`. El ámbito `user:email` de GitHub **no** se pide aquí, sino desde `AuthPanel`, para que quede en el repo el motivo.
+  4. **Las dos plantillas de correo**, y esto es lo que más cuesta descubrir. Las de fábrica usan `{{ .ConfirmationURL }}`, que apunta a `/auth/v1/verify` y rebota al sitio con un `?code=` de PKCE; `/auth/confirmar` espera `token_hash`, así que con las plantillas sin tocar la cuenta se confirma pero **quien pulsa el enlace ve el aviso de enlace caducado**. Eso pasaba desde SPEC 15 sin que se notara, porque el alta acababa funcionando igual. Las dos, **Confirm signup** y **Reset Password**, tienen que apuntar así:
+
+     ```
+     {{ .RedirectTo }}?token_hash={{ .TokenHash }}&type=signup
+     {{ .RedirectTo }}?token_hash={{ .TokenHash }}&type=recovery
+     ```
+
+     `.RedirectTo` y no `.SiteURL`: así el enlace vuelve al origen desde el que se pidió y no hay que tocarlas al desplegar.
+
+- **La cuota de correo del plan gratuito son dos por hora**, y desde SPEC 16 hay dos flujos que la gastan. Al agotarla Supabase responde `429: email rate limit exceeded`; subirla exige un SMTP propio, que es otra spec. Ojo con el orden de `readable()` en `AuthPanel`: ese mensaje lleva la palabra `email` dentro, así que la rama de la cuota va **antes** que la de correo inválido o salía `ESE CORREO NO VALE` por un correo perfecto.
 
 ## El marcador
 
@@ -521,6 +538,12 @@ SPEC 10 la de `snake` y SPEC 14 la de `frogger` —la tabla tiene **cinco**, con
   `auth.getUser()`, ignorando lo que llegue por parámetro —una Server Action es
   una URL pública que responde a cualquier POST—. Sin sesión se conserva el
   camino de siempre: nombre recibido, normalizado y validado, y `user_id` nulo.
+  Y desde SPEC 16 hay un **tercer** caso, la sesión sin perfil: la marca entra
+  como `INVITADO` con `user_id` nulo en vez de rechazarse. El nombre lo sigue
+  poniendo el servidor, simplemente todavía no hay ninguno que poner, y perder
+  la partida sería peor. Ojo con la distinción que hace ese código: que la
+  consulta **falle** sigue rechazando la marca —es la base que no contesta—; lo
+  que entra como invitado es la **ausencia de fila**.
 - **`scores.user_id` se suma a `device_id`, no lo sustituye.** Es
   `on delete set null` y no `cascade`: si una cuenta desaparece, su marca sigue
   en el marcador con el nombre con el que se firmó —se pierde el dueño, no la
@@ -544,17 +567,45 @@ SPEC 10 la de `snake` y SPEC 14 la de `frogger` —la tabla tiene **cinco**, con
 
 **Desde SPEC 15 la autenticación es real**: correo y contraseña de Supabase Auth,
 con la sesión en cookies —`@supabase/ssr`—, así que el servidor ve lo mismo que el
-navegador. Lo que **no** entra hasta la SPEC 16 es OAuth con Google y GitHub
-—sus dos botones se quedan visibles y deshabilitados— y recuperar la contraseña.
+navegador. **Desde SPEC 16 hay además Google y GitHub**, y con ellos recuperar la
+contraseña y un estado que antes no existía: la **cuenta sin nombre**.
 
-- **El nombre de jugador es `public.profiles.username` y es único.** Lo crea un
+- **Hay cuentas sin perfil, y no es un error.** Ni Google ni GitHub mandan un
+  nombre de jugador, y `profiles.username` es `not null`, único y con formato: si
+  el trigger insistiera en escribir, `upper(null)` tumbaría el alta entera —ni
+  cuenta, ni sesión, ni forma de entrar—. Así que desde SPEC 16
+  `handle_new_user()` **devuelve `new` sin escribir** cuando el alta no trae
+  `raw_user_meta_data->>'username'`. «Tener perfil» sigue significando «tiene
+  nombre»; lo que aparece es la ausencia de fila como estado legítimo. Lo que
+  **no** se hizo, a propósito: hacer nulable la columna —un perfil a medias
+  obliga a comprobar el nulo en cada consulta— ni inventar un `JUGADOR_7F2A`, que
+  es un nombre real ocupando sitio en la tabla de únicos y que alguien acabaría
+  firmando sin querer.
+- **El nombre de jugador es `public.profiles.username` y es único.** Lo crea el
   **trigger** sobre `auth.users` (`handle_new_user()`, `security definer`) desde
   `raw_user_meta_data->>'username'`, en mayúsculas y con formato
   `^[A-Z0-9_]{3,12}$`. Se crea ahí y no desde el cliente porque con la
   confirmación de correo activada `signUp()` no devuelve sesión y ese `insert` no
   tendría permiso; y porque si el nombre está cogido el trigger falla, el
   `insert` en `auth.users` se deshace y no queda una cuenta huérfana sin perfil.
-  La tabla sólo tiene política de `select`: nadie escribe en ella desde la app.
+  Con proveedor no hay trigger que valga y la fila la escribe el navegador, así
+  que SPEC 16 le añade a la tabla su **única** política de escritura,
+  `"crear mi perfil"`, acotada a `id = auth.uid()`. Sigue sin haber `update` ni
+  `delete`: el nombre se elige una vez y cambiarlo está fuera de alcance.
+- **`VaultUser.username` es `string | null`, y el nulo es el estado.** Desapareció
+  el `FALLBACK_NAME` de SPEC 15, que inventaba `JUGADOR` cuando el perfil no se
+  podía leer: inventarlo ahora sería firmar marcas con un nombre que nadie
+  eligió. Un `needsUsername: boolean` al lado de un nombre inventado serían dos
+  campos que pueden contradecirse para decir una sola cosa. Lo leen cuatro
+  sitios: `SiteHeader` enseña `ELIGE NOMBRE` enlazando a `/cuenta` mientras
+  falte, `AuthPanel` lo pide, `PlayCabinet` firma `INVITADO` y `ContactForm` no
+  prerrellena nada.
+- **El panel tiene cinco bloques y el orden es la lógica**: sesión con perfil,
+  sesión sin perfil, «revisa tu correo», el modo `recuperar`, y las pestañas de
+  acceso y registro. «Sesión con perfil» va antes que «revisa tu correo» para que
+  quien confirma su correo y vuelve con sesión vea el perfil y no un aviso viejo.
+  El formulario de nombre vive **ahí** y no en una ruta propia: es donde te deja
+  el callback y donde ya están los otros cuatro estados.
 - **Entrar y registrarse pasa por el navegador**, en `components/auth-panel.tsx`
   y no en una Server Action: `@supabase/ssr` escribe ahí las cookies que después
   lee el servidor, y `onAuthStateChange` mantiene el contexto al día sin
@@ -563,12 +614,43 @@ navegador. Lo que **no** entra hasta la SPEC 16 es OAuth con Google y GitHub
   comprueba que el `username` esté libre **antes** de `signUp()` —cortesía, la
   garantía real es el `unique`— y traduce los errores de Supabase a rótulos del
   vault; el del trigger acaba en el mismo `ESE NOMBRE YA ESTA COGIDO`.
-- **`app/auth/confirmar/route.ts`** es a donde apunta el enlace del correo: canjea
-  `token_hash` con `verifyOtp()` y acaba en `/cuenta`, o en
-  `/cuenta?error=confirmacion` si el enlace caducó o ya se usó. Es un Route
-  Handler porque hay que escribir cookies, y el aviso lo resuelve la **página** y
-  lo baja por props: el panel no lee la URL por su cuenta.
-- **Un solo contexto**, `SessionProvider` de `lib/session.tsx`, montado en el layout raíz: la cabecera, `/cuenta` y `/jugar` leen el mismo usuario. `useSession()` lanza si no hay proveedor por encima. Dentro hay **dos estados y no uno**: `authUser` es lo que dice Supabase y `user` es lo que se pinta, que además necesita el `username` de `profiles`. Separarlos es lo que permite que el callback de `onAuthStateChange` sea síncrono —consultar la base de datos ahí dentro puede bloquearse contra el candado de auth— y que un refresco de token no vuelva a pedir el perfil.
+- **Los canjes son dos rutas y no una**, porque son dos canjes distintos:
+
+  | Ruta              | Qué canjea             | Con qué                    | A dónde va                                                   |
+  | ----------------- | ---------------------- | -------------------------- | ------------------------------------------------------------ |
+  | `/auth/confirmar` | `token_hash` de correo | `verifyOtp()`              | `/cuenta`; con `type=recovery`, a `/cuenta/nueva-contrasena` |
+  | `/auth/callback`  | `code` de OAuth        | `exchangeCodeForSession()` | `/cuenta`, o `/cuenta?error=oauth`                           |
+
+  Meterlas en una sola la convertiría en un `if` sobre qué parámetro llegó. En
+  cambio la recuperación **sí** comparte ruta con la confirmación, porque ahí el
+  canje es el mismo `verifyOtp()` y lo único que cambia es la salida. Las dos son
+  Route Handlers porque hay que escribir cookies, y los avisos los resuelve la
+  **página** de `/cuenta` y los baja por props —su `NOTICES` tiene tres:
+  `confirmacion`, `oauth` y `recuperacion`—: el panel no lee la URL por su
+  cuenta.
+
+- **`/cuenta/nueva-contrasena` no pide la contraseña anterior**, y no es un
+  descuido: es lo que hace `updateUser()`, y pedirla rompería la recuperación
+  —quien la olvidó no puede escribirla—. Quien llega ahí ya tiene sesión válida
+  en ese navegador, porque el enlace de `recovery` la abre. Por eso mismo la
+  pantalla funciona **también con una sesión normal**: es de hecho la pantalla de
+  cambiar la contraseña, y no tenerla obligaría a pedirse un correo a uno mismo.
+  Al terminar se sale a `/cuenta` **sin cerrar la sesión**: ya es válida, y
+  echarla para pedir la contraseña recién escrita es trabajo sin ganancia. La
+  comprobación de que hay sesión se hace en el servidor con `getUser()`; sin
+  ella, `/cuenta?error=recuperacion`.
+
+- **El aviso de recuperar es el mismo exista o no el correo.** `resetPasswordForEmail()`
+  responde igual a propósito, y distinguirlo en pantalla convertiría el
+  formulario en un detector de qué direcciones tienen cuenta aquí.
+
+- **Las identidades se enlazan por correo, y eso lo hace Supabase.** Quien se
+  registró con un correo y luego entra con Google usando ése mismo cae en la
+  **misma** cuenta —una fila en `auth.users`, dos en `auth.identities`, un solo
+  `username`—. Con el correo sin verificar del proveedor no hay enlazado y quedan
+  dos cuentas para la misma persona: no se fuerza, porque unificarlas sería
+  reclamar marcas ajenas.
+- **Un solo contexto**, `SessionProvider` de `lib/session.tsx`, montado en el layout raíz: la cabecera, `/cuenta` y `/jugar` leen el mismo usuario. `useSession()` lanza si no hay proveedor por encima. Dentro hay **dos estados y no uno**: `authUser` es lo que dice Supabase y `user` es lo que se pinta, que además necesita el `username` de `profiles`. Separarlos es lo que permite que el callback de `onAuthStateChange` sea síncrono —consultar la base de datos ahí dentro puede bloquearse contra el candado de auth— y que un refresco de token no vuelva a pedir el perfil. Desde SPEC 16 el contexto expone además **`refreshProfile()`**, y existe por un solo caso: quien acaba de elegir su nombre. Esa fila la escribe el navegador, así que Supabase no emite ningún evento de auth, y `router.refresh()` sólo alcanza a los Server Components —el proveedor es de cliente y no se remonta—; sin ella el panel seguiría pidiendo el nombre y la cabecera diciendo `ELIGE NOMBRE` hasta recargar a mano.
 - **`ready` se deduce, no se guarda**: el estado es `VaultUser | null | undefined` y `undefined` significa «aún no ha contestado Supabase». Hasta que `ready` sea `true` nadie pinta estado de sesión —el servidor no lo tiene y pintarlo antes sería un desajuste de hidratación—.
 - **`useMine()` vive en `lib/session.tsx` y es la única regla de «esta marca es mía»**: con sesión manda la **cuenta** (`userId`), sin ella manda el **dispositivo** (`deviceId`), nunca las dos a la vez. La usan las tres tablas del marcador; estaba escrita tres veces y tres copias de una regla son tres sitios donde puede empezar a decir cosas distintas.
 - **`lib/storage.ts` es el único que toca `localStorage`.** La clave sigue siendo `arcadevault:v1` y dentro ya sólo hay dos campos, `deviceId` y `skins`: SPEC 06 se llevó `scores` a Supabase y SPEC 15 se lleva `user`. Ninguna de las dos subió a `v2`, y a propósito: lo que se quita es un campo que deja de leerse, y estrenar clave habría borrado las pieles y el identificador de todo el mundo. Lo que un navegador viejo tenga guardado ahí se queda sin que lo lea nadie. `skins` se teclea `Record<string, SkinId>` y no `Record<GameId, SkinId>` para que este archivo no importe del catálogo. Todo va envuelto en `try/catch`: en modo privado la interfaz funciona igual, sólo que no persiste.

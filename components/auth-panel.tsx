@@ -42,6 +42,9 @@ const PROVIDERS = [
 
 type OAuthProvider = (typeof PROVIDERS)[number]["id"];
 
+/** Los tres bloques que se pintan cuando no hay sesión. */
+type PanelMode = "login" | "register" | "recuperar";
+
 /** El mínimo que Supabase Auth trae de fábrica. */
 const MIN_PASSWORD = 6;
 
@@ -61,10 +64,14 @@ function readable(message: string): string {
   if (m.includes("invalid login credentials")) return "CORREO O CONTRASENA INCORRECTOS";
   if (m.includes("email not confirmed")) return "CONFIRMA TU CORREO ANTES DE ENTRAR";
   if (m.includes("already registered")) return "ESE CORREO YA ESTA REGISTRADO";
-  if (m.includes("password")) return `LA CONTRASENA NECESITA ${MIN_PASSWORD} CARACTERES`;
-  if (m.includes("email")) return "ESE CORREO NO VALE";
+  // La cuota va **antes** que las dos de abajo: el mensaje de Supabase es
+  // `email rate limit exceeded`, así que la comprobación de `email` lo cazaba
+  // primero y salía ESE CORREO NO VALE por un correo que estaba perfecto. Con
+  // dos flujos de correo desde SPEC 16 se choca contra ella mucho más.
   if (m.includes("rate limit") || m.includes("too many"))
     return "DEMASIADOS INTENTOS. ESPERA UN POCO";
+  if (m.includes("password")) return `LA CONTRASENA NECESITA ${MIN_PASSWORD} CARACTERES`;
+  if (m.includes("email")) return "ESE CORREO NO VALE";
   return "NO SE HA PODIDO. INTENTALO OTRA VEZ";
 }
 
@@ -77,7 +84,7 @@ export function AuthPanel({
   const { user, ready, logout, refreshProfile } = useSession();
   const router = useRouter();
 
-  const [tab, setTab] = useState<"login" | "register">("login");
+  const [mode, setMode] = useState<PanelMode>("login");
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -87,14 +94,15 @@ export function AuthPanel({
   // propio lo sustituye: quien vuelve a probar ya no necesita que le repitan
   // que el enlace anterior no valía.
   const [error, setError] = useState<string | null>(notice ?? null);
-  /** Correo al que se acaba de mandar la confirmación. `null` mientras no. */
+  /** Correo al que se acaba de mandar un enlace. `null` mientras no. */
   const [sent, setSent] = useState<string | null>(null);
 
-  const isRegister = tab === "register";
+  const isRegister = mode === "register";
+  const isRecover = mode === "recuperar";
 
-  /** Cambiar de pestaña no arrastra el error ni el aviso de la otra. */
-  function pick(next: "login" | "register") {
-    setTab(next);
+  /** Cambiar de bloque no arrastra el error ni el aviso del anterior. */
+  function pick(next: PanelMode) {
+    setMode(next);
     setError(null);
     setSent(null);
   }
@@ -176,6 +184,40 @@ export function AuthPanel({
       // Credenciales ausentes o red caída: `createClient()` lanza, y el panel no
       // puede quedarse colgado en el estado de envío.
       console.error("[cuenta] el envío falló:", cause);
+      setError("NO SE HA PODIDO. INTENTALO OTRA VEZ");
+    } finally {
+      setSending(false);
+    }
+  }
+
+  /**
+   * Pedir el enlace para escribir una contraseña nueva.
+   *
+   * Sale al mismo `/auth/confirmar` que el correo de registro, porque el canje
+   * **es** el mismo `verifyOtp()`; lo que cambia es a dónde se sale después, y
+   * eso lo decide el `type` del enlace.
+   *
+   * El aviso es el mismo exista o no ese correo, y no por descuido:
+   * `resetPasswordForEmail()` responde igual a propósito, y distinguirlo aquí
+   * convertiría el formulario en un detector de qué direcciones tienen cuenta.
+   */
+  async function sendRecovery(e: React.FormEvent) {
+    e.preventDefault();
+    if (sending) return;
+    setError(null);
+    setSending(true);
+    try {
+      const supabase = createClient();
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/auth/confirmar`,
+      });
+      if (error) {
+        setError(readable(error.message));
+        return;
+      }
+      setSent(email);
+    } catch (cause) {
+      console.error("[cuenta] el enlace de recuperación no salió:", cause);
       setError("NO SE HA PODIDO. INTENTALO OTRA VEZ");
     } finally {
       setSending(false);
@@ -375,8 +417,9 @@ export function AuthPanel({
               REVISA TU CORREO
             </span>
             <span className="text-[12px] tracking-av text-av-text-dim">
-              Hemos enviado el enlace de confirmación a {sent}. La cuenta no entra hasta que lo
-              pulses.
+              {isRecover
+                ? `Si ${sent} tiene cuenta aquí, le hemos enviado un enlace para escribir una contraseña nueva.`
+                : `Hemos enviado el enlace de confirmación a ${sent}. La cuenta no entra hasta que lo pulses.`}
             </span>
           </div>
           <button
@@ -387,6 +430,56 @@ export function AuthPanel({
             VOLVER AL ACCESO
           </button>
         </div>
+      ) : isRecover ? (
+        <form onSubmit={sendRecovery} className="flex flex-col gap-4">
+          <div className="grid place-items-center gap-3 border border-av-cyan/35 bg-av-void p-5 text-center">
+            <span className="font-display text-[11px] tracking-av text-av-cyan [text-shadow:0_0_12px_rgba(0,245,255,0.7)]">
+              RECUPERAR ACCESO
+            </span>
+            <span className="text-[12px] tracking-av text-av-text-dim">
+              Escribe tu correo y te enviamos un enlace para poner una contraseña nueva.
+            </span>
+          </div>
+
+          <label className={LABEL}>
+            Correo electrónico
+            <input
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="tu@correo.com"
+              type="email"
+              autoComplete="email"
+              required
+              disabled={sending}
+              className={FIELD}
+            />
+          </label>
+
+          {error && (
+            <p
+              role="alert"
+              className="border border-av-magenta/45 bg-av-magenta/10 p-3 text-center font-display text-[9px] leading-relaxed tracking-av text-av-magenta"
+            >
+              {error}
+            </p>
+          )}
+
+          <button
+            type="submit"
+            disabled={sending}
+            className="cursor-pointer border-none bg-av-cyan p-4 font-display text-[10px] tracking-av text-av-bg shadow-[0_0_22px_rgba(0,245,255,0.5)] active:scale-97 hover:bg-av-yellow disabled:cursor-wait disabled:opacity-60"
+          >
+            {sending ? "ENVIANDO..." : "ENVIAR ENLACE"}
+          </button>
+
+          <button
+            type="button"
+            onClick={() => pick("login")}
+            className="cursor-pointer border border-av-magenta/50 bg-transparent p-3.75 font-display text-[9px] tracking-av text-av-magenta active:scale-97 hover:bg-av-magenta/16 hover:text-white"
+          >
+            VOLVER AL ACCESO
+          </button>
+        </form>
       ) : (
         <div>
           <div className="grid grid-cols-2 border border-av-cyan/25">
@@ -472,6 +565,18 @@ export function AuthPanel({
             >
               {sending ? "ENVIANDO..." : isRegister ? "CREAR MI CUENTA" : "ENTRAR AL VAULT"}
             </button>
+
+            {/* Sólo bajo el acceso: en el registro no hay contraseña que haber
+                olvidado todavía. */}
+            {!isRegister && (
+              <button
+                type="button"
+                onClick={() => pick("recuperar")}
+                className="cursor-pointer bg-transparent font-display text-[9px] tracking-av text-av-text-muted underline underline-offset-4 hover:text-av-cyan"
+              >
+                OLVIDASTE TU CONTRASENA?
+              </button>
+            )}
 
             <Link
               href="/"

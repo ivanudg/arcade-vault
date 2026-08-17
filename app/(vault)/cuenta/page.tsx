@@ -19,6 +19,7 @@ export const metadata: Metadata = {
 const NOTICES: Record<string, string> = {
   confirmacion: "ESE ENLACE YA NO VALE. PIDE OTRO",
   oauth: "NO SE PUDO ENTRAR CON ESE PROVEEDOR",
+  recuperacion: "ENTRA ANTES DE CAMBIAR TU CONTRASENA",
 };
 
 export default async function AccountPage({ searchParams }: PageProps<"/cuenta">) {
