@@ -11,23 +11,29 @@
 
 import { useMemo, useState } from "react";
 import { GameCard } from "@/components/game-card";
-import { GAMES, type GameId } from "@/lib/games";
-
-/** 'TODOS' más las categorías del catálogo, sin repetir y en orden de aparición. */
-const CATEGORIES = ["TODOS", ...new Set(GAMES.map((g) => g.cat))];
+import type { Game, GameId } from "@/lib/games";
 
 export function LibraryBrowser({
+  games,
   records,
 }: {
+  /**
+   * Las máquinas jugables, resueltas en el servidor. Desde SPEC 17 salen de
+   * `public.games` y bajan por props: ningún componente consulta por su cuenta.
+   */
+  games: Game[];
   /** Mejor marca de cada máquina, resuelta en el servidor. Sólo va de paso. */
   records: Partial<Record<GameId, number>>;
 }) {
   const [query, setQuery] = useState("");
   const [cat, setCat] = useState("TODOS");
 
+  /** 'TODOS' más las categorías que hay hoy, sin repetir y en orden de aparición. */
+  const categories = useMemo(() => ["TODOS", ...new Set(games.map((g) => g.cat))], [games]);
+
   const visible = useMemo(() => {
     const q = query.trim().toLowerCase();
-    return GAMES.filter(
+    return games.filter(
       (g) =>
         (cat === "TODOS" || g.cat === cat) &&
         (!q ||
@@ -35,7 +41,7 @@ export function LibraryBrowser({
           g.desc.toLowerCase().includes(q) ||
           g.cat.toLowerCase().includes(q)),
     );
-  }, [query, cat]);
+  }, [games, query, cat]);
 
   return (
     <>
@@ -49,7 +55,7 @@ export function LibraryBrowser({
         />
 
         <div className="flex flex-wrap gap-2">
-          {CATEGORIES.map((c) => {
+          {categories.map((c) => {
             const on = cat === c;
             return (
               <button
