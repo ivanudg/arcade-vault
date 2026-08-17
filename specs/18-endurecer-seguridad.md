@@ -291,11 +291,11 @@ Van al final por eso.
 
 ### En pantalla
 
-- [ ] Registro con `abc12345` da `LE FALTA UNA MAYUSCULA`, y no se hace ninguna petición de red.
-- [ ] Registro con `Abc12345` da `LE FALTA UN SIMBOLO: !@#$%&*`.
+- [x] Registro con `abc12345` da `LE FALTA UNA MAYUSCULA`, y no se hace ninguna petición de red.
+- [x] Registro con `Abc12345` da `LE FALTA UN SIMBOLO: !@#$%&*`.
 - [ ] Registro con `Abc1234!` llega a «REVISA TU CORREO».
-- [ ] **Entrar con la cuenta que ya existe, cuya contraseña tiene seis caracteres, funciona.**
-- [ ] Entrar con una contraseña incorrecta sigue dando `CORREO O CONTRASENA INCORRECTOS`.
+- [x] **Entrar con la cuenta que ya existe, cuya contraseña tiene seis caracteres, funciona.**
+- [x] Entrar con una contraseña incorrecta sigue dando `CORREO O CONTRASENA INCORRECTOS`.
 - [ ] `/cuenta/nueva-contrasena` con `abcdefgh` da `LE FALTA UNA MAYUSCULA`, y con la
       contraseña actual da `ESA YA ERA TU CONTRASENA. ESCRIBE OTRA`.
 - [ ] Entrar con Google y con GitHub sigue funcionando.
