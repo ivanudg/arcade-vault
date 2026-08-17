@@ -1,11 +1,11 @@
 # SPEC 15 — Cuentas reales: registro, acceso y sesión de Supabase
 
-> **Estado:** Aprobado
+> **Estado:** Implementado
 > **Depende de:** SPEC 01, SPEC 04, SPEC 06
 > **Fecha:** 2026-08-16
 > **Objetivo:** Sustituir la sesión simulada de `localStorage` por cuentas reales de Supabase Auth con correo y contraseña, un `username` único por jugador en `public.profiles`, y marcas firmadas con `user_id`.
 
-## Por qué existe esta  spec
+## Por qué existe esta spec
 
 Desde SPEC 01 el vault tiene una sesión de mentira: `/cuenta` escribe un nombre
 en `localStorage`, la contraseña se descarta sin mirarla y los dos botones de
@@ -205,34 +205,34 @@ queda ahí sin que lo lea nadie, exactamente como pasó con `scores` en SPEC 06.
 
 ## Criterios de aceptación
 
-- [ ] `npx tsc --noEmit`, `npm run lint` y `npm run build` pasan sin errores.
-- [ ] Registrarse con usuario libre, correo y contraseña crea la fila en
+- [x] `npx tsc --noEmit`, `npm run lint` y `npm run build` pasan sin errores.
+- [x] Registrarse con usuario libre, correo y contraseña crea la fila en
       `auth.users` y su fila en `public.profiles` con el `username` en mayúsculas.
-- [ ] Registrarse con un `username` ya existente no crea ninguna cuenta y el panel
+- [x] Registrarse con un `username` ya existente no crea ninguna cuenta y el panel
       enseña `ESE NOMBRE YA ESTA COGIDO`.
-- [ ] Registrarse con un correo ya existente enseña un error y no deja el panel
+- [x] Registrarse con un correo ya existente enseña un error y no deja el panel
       colgado en el estado de envío.
-- [ ] Hasta pulsar el enlace del correo, el panel enseña `REVISA TU CORREO` y no
+- [x] Hasta pulsar el enlace del correo, el panel enseña `REVISA TU CORREO` y no
       hay sesión iniciada.
-- [ ] Pulsar el enlace del correo lleva a `/cuenta` con la sesión abierta.
-- [ ] Un enlace de confirmación caducado o ya usado lleva a `/cuenta` con un aviso
+- [x] Pulsar el enlace del correo lleva a `/cuenta` con la sesión abierta.
+- [x] Un enlace de confirmación caducado o ya usado lleva a `/cuenta` con un aviso
       y sin sesión.
-- [ ] Con contraseña incorrecta, el acceso enseña un error y no abre sesión.
-- [ ] Con sesión abierta, `SiteHeader` y `/cuenta` muestran el `username`, no el
+- [x] Con contraseña incorrecta, el acceso enseña un error y no abre sesión.
+- [x] Con sesión abierta, `SiteHeader` y `/cuenta` muestran el `username`, no el
       correo.
-- [ ] Recargar la página con sesión abierta la mantiene: el servidor la ve, no
+- [x] Recargar la página con sesión abierta la mantiene: el servidor la ve, no
       sólo el navegador.
-- [ ] `CERRAR SESION` deja el sitio como invitado sin recargar a mano.
-- [ ] Jugar sin cuenta sigue siendo posible y la marca entra firmada como
+- [x] `CERRAR SESION` deja el sitio como invitado sin recargar a mano.
+- [x] Jugar sin cuenta sigue siendo posible y la marca entra firmada como
       `INVITADO` con `user_id` nulo.
-- [ ] Jugar con cuenta guarda la marca con `user_id` y con el `username` del
+- [x] Jugar con cuenta guarda la marca con `user_id` y con el `username` del
       perfil, aunque el cliente mande otro nombre.
-- [ ] En `/salon`, con sesión abierta, mis marcas salen resaltadas en un navegador
+- [x] En `/salon`, con sesión abierta, mis marcas salen resaltadas en un navegador
       distinto de aquel en el que las hice.
-- [ ] `localStorage` deja de escribir el campo `user`; `deviceId` y `skins` siguen
+- [x] `localStorage` deja de escribir el campo `user`; `deviceId` y `skins` siguen
       ahí y la clave sigue siendo `arcadevault:v1`.
-- [ ] Los botones `GOOGLE` y `GITHUB` se ven deshabilitados y no hacen nada.
-- [ ] Con las variables de Supabase ausentes, el sitio sigue construyendo y
+- [x] Los botones `GOOGLE` y `GITHUB` se ven deshabilitados y no hacen nada.
+- [x] Con las variables de Supabase ausentes, el sitio sigue construyendo y
       `proxy.ts` no rompe ninguna ruta.
 
 ## Decisiones

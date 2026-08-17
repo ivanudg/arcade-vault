@@ -27,22 +27,23 @@ y el último eslabón encadena a su vez `skin-designer` y `mobile-porter`; los d
 Las specs viven en `specs/NN-<slug>.md` y llevan su estado en la segunda línea. El
 historial cuenta el producto mejor que el código:
 
-| Spec | Qué trajo                                                                                  |
-| ---- | ------------------------------------------------------------------------------------------ |
-| 01   | MVP visual: biblioteca, ficha, salón, cuenta y gabinete, puerto de `references/templates/` |
-| 02   | Portada en `/` y mudanza del catálogo a `/biblioteca`                                      |
-| 03   | `/acerca-de` y el formulario de contacto con Resend                                        |
-| 04   | Conexión con Supabase (clientes, `env.ts`, `/api/supabase-health`)                         |
-| 05   | Asteroids: el primer motor real y el contrato `GameMount`                                  |
-| 06   | El marcador se muda a Supabase: `public.games` y `public.scores`                           |
-| 07   | El catálogo encoge a una máquina y el marcador arranca vacío                               |
-| 08   | Tetris y los rótulos de HUD por motor                                                      |
-| 09   | Arkanoid, puerto sin spritesheet                                                           |
-| 10   | Snake, escrita desde cero, con `public/snake/fruits.png`                                   |
-| 11   | `/jugar/[id]` jugable con el dedo: maquetación vertical y horizontal de mano               |
-| 12   | El mando de mano se vuelve de consola: cruz, `B`/`A` y `PAUSA`/`SALIR` en el centro        |
-| 13   | El mando se viste: chasis, cruz con flechas SVG y hub, `B`/`A` con relieve; `game-pad.tsx` |
-| 14   | Frogger: rondas infinitas, cronómetro en el canvas y la fauna del río; estrena `REFLEJOS`  |
+| Spec | Qué trajo                                                                                     |
+| ---- | --------------------------------------------------------------------------------------------- |
+| 01   | MVP visual: biblioteca, ficha, salón, cuenta y gabinete, puerto de `references/templates/`    |
+| 02   | Portada en `/` y mudanza del catálogo a `/biblioteca`                                         |
+| 03   | `/acerca-de` y el formulario de contacto con Resend                                           |
+| 04   | Conexión con Supabase (clientes, `env.ts`, `/api/supabase-health`)                            |
+| 05   | Asteroids: el primer motor real y el contrato `GameMount`                                     |
+| 06   | El marcador se muda a Supabase: `public.games` y `public.scores`                              |
+| 07   | El catálogo encoge a una máquina y el marcador arranca vacío                                  |
+| 08   | Tetris y los rótulos de HUD por motor                                                         |
+| 09   | Arkanoid, puerto sin spritesheet                                                              |
+| 10   | Snake, escrita desde cero, con `public/snake/fruits.png`                                      |
+| 11   | `/jugar/[id]` jugable con el dedo: maquetación vertical y horizontal de mano                  |
+| 12   | El mando de mano se vuelve de consola: cruz, `B`/`A` y `PAUSA`/`SALIR` en el centro           |
+| 13   | El mando se viste: chasis, cruz con flechas SVG y hub, `B`/`A` con relieve; `game-pad.tsx`    |
+| 14   | Frogger: rondas infinitas, cronómetro en el canvas y la fauna del río; estrena `REFLEJOS`     |
+| 15   | Cuentas reales: Supabase Auth, `public.profiles`, `proxy.ts` y la marca firmada con `user_id` |
 
 Ojo: **el estado del encabezado no siempre se actualiza al cerrar**. La spec 02 sigue
 marcada como `Aprobado` con la portada implementada, y la 14 como `Aprobada` con Frogger
@@ -99,7 +100,8 @@ npx supabase db push   # aplica las migraciones de supabase/migrations/
 
 ## Rutas y pantallas
 
-Siete pantallas y una ruta de diagnóstico. El grupo `app/(vault)/` **no aparece en la
+Siete pantallas y dos rutas sin pintura: el diagnóstico de conexión y la
+confirmación del correo. El grupo `app/(vault)/` **no aparece en la
 URL**: existe para que `/jugar/[id]` quede fuera y monte su cabecera reducida
 (`PlayHeader`) sin heredar el `SiteHeader` ni el `SiteFooter` de `app/(vault)/layout.tsx`.
 
@@ -109,10 +111,11 @@ URL**: existe para que `/jugar/[id]` quede fuera y monte su cabecera reducida
 | `/biblioteca`          | `app/(vault)/biblioteca/page.tsx`  | Catálogo con buscador y filtros                        |
 | `/juego/[id]`          | `app/(vault)/juego/[id]/page.tsx`  | Ficha: miniatura, descripción, controles y top 10      |
 | `/salon`               | `app/(vault)/salon/page.tsx`       | Salón de la fama, una pestaña por máquina              |
-| `/cuenta`              | `app/(vault)/cuenta/page.tsx`      | `AuthPanel`: sesión simulada                           |
+| `/cuenta`              | `app/(vault)/cuenta/page.tsx`      | `AuthPanel`: registro, acceso y perfil                 |
 | `/acerca-de`           | `app/(vault)/acerca-de/page.tsx`   | Misión y formulario de contacto                        |
 | `/jugar/[id]`          | `app/jugar/[id]/page.tsx`          | El gabinete: HUD, canvas y mando                       |
 | `/api/supabase-health` | `app/api/supabase-health/route.ts` | Diagnóstico de conexión                                |
+| `/auth/confirmar`      | `app/auth/confirmar/route.ts`      | Canjea el enlace del correo y redirige a `/cuenta`     |
 
 - **`app/layout.tsx` es de todas**: fuentes, `metadata` con plantilla `"%s · Arcade Vault"`, `VaultBackdrop` y `SessionProvider`. Su contenedor no lleva `z-index` a propósito, para no crear contexto de apilamiento: los z de dentro compiten con los del fondo (rejilla 0, cabecera 40, scanlines 50, superpuestos 55 y 60).
 - **`app/not-found.tsx` vive en la raíz, fuera del grupo**, y monta cabecera y pie por su cuenta: un `not-found` dentro de un grupo de rutas no atiende las URLs que no corresponden a ninguna ruta.
@@ -450,14 +453,15 @@ máquina, se actualiza también esa tabla.
 
 ## Supabase
 
-El proyecto está conectado a Supabase (`nlfwqnmidfdohuyhklqp`) desde SPEC 04, y desde SPEC 06 hay dos tablas: el marcador vive ahí. En `localStorage` solo quedan la sesión y el identificador del navegador.
+El proyecto está conectado a Supabase (`nlfwqnmidfdohuyhklqp`) desde SPEC 04, y desde SPEC 06 hay dos tablas: el marcador vive ahí. Desde SPEC 15 hay una tercera, `public.profiles`, y la sesión también es suya: en `localStorage` sólo quedan el identificador del navegador y la piel de cada máquina.
 
 - **Qué cliente usar.** `@/lib/supabase/client` (`createBrowserClient`) en componentes con `"use client"`. `@/lib/supabase/server` (`createServerClient`) en Server Components, Server Actions y Route Handlers; su `createClient()` es **`async`** porque `cookies()` es una promesa en Next 16. El de servidor nunca se guarda en una variable de módulo: cada petición trae sus cookies.
 - **Nadie lee `process.env` de Supabase fuera de `lib/supabase/env.ts`.** Ahí están `supabaseUrl()`, `supabasePublishableKey()`, `supabaseSecretKey()` —sin consumidor aún— e `isSupabaseConfigured()`, la única que no lanza. Ojo: Next solo sustituye `process.env.NEXT_PUBLIC_*` si la lectura es **literal**, así que un `process.env[nombre]` dinámico llegaría `undefined` al navegador.
 - **Sin credenciales se falla, no se finge.** Al contrario que Resend en SPEC 03, pedir un cliente sin variables lanza un error que nombra la que falta. El repo sigue construyendo igual.
 - **`lib/supabase/database.types.ts` es generado; no se edita a mano.** Se regenera con `npm run supabase:types` contra el proyecto enlazado.
 - **`/api/supabase-health`** dice si hay conexión: `200 {ok:true}` o `503 {ok:false, reason}`. Nunca imprime claves.
-- **No existe `proxy.ts`** y no hay autenticación real. Entra en la spec que traiga el login.
+- **`proxy.ts` está en la raíz y sólo refresca la sesión.** Llama a `auth.getUser()` y devuelve la respuesta con las cookies actualizadas; sin eso el token caducaría y el servidor acabaría viendo a un invitado donde hay una cuenta. **No protege rutas**: hoy no hay ninguna que lo pida y la documentación de Next avisa de que el proxy no es el sitio para la autorización. Su `matcher` excluye `_next/static`, `_next/image`, `favicon.ico` y `snake/fruits.png`, y si faltan las credenciales deja pasar la petición sin tocarla —lo contrario que `env.ts`, y a propósito: lanzar ahí tumbaría el sitio entero—.
+- **Hay configuración que no está en el repo.** La autenticación por correo necesita, una vez, en el panel de Supabase: la confirmación de correo activada, la **Site URL** del despliegue y, en las **URLs de redirección**, `<origen>/auth/confirmar` para cada origen desde el que se pruebe (`http://localhost:3000` incluido). Sin eso el enlace del correo apunta a donde no debe. `.env.example` no cambia: la autenticación usa las tres variables de siempre.
 
 ## El marcador
 
@@ -504,14 +508,27 @@ SPEC 10 la de `snake` y SPEC 14 la de `frogger` —la tabla tiene **cinco**, con
 - **`lib/scores.ts` es isomorfo**: sólo tipos y `formatScore()`. Lo importan tanto
   el servidor como los componentes de cliente.
 - **Ningún componente consulta por su cuenta.** Las páginas resuelven las filas y
-  las bajan por props. El único efecto que queda en los componentes es el que
-  marca las marcas propias comparando `device_id` con el `deviceId()` de
-  `lib/storage.ts`, porque el servidor no puede leer `localStorage` y siempre
-  manda `mine: false`.
+  las bajan por props con `mine: false`. Quién es el dueño lo decide el
+  navegador, con el `useMine()` de `lib/session.tsx` (ver «Sesión y cuentas»):
+  el servidor podría saberlo cuando hay cuenta, pero sin ella hace falta
+  `localStorage`, y una marca no puede resaltarse de dos maneras según quién
+  mire.
 - **Escribir es la Server Action `app/jugar/[id]/actions.ts`**, no un `insert`
-  desde el navegador: ahí se normaliza el nombre como en `lib/session.tsx`, se
-  comprueba el `gameId` contra `GAMES` y se llama a `revalidatePath` de `/`,
-  `/salon`, `/biblioteca` y la ruta concreta del juego.
+  desde el navegador: ahí se comprueba el `gameId` contra `GAMES` y se llama a
+  `revalidatePath` de `/`, `/salon`, `/biblioteca` y la ruta concreta del juego.
+  Desde SPEC 15, **con sesión el nombre no lo pone el cliente**: el
+  `player_name` sale del `profiles.username` y el `user_id` de
+  `auth.getUser()`, ignorando lo que llegue por parámetro —una Server Action es
+  una URL pública que responde a cualquier POST—. Sin sesión se conserva el
+  camino de siempre: nombre recibido, normalizado y validado, y `user_id` nulo.
+- **`scores.user_id` se suma a `device_id`, no lo sustituye.** Es
+  `on delete set null` y no `cascade`: si una cuenta desaparece, su marca sigue
+  en el marcador con el nombre con el que se firmó —se pierde el dueño, no la
+  puntuación—. La política de `insert` admite `user_id` nulo o el de quien esté
+  autenticado, así que nadie firma con la cuenta de otro ni desde el navegador.
+  Ojo con las vistas: `top_scores` se escribió con `s.*`, pero Postgres expande
+  esa estrella al crearla, así que hubo que **recrearla** para que se enterara
+  de la columna nueva; `player_bests`, que nombra las suyas, también.
 - **Las cuatro pantallas que leen marcas se renderizan en cada visita**: la
   portada, la biblioteca y la ficha lo declaran con `dynamic = "force-dynamic"`;
   `/salon` no hace falta que lo declare, porque su `searchParams` ya la hace
@@ -523,16 +540,40 @@ SPEC 10 la de `snake` y SPEC 14 la de `frogger` —la tabla tiene **cinco**, con
   remoto sin dejar rastro en el repo. Se corrige hacia delante: SPEC 07 no
   revirtió la siembra de SPEC 06, añadió una migración que la borra.
 
-## Sesión y `localStorage`
+## Sesión y cuentas
 
-**No hay autenticación real.** `/cuenta` es un panel que escribe un nombre en
-`localStorage`; entra de verdad con la spec que traiga el login.
+**Desde SPEC 15 la autenticación es real**: correo y contraseña de Supabase Auth,
+con la sesión en cookies —`@supabase/ssr`—, así que el servidor ve lo mismo que el
+navegador. Lo que **no** entra hasta la SPEC 16 es OAuth con Google y GitHub
+—sus dos botones se quedan visibles y deshabilitados— y recuperar la contraseña.
 
-- **Un solo contexto**, `SessionProvider` de `lib/session.tsx`, montado en el layout raíz: la cabecera, `/cuenta` y `/jugar` leen el mismo usuario en vez de tocar el almacenamiento cada una por su cuenta. `useSession()` lanza si no hay proveedor por encima.
-- **`ready` se deduce, no se guarda**: el estado es `VaultUser | null | undefined` y `undefined` significa «aún no se ha leído `localStorage`». Hasta que `ready` sea `true` nadie pinta estado de sesión —el servidor no tiene almacenamiento y pintarlo antes sería un desajuste de hidratación—.
-- **`lib/storage.ts` es el único que toca `localStorage`.** La clave es `arcadevault:v1` (la versión va dentro: un cambio de esquema estrena clave). Dentro hay tres campos, `user`, `deviceId` y `skins` —la piel elegida en cada máquina, que estrenó el selector del gabinete—; desde SPEC 06 las puntuaciones viven en Supabase, y el campo `scores` que hubiera guardado un navegador viejo se queda ahí sin que lo lea nadie. `skins` entró **sin subir a `v2`** a propósito: es opcional, no invalida lo ya guardado, y estrenar clave habría cerrado la sesión de todo el mundo por un color. Se teclea `Record<string, SkinId>` y no `Record<GameId, SkinId>` para que este archivo no importe del catálogo. Todo va envuelto en `try/catch`: en modo privado la interfaz funciona igual, sólo que no persiste.
-- **El nombre se normaliza igual en los dos sitios**: mayúsculas y 12 caracteres, en `login()` y otra vez en la Server Action que guarda la marca.
-- **`deviceId()` puede devolver `undefined`.** `crypto.randomUUID()` sólo existe en contexto seguro, así que probando desde el móvil por `http://192.168.x.x` no está. La marca se guarda igual, sin dueño: se pierde un color en la tabla, no una puntuación.
+- **El nombre de jugador es `public.profiles.username` y es único.** Lo crea un
+  **trigger** sobre `auth.users` (`handle_new_user()`, `security definer`) desde
+  `raw_user_meta_data->>'username'`, en mayúsculas y con formato
+  `^[A-Z0-9_]{3,12}$`. Se crea ahí y no desde el cliente porque con la
+  confirmación de correo activada `signUp()` no devuelve sesión y ese `insert` no
+  tendría permiso; y porque si el nombre está cogido el trigger falla, el
+  `insert` en `auth.users` se deshace y no queda una cuenta huérfana sin perfil.
+  La tabla sólo tiene política de `select`: nadie escribe en ella desde la app.
+- **Entrar y registrarse pasa por el navegador**, en `components/auth-panel.tsx`
+  y no en una Server Action: `@supabase/ssr` escribe ahí las cookies que después
+  lee el servidor, y `onAuthStateChange` mantiene el contexto al día sin
+  recargar. `login()` **ya no está en el contexto**: entrar es una llamada de red
+  que falla de cuatro maneras distintas y necesita dónde contarlo. El panel
+  comprueba que el `username` esté libre **antes** de `signUp()` —cortesía, la
+  garantía real es el `unique`— y traduce los errores de Supabase a rótulos del
+  vault; el del trigger acaba en el mismo `ESE NOMBRE YA ESTA COGIDO`.
+- **`app/auth/confirmar/route.ts`** es a donde apunta el enlace del correo: canjea
+  `token_hash` con `verifyOtp()` y acaba en `/cuenta`, o en
+  `/cuenta?error=confirmacion` si el enlace caducó o ya se usó. Es un Route
+  Handler porque hay que escribir cookies, y el aviso lo resuelve la **página** y
+  lo baja por props: el panel no lee la URL por su cuenta.
+- **Un solo contexto**, `SessionProvider` de `lib/session.tsx`, montado en el layout raíz: la cabecera, `/cuenta` y `/jugar` leen el mismo usuario. `useSession()` lanza si no hay proveedor por encima. Dentro hay **dos estados y no uno**: `authUser` es lo que dice Supabase y `user` es lo que se pinta, que además necesita el `username` de `profiles`. Separarlos es lo que permite que el callback de `onAuthStateChange` sea síncrono —consultar la base de datos ahí dentro puede bloquearse contra el candado de auth— y que un refresco de token no vuelva a pedir el perfil.
+- **`ready` se deduce, no se guarda**: el estado es `VaultUser | null | undefined` y `undefined` significa «aún no ha contestado Supabase». Hasta que `ready` sea `true` nadie pinta estado de sesión —el servidor no lo tiene y pintarlo antes sería un desajuste de hidratación—.
+- **`useMine()` vive en `lib/session.tsx` y es la única regla de «esta marca es mía»**: con sesión manda la **cuenta** (`userId`), sin ella manda el **dispositivo** (`deviceId`), nunca las dos a la vez. La usan las tres tablas del marcador; estaba escrita tres veces y tres copias de una regla son tres sitios donde puede empezar a decir cosas distintas.
+- **`lib/storage.ts` es el único que toca `localStorage`.** La clave sigue siendo `arcadevault:v1` y dentro ya sólo hay dos campos, `deviceId` y `skins`: SPEC 06 se llevó `scores` a Supabase y SPEC 15 se lleva `user`. Ninguna de las dos subió a `v2`, y a propósito: lo que se quita es un campo que deja de leerse, y estrenar clave habría borrado las pieles y el identificador de todo el mundo. Lo que un navegador viejo tenga guardado ahí se queda sin que lo lea nadie. `skins` se teclea `Record<string, SkinId>` y no `Record<GameId, SkinId>` para que este archivo no importe del catálogo. Todo va envuelto en `try/catch`: en modo privado la interfaz funciona igual, sólo que no persiste.
+- **El nombre se normaliza igual en los tres sitios**: mayúsculas y 12 caracteres, en el registro del panel, en el `check` de la tabla y en la Server Action que guarda la marca de un invitado.
+- **`deviceId()` puede devolver `undefined`.** `crypto.randomUUID()` sólo existe en contexto seguro, así que probando desde el móvil por `http://192.168.x.x` no está. La marca se guarda igual, sin dueño: se pierde un color en la tabla, no una puntuación. Con cuenta ya no importa, porque el dueño lo pone `user_id`.
 
 ## Contacto y Resend
 
