@@ -1,18 +1,13 @@
 /**
- * Pantalla 404. La única que no existe en references/templates/, así que se
- * compone con piezas que ya usan las otras: el chip con borde de la ficha, un
- * rótulo de neón con `av-flicker` —el tubo de una máquina que no arranca— y el
- * mismo botón cian de VOLVER AL VAULT.
- *
- * El acento es magenta porque en este producto magenta es el color de aviso:
- * es el que usa "NO HAY JUEGOS PARA ESA BUSQUEDA" en la biblioteca.
+ * Pantalla 404 de las URLs que no corresponden a ninguna ruta.
  *
  * Monta la cabecera y el pie por su cuenta: vive en la raíz de `app/`, fuera
  * del grupo `(vault)`, porque un `not-found` dentro de un grupo no atiende las
- * URLs que no corresponden a ninguna ruta.
+ * URLs que no corresponden a ninguna ruta. Su hermano de `app/(vault)/` sí las
+ * hereda del layout del grupo, y por eso el cuerpo vive aparte.
  */
 
-import Link from "next/link";
+import { NotFoundBody } from "@/components/not-found-body";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
 
@@ -20,29 +15,7 @@ export default function NotFound() {
   return (
     <>
       <SiteHeader />
-      <main className="flex flex-1 items-center justify-center px-[clamp(14px,3vw,40px)] py-[clamp(44px,10vw,110px)]">
-        <section className="flex max-w-[52ch] flex-col items-center gap-5 text-center animate-av-fade">
-          <span className="border border-av-amber/30 px-2.25 py-1.75 font-display text-[8px] tracking-av text-av-amber">
-            ERROR 404
-          </span>
-
-          <h1 className="font-display text-av-section leading-[1.35] tracking-av text-av-magenta av-glow-magenta animate-av-flicker">
-            MAQUINA NO ENCONTRADA
-          </h1>
-
-          <p className="text-[15px] leading-[1.75] text-pretty text-av-text-soft">
-            Esa dirección no corresponde a ninguna máquina del vault. Vuelve a la biblioteca para
-            ver el catálogo completo.
-          </p>
-
-          <Link
-            href="/biblioteca"
-            className="mt-1 border border-av-cyan px-6.5 py-4.5 font-display text-[11px] tracking-av text-av-cyan hover:bg-av-cyan/12 hover:text-white"
-          >
-            &lt; VOLVER AL VAULT
-          </Link>
-        </section>
-      </main>
+      <NotFoundBody />
       <SiteFooter />
     </>
   );

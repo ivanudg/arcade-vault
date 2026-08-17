@@ -1,17 +1,24 @@
 /**
  * Ficha de máquina. Puerto de references/templates/detalle.dc.html.
  *
- * Server Component: el catálogo es fijo, así que `generateStaticParams()` cierra
- * la lista de rutas —una por máquina— aunque el marcador obligue a renderizar en
- * cada visita. Sólo la preview y el panel de puntuaciones bajan a cliente.
+ * Server Component: los ids son fijos, así que `generateStaticParams()` cierra
+ * la lista de rutas —una por máquina— aunque el marcador y, desde SPEC 17, el
+ * catálogo obliguen a renderizar en cada visita. Sólo la preview y el panel de
+ * puntuaciones bajan a cliente.
+ *
+ * Que el id exista y que la máquina exista dejaron de ser lo mismo: el id sale
+ * del código y la máquina, de `public.games`. Un `GameId` sin fila —o con la
+ * fila en `playable = false`— responde 404 aunque su motor esté ahí.
  */
 
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { CatalogUnavailable } from "@/components/catalog-unavailable";
 import { GamePreview } from "@/components/game-preview";
 import { ScorePanel } from "@/components/score-panel";
-import { GAMES, getGame, tint } from "@/lib/games";
+import { game as findGame } from "@/lib/catalog";
+import { GAME_IDS, tint, type GameId } from "@/lib/games";
 import { board } from "@/lib/leaderboard";
 import { formatScore } from "@/lib/scores";
 
@@ -28,29 +35,57 @@ export const dynamicParams = false;
  */
 export const dynamic = "force-dynamic";
 
+/**
+ * Sale de `GAME_IDS` y no del catálogo: esto corre en el build, donde no hay ni
+ * credenciales ni red. Y si las hubiera sería peor, porque congelaría la lista
+ * de rutas en el despliegue, que es lo contrario de lo que busca SPEC 17.
+ */
 export function generateStaticParams() {
-  return GAMES.map((g) => ({ id: g.id }));
+  return GAME_IDS.map((id) => ({ id }));
 }
 
 export async function generateMetadata({ params }: PageProps<"/juego/[id]">): Promise<Metadata> {
   const { id } = await params;
-  const game = getGame(id);
+  // Misma llamada que la página, y una sola consulta: `game()` está envuelta en
+  // `cache()` de React, que deduplica dentro de la petición.
+  const game = await findGame(id);
   if (!game) return {};
   return { title: game.title, description: game.desc };
 }
 
 export default async function GamePage({ params }: PageProps<"/juego/[id]">) {
   const { id } = await params;
-  const game = getGame(id);
-  // Un id inventado responde 404 en lugar de servir otra máquina, a diferencia
-  // del `game()` del prototipo, que caía en la primera del catálogo.
-  if (!game) notFound();
 
-  // Una sola consulta: el récord del rótulo es la primera fila de la tabla, así
-  // que no pueden discrepar. `rows` conserva el `null` —el panel distingue no
-  // poder preguntar de no haber marcas—; el rótulo no, porque en los dos casos
-  // el récord está por escribir y pinta `—`.
-  const rows = await board(game.id);
+  // El id se comprueba contra el código antes de tocar la red: uno que no
+  // existe no tiene fila que buscar ni tabla que traer.
+  if (!(GAME_IDS as readonly string[]).includes(id)) notFound();
+
+  // Las dos lecturas a la vez. La del marcador no espera a la del catálogo
+  // porque no la necesita: el id ya está validado, y si la máquina resulta no
+  // estar, la tabla que ya llegó se descarta sin más.
+  const [game, rows] = await Promise.all([findGame(id), board(id as GameId)]);
+
+  // `null` es que no se pudo preguntar, y eso no es un 404: decir que la
+  // máquina no existe cuando lo que pasa es que la base de datos no contesta
+  // sería mentir.
+  if (game === null) {
+    return (
+      <main className="flex-1 px-[clamp(14px,3vw,40px)] pt-[clamp(22px,4vw,44px)] pb-22.5">
+        <section className="mx-auto w-full max-w-310 animate-av-fade">
+          <CatalogUnavailable />
+        </section>
+      </main>
+    );
+  }
+
+  // Sin fila, o retirada, sí es 404: `playable = false` es la vía de retirada
+  // sin desplegar, y una máquina retirada no tiene ficha.
+  if (game === undefined || !game.playable) notFound();
+
+  // El récord del rótulo es la primera fila de la tabla, así que no pueden
+  // discrepar. `rows` conserva el `null` —el panel distingue no poder preguntar
+  // de no haber marcas—; el rótulo no, porque en los dos casos el récord está
+  // por escribir y pinta `—`.
   const record = rows?.[0] ? formatScore(rows[0].score) : "—";
 
   return (
@@ -104,19 +139,17 @@ export default async function GamePage({ params }: PageProps<"/juego/[id]">) {
               CONTROLES: {game.controls}
             </div>
 
+            {/* Ya no hay rama `PRONTO`: desde SPEC 17 una máquina con
+                `playable = false` no llega hasta aquí, porque su ficha responde
+                404 igual que su pantalla de juego. Quien ve esta página puede
+                jugar, siempre. */}
             <div className="flex flex-wrap gap-3.5">
-              {game.playable ? (
-                <Link
-                  href={`/jugar/${game.id}`}
-                  className="bg-av-magenta px-6.5 py-4.5 font-display text-[12px] tracking-av-wider text-av-bg animate-av-pulse hover:bg-av-yellow hover:text-av-bg"
-                >
-                  JUGAR AHORA
-                </Link>
-              ) : (
-                <span className="border border-white/10 bg-av-panel-raised px-6.5 py-4.5 font-display text-[12px] tracking-av-wider text-av-line-strong">
-                  PRONTO
-                </span>
-              )}
+              <Link
+                href={`/jugar/${game.id}`}
+                className="bg-av-magenta px-6.5 py-4.5 font-display text-[12px] tracking-av-wider text-av-bg animate-av-pulse hover:bg-av-yellow hover:text-av-bg"
+              >
+                JUGAR AHORA
+              </Link>
               <Link
                 href="/"
                 className="border border-av-cyan px-6.5 py-4.5 font-display text-[11px] tracking-av text-av-cyan hover:bg-av-cyan/12 hover:text-white"
