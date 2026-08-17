@@ -1,6 +1,6 @@
 # SPEC 17 — El catálogo se muda a Supabase
 
-> **Estado:** Aprobado
+> **Estado:** Implementado
 > **Depende de:** SPEC 04, SPEC 06, SPEC 07
 > **Fecha:** 2026-08-16
 > **Objetivo:** Que `public.games` pase a ser la fuente de verdad de los siete campos del catálogo, para poder editar y retirar máquinas desde el panel de Supabase sin desplegar.
@@ -282,28 +282,28 @@ y es commiteable por separado.
 
 ## Criterios de aceptación
 
-- [ ] Cambiar `tagline` de una fila en el panel de Supabase y recargar `/biblioteca`
+- [x] Cambiar `tagline` de una fila en el panel de Supabase y recargar `/biblioteca`
       muestra el texto nuevo, sin desplegar ni reiniciar el servidor.
-- [ ] Cambiar `glow` de una fila cambia el color de su tarjeta y el de su ficha.
-- [ ] `update public.games set playable = false where id = 'frogger'` la saca de
+- [x] Cambiar `glow` de una fila cambia el color de su tarjeta y el de su ficha.
+- [x] `update public.games set playable = false where id = 'frogger'` la saca de
       `/biblioteca` y de la portada, y `/juego/frogger` y `/jugar/frogger` responden 404.
-- [ ] Con `frogger` en `playable = false`, su pestaña sigue en `/salon` y su tabla se ve.
-- [ ] Con `frogger` en `playable = false`, la Server Action rechaza guardar una marca suya.
-- [ ] `insert` con `cat = 'INVENTADA'` lo rechaza la base de datos.
-- [ ] `insert` con `glow = '#123456'` lo rechaza la base de datos.
-- [ ] `update` de `title` a `GALAGÁ` lo rechaza la base de datos.
-- [ ] `insert` de una fila con `id = 'pong'` no rompe nada: no aparece en el catálogo y
+- [x] Con `frogger` en `playable = false`, su pestaña sigue en `/salon` y su tabla se ve.
+- [x] Con `frogger` en `playable = false`, la Server Action rechaza guardar una marca suya.
+- [x] `insert` con `cat = 'INVENTADA'` lo rechaza la base de datos.
+- [x] `insert` con `glow = '#123456'` lo rechaza la base de datos.
+- [x] `update` de `title` a `GALAGÁ` lo rechaza la base de datos.
+- [x] `insert` de una fila con `id = 'pong'` no rompe nada: no aparece en el catálogo y
       queda un aviso en la consola del servidor.
-- [ ] Con las variables de Supabase borradas de `.env.local`, `/biblioteca` enseña
+- [x] Con las variables de Supabase borradas de `.env.local`, `/biblioteca` enseña
       `CATALOGO NO DISPONIBLE`, y `npm run build` sigue pasando.
-- [ ] Con `public.games` vacía, `/biblioteca` enseña `EL VAULT ESTA VACIO` y no el aviso
+- [x] Con `public.games` vacía, `/biblioteca` enseña `EL VAULT ESTA VACIO` y no el aviso
       de avería.
-- [ ] Sin `?juego=`, `/salon` abre en la máquina de menor `sort_order`, sea cual sea.
-- [ ] `grep -rn "\bGAMES\b\|getGame" app components lib` no devuelve ninguna coincidencia.
-- [ ] Una visita a `/jugar/asteroids` hace **una** consulta a `games`, no tres.
-- [ ] Las cinco máquinas se juegan igual que antes: `lib/games/` no tiene ni una línea de
+- [x] Sin `?juego=`, `/salon` abre en la máquina de menor `sort_order`, sea cual sea.
+- [x] `grep -rn "\bGAMES\b\|getGame" app components lib` no devuelve ninguna coincidencia.
+- [x] Una visita a `/jugar/asteroids` hace **una** consulta a `games`, no tres.
+- [x] Las cinco máquinas se juegan igual que antes: `lib/games/` no tiene ni una línea de
       diferencia en `git diff`.
-- [ ] `npx tsc --noEmit`, `npm run lint` y `npm run build` pasan.
+- [x] `npx tsc --noEmit`, `npm run lint` y `npm run build` pasan.
 
 ## Decisiones tomadas y descartadas
 
