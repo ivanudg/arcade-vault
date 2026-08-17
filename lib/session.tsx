@@ -20,6 +20,7 @@
 import { useRouter } from "next/navigation";
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 import type { User } from "@supabase/supabase-js";
+import { deviceId } from "@/lib/storage";
 import { createClient } from "@/lib/supabase/client";
 import { isSupabaseConfigured } from "@/lib/supabase/env";
 
@@ -148,4 +149,43 @@ export function useSession(): Session {
     throw new Error("useSession() necesita un <SessionProvider> por encima.");
   }
   return session;
+}
+
+/** Lo que hace falta para saber de quién es una marca. */
+interface Signed {
+  deviceId: string | null;
+  userId: string | null;
+}
+
+/**
+ * Devuelve la prueba de «esta marca es mía», que las tres tablas del marcador
+ * aplican igual.
+ *
+ * Con sesión manda la **cuenta**, que es lo que sobrevive al cambio de aparato;
+ * sin ella manda el **dispositivo**, como desde SPEC 06. Nunca las dos a la vez:
+ * quien entra deja de ver resaltadas las marcas que dejó de invitado en este
+ * navegador, porque no son suyas —son de quien estuviera jugando aquí—.
+ *
+ * Vive aquí y no en cada tabla porque tres copias de una regla son tres sitios
+ * donde puede empezar a decir cosas distintas. El servidor no la resuelve:
+ * `localStorage` no lo puede leer, y una marca no puede resaltarse de dos formas
+ * según quién pregunte.
+ */
+export function useMine(): (row: Signed) => boolean {
+  const { user, ready } = useSession();
+  const [device, setDevice] = useState<string>();
+
+  // `localStorage` no existe en el render de servidor: la lectura espera al
+  // efecto, y hasta entonces no se resalta nada.
+  // eslint-disable-next-line react-hooks/set-state-in-effect -- lectura única de localStorage tras hidratar
+  useEffect(() => setDevice(deviceId()), []);
+
+  return useCallback(
+    (row: Signed) => {
+      if (!ready) return false;
+      if (user) return row.userId !== null && row.userId === user.id;
+      return device !== undefined && row.deviceId === device;
+    },
+    [ready, user, device],
+  );
 }

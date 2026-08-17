@@ -16,12 +16,11 @@
  */
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
 import { ScoreboardEmpty } from "@/components/scoreboard-empty";
 import { ScoreboardUnavailable } from "@/components/scoreboard-unavailable";
 import type { GameId } from "@/lib/games";
+import { useMine } from "@/lib/session";
 import { formatScore, type BoardRow } from "@/lib/scores";
-import { deviceId } from "@/lib/storage";
 
 /** Oro, plata y bronce. La plata no está en la paleta: es exclusiva del podio. */
 const MEDALS = ["#f5ff00", "#d8dee9", "#ff9d4d"];
@@ -35,14 +34,11 @@ export function ScorePanel({
   /** La tabla de esta máquina, o `null` si la base de datos no contestó. */
   rows: BoardRow[] | null;
 }) {
-  const [device, setDevice] = useState<string>();
-
-  // eslint-disable-next-line react-hooks/set-state-in-effect -- lectura única de localStorage tras hidratar
-  useEffect(() => setDevice(deviceId()), []);
+  const isMine = useMine();
 
   const rows = (served ?? []).map((r) => ({
     ...r,
-    mine: device !== undefined && r.deviceId === device,
+    mine: isMine(r),
   }));
 
   return (

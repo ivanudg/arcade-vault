@@ -23,7 +23,12 @@ export interface ScoreEntry {
 export interface BoardRow extends ScoreEntry {
   /** Del dispositivo que la guardó. `null` en las semillas. */
   deviceId: string | null;
-  /** `true` si la marca la guardó este dispositivo. Lo resuelve el cliente. */
+  /** De la cuenta que la firmó. `null` si se jugó sin ella. */
+  userId: string | null;
+  /**
+   * `true` si la marca es de quien mira. Lo resuelve el cliente: por cuenta si
+   * hay sesión, y por dispositivo si no.
+   */
   mine: boolean;
 }
 
@@ -32,6 +37,8 @@ export interface RecentScore extends ScoreEntry {
   game: GameId;
   /** Del dispositivo que la guardó. `null` en las semillas. */
   deviceId: string | null;
+  /** De la cuenta que la firmó. `null` si se jugó sin ella. */
+  userId: string | null;
   mine: boolean;
 }
 
@@ -45,6 +52,8 @@ export interface PlayerRank {
   game: GameId;
   /** Del dispositivo que la guardó. `null` en las semillas. */
   deviceId: string | null;
+  /** De la cuenta que la firmó. `null` si se jugó sin ella. */
+  userId: string | null;
   mine: boolean;
 }
 

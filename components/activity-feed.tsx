@@ -15,10 +15,9 @@
  * cuáles son de este navegador, que es lo único que el servidor no puede saber.
  */
 
-import { useEffect, useState } from "react";
 import { getGame } from "@/lib/games";
+import { useMine } from "@/lib/session";
 import { formatScore, type RecentScore } from "@/lib/scores";
-import { deviceId } from "@/lib/storage";
 
 export function ActivityFeed({
   rows: served,
@@ -26,14 +25,11 @@ export function ActivityFeed({
   /** Las últimas marcas del vault, de nueva a vieja. */
   rows: RecentScore[];
 }) {
-  const [device, setDevice] = useState<string>();
-
-  // eslint-disable-next-line react-hooks/set-state-in-effect -- lectura única de localStorage tras hidratar
-  useEffect(() => setDevice(deviceId()), []);
+  const isMine = useMine();
 
   const rows = served.map((r) => ({
     ...r,
-    mine: device !== undefined && r.deviceId === device,
+    mine: isMine(r),
   }));
 
   return (
