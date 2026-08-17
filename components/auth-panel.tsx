@@ -13,7 +13,12 @@
  * fallar de cuatro formas distintas —nombre cogido, correo repetido, contraseña
  * mala, correo sin confirmar— y cada una tiene que poder decirse en pantalla.
  *
- * Con sesión activa el formulario se sustituye por el perfil.
+ * Con sesión activa el formulario se sustituye por el perfil —o, desde SPEC 16,
+ * por el formulario de nombre de jugador, que es como llega una cuenta de Google
+ * o de GitHub: sesión de verdad y sin fila en `profiles`—. El orden de los
+ * bloques **es** la lógica: «sesión con perfil» va antes que «revisa tu correo»
+ * para que quien confirma su correo y vuelve con sesión vea el perfil y no un
+ * aviso viejo.
  */
 
 import Link from "next/link";
@@ -61,7 +66,7 @@ export function AuthPanel({
 }: {
   notice?: string;
 }) {
-  const { user, ready, logout } = useSession();
+  const { user, ready, logout, refreshProfile } = useSession();
   const router = useRouter();
 
   const [tab, setTab] = useState<"login" | "register">("login");
@@ -169,6 +174,66 @@ export function AuthPanel({
     }
   }
 
+  /**
+   * Elegir el nombre de una cuenta que todavía no lo tiene.
+   *
+   * Es el `insert` que la política `"crear mi perfil"` permite, y el único que
+   * la app hace sobre `profiles`. La comprobación previa es cortesía, igual que
+   * en el registro: quien decide de verdad es el `unique` de la columna.
+   */
+  async function chooseName(e: React.FormEvent) {
+    e.preventDefault();
+    if (sending || !user) return;
+    setError(null);
+
+    const username = name.toUpperCase().slice(0, 12);
+
+    if (!USERNAME.test(username)) {
+      setError("EL NOMBRE VA DE 3 A 12: LETRAS, CIFRAS Y _");
+      return;
+    }
+
+    setSending(true);
+    try {
+      const supabase = createClient();
+
+      const { data: taken, error: lookup } = await supabase
+        .from("profiles")
+        .select("username")
+        .eq("username", username)
+        .maybeSingle();
+      if (lookup) {
+        setError(readable(lookup.message));
+        return;
+      }
+      if (taken) {
+        setError("ESE NOMBRE YA ESTA COGIDO");
+        return;
+      }
+
+      const { error } = await supabase.from("profiles").insert({ id: user.id, username });
+      if (error) {
+        // `23505` es el choque contra el `unique`: dos personas eligiendo el
+        // mismo nombre en la misma fracción de segundo, que es lo que la
+        // comprobación de arriba no puede cubrir.
+        setError(error.code === "23505" ? "ESE NOMBRE YA ESTA COGIDO" : readable(error.message));
+        return;
+      }
+
+      // La fila la ha escrito el navegador, así que Supabase no emite ningún
+      // evento de auth: el contexto hay que avisarlo a mano. `router.refresh()`
+      // es para los Server Components, que pintaron esta pantalla sin nombre.
+      await refreshProfile();
+      router.refresh();
+      setName("");
+    } catch (cause) {
+      console.error("[cuenta] el nombre no se pudo guardar:", cause);
+      setError("NO SE HA PODIDO. INTENTALO OTRA VEZ");
+    } finally {
+      setSending(false);
+    }
+  }
+
   return (
     <div className="w-[min(100%,440px)] border border-av-cyan/28 bg-[rgba(13,15,22,0.92)] p-[clamp(22px,4vw,36px)] shadow-[0_0_44px_rgba(0,245,255,0.12)]">
       <div className="text-center font-display text-[15px] tracking-av text-av-cyan [text-shadow:0_0_12px_rgba(0,245,255,0.8)]">
@@ -209,6 +274,56 @@ export function AuthPanel({
             CERRAR SESION
           </button>
         </div>
+      ) : user ? (
+        /* Hay sesión de verdad y lo que falta es el nombre: así nace una cuenta
+           de Google o de GitHub, que no traen ninguno. El acento es el amarillo
+           con el que la cabecera dice ELIGE NOMBRE —queda algo por hacer—, y no
+           el magenta de los errores: aquí no ha fallado nada. */
+        <form onSubmit={chooseName} className="flex flex-col gap-4">
+          <div className="grid place-items-center gap-3 border border-av-yellow/35 bg-av-void p-5 text-center">
+            <span className="font-display text-[11px] tracking-av text-av-yellow [text-shadow:0_0_12px_rgba(245,255,0,0.7)]">
+              ELIGE TU NOMBRE
+            </span>
+            <span className="text-[12px] tracking-av text-av-text-dim">
+              Es con el que firmas tus marcas en el salón. Se elige una vez y no se puede cambiar.
+            </span>
+          </div>
+
+          <label className={LABEL}>
+            Nombre de jugador
+            <input
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="jugador_01"
+              autoComplete="username"
+              maxLength={12}
+              autoFocus
+              disabled={sending}
+              className={FIELD}
+            />
+          </label>
+
+          {error && (
+            <p
+              role="alert"
+              className="border border-av-magenta/45 bg-av-magenta/10 p-3 text-center font-display text-[9px] leading-relaxed tracking-av text-av-magenta"
+            >
+              {error}
+            </p>
+          )}
+
+          <button
+            type="submit"
+            disabled={sending}
+            className="cursor-pointer border-none bg-av-cyan p-4 font-display text-[10px] tracking-av text-av-bg shadow-[0_0_22px_rgba(0,245,255,0.5)] active:scale-97 hover:bg-av-yellow disabled:cursor-wait disabled:opacity-60"
+          >
+            {sending ? "GUARDANDO..." : "GUARDAR NOMBRE"}
+          </button>
+
+          <p className="text-center text-[11px] tracking-av text-av-text-faint">
+            Hasta que lo elijas, tus marcas entran firmadas como INVITADO.
+          </p>
+        </form>
       ) : sent ? (
         <div className="flex flex-col gap-4 text-center">
           <div className="grid place-items-center gap-3 border border-av-cyan/35 bg-av-void p-5">
