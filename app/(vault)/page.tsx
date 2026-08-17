@@ -20,7 +20,8 @@ import { MiniGameCard } from "@/components/mini-game-card";
 import { Reveal } from "@/components/reveal";
 import { SectionHead } from "@/components/section-head";
 import { TopPlayers } from "@/components/top-players";
-import { GAMES } from "@/lib/games";
+import { catalog } from "@/lib/catalog";
+import type { Game, GameId } from "@/lib/games";
 import { type Accent, FAQ, FEATURES, PLAN, STATS } from "@/lib/landing";
 import { recentScores, topPlayers } from "@/lib/leaderboard";
 
@@ -53,14 +54,30 @@ const FAQ_EDGE = ["border-l-av-cyan", "border-l-av-magenta", "border-l-av-yellow
 export const dynamic = "force-dynamic";
 
 export default async function HomePage() {
-  // Las dos consultas en paralelo: no dependen una de otra y la portada no
-  // tiene por qué esperar dos viajes seguidos.
-  const [recentResult, rankingResult] = await Promise.all([recentScores(), topPlayers()]);
-  // `null` es que no se pudo preguntar. La portada no distingue: sin actividad
-  // que enseñar esconde su sección, y da igual por qué no la haya.
+  // Las tres consultas en paralelo: no dependen unas de otras y la portada no
+  // tiene por qué esperar tres viajes seguidos.
+  const [recentResult, rankingResult, catalogResult] = await Promise.all([
+    recentScores(),
+    topPlayers(),
+    catalog(),
+  ]);
+  // `null` es que no se pudo preguntar. La portada no distingue, ni en el
+  // marcador ni en el catálogo: sin nada que enseñar esconde la sección, y da
+  // igual por qué no lo haya. Las pantallas que sí lo distinguen son las que se
+  // quedarían en blanco.
   const recent = recentResult ?? [];
   const ranking = rankingResult ?? [];
   const hasActivity = recent.length > 0 || ranking.length > 0;
+
+  // Sólo las jugables: una retirada no se anuncia en la puerta de entrada.
+  const games = (catalogResult ?? []).filter((g) => g.playable);
+
+  // Las dos bandas del marcador nombran y colorean la máquina de cada marca, y
+  // lo hacen por id: el mapa se arma una vez aquí en vez de recorrer el
+  // catálogo entero por fila. Una marca de una máquina que ya no está sigue
+  // pintándose con su id y sin acento, que es lo que esos componentes ya hacían.
+  const byId: Partial<Record<GameId, Game>> = {};
+  for (const g of catalogResult ?? []) byId[g.id] = g;
 
   return (
     <main className="flex-1">
@@ -146,29 +163,36 @@ export default async function HomePage() {
         </div>
       </section>
 
-      {/* 02 — Las seis primeras máquinas del catálogo. */}
-      <section className="mx-auto max-w-330 px-[clamp(14px,3vw,40px)] py-[clamp(52px,8vw,80px)]">
-        <Reveal>
-          <SectionHead index={2} title="JUEGOS DISPONIBLES AHORA" accent="cyan" />
-        </Reveal>
+      {/* 02 — Las seis primeras máquinas jugables del catálogo.
 
-        <Reveal>
-          <div className="grid grid-cols-2 gap-4 md:grid-cols-3 xl:grid-cols-6">
-            {GAMES.slice(0, 6).map((game) => (
-              <MiniGameCard key={game.id} game={game} />
-            ))}
-          </div>
+          Sin catálogo no hay sección, igual que sin actividad: una cabecera de
+          juegos disponibles sobre una rejilla vacía afirma que no hay ninguno,
+          y lo que pasa es que no se sabe. El aviso de avería se queda para las
+          pantallas que se quedarían en blanco sin él. */}
+      {games.length > 0 && (
+        <section className="mx-auto max-w-330 px-[clamp(14px,3vw,40px)] py-[clamp(52px,8vw,80px)]">
+          <Reveal>
+            <SectionHead index={2} title="JUEGOS DISPONIBLES AHORA" accent="cyan" />
+          </Reveal>
 
-          <div className="mt-7 text-center">
-            <Link
-              href="/biblioteca"
-              className="inline-block border border-av-cyan px-7 py-4 font-display text-[11px] tracking-av text-av-cyan hover:bg-av-cyan/12 hover:text-white"
-            >
-              VER TODOS LOS JUEGOS →
-            </Link>
-          </div>
-        </Reveal>
-      </section>
+          <Reveal>
+            <div className="grid grid-cols-2 gap-4 md:grid-cols-3 xl:grid-cols-6">
+              {games.slice(0, 6).map((game) => (
+                <MiniGameCard key={game.id} game={game} />
+              ))}
+            </div>
+
+            <div className="mt-7 text-center">
+              <Link
+                href="/biblioteca"
+                className="inline-block border border-av-cyan px-7 py-4 font-display text-[11px] tracking-av text-av-cyan hover:bg-av-cyan/12 hover:text-white"
+              >
+                VER TODOS LOS JUEGOS →
+              </Link>
+            </div>
+          </Reveal>
+        </section>
+      )}
 
       {/* Franja de cifras: el único bloque a ancho completo de la portada, con
           su velo amarillo. Las tres cifras salen de `STATS`. */}
@@ -211,8 +235,8 @@ export default async function HomePage() {
 
           <Reveal>
             <div className="grid items-start gap-4.5 lg:grid-cols-[1.2fr_1fr]">
-              {recent.length > 0 && <ActivityFeed rows={recent} />}
-              {ranking.length > 0 && <TopPlayers rows={ranking} />}
+              {recent.length > 0 && <ActivityFeed rows={recent} games={byId} />}
+              {ranking.length > 0 && <TopPlayers rows={ranking} games={byId} />}
             </div>
           </Reveal>
         </section>

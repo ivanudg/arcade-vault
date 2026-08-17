@@ -15,15 +15,22 @@
  * cuáles son de este navegador, que es lo único que el servidor no puede saber.
  */
 
-import { getGame } from "@/lib/games";
+import type { Game, GameId } from "@/lib/games";
 import { useMine } from "@/lib/session";
 import { formatScore, type RecentScore } from "@/lib/scores";
 
 export function ActivityFeed({
   rows: served,
+  games,
 }: {
   /** Las últimas marcas del vault, de nueva a vieja. */
   rows: RecentScore[];
+  /**
+   * El catálogo por id, resuelto en el servidor. De aquí salen el título y el
+   * acento de cada marca. Una máquina que ya no está no aparece en el mapa, y
+   * su marca se pinta con el id pelado y sin acento.
+   */
+  games: Partial<Record<GameId, Game>>;
 }) {
   const isMine = useMine();
 
@@ -42,7 +49,7 @@ export function ActivityFeed({
 
       <div className="py-1.5">
         {rows.map((row, i) => {
-          const game = getGame(row.game);
+          const game = games[row.game];
           return (
             <div
               key={`${row.game}-${row.name}-${row.score}`}

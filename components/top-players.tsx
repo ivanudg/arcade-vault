@@ -15,7 +15,7 @@
  */
 
 import Link from "next/link";
-import { getGame, tint } from "@/lib/games";
+import { tint, type Game, type GameId } from "@/lib/games";
 import { formatScore, type PlayerRank } from "@/lib/scores";
 
 /** Oro, plata y bronce, los mismos tres del salón. */
@@ -27,9 +27,15 @@ const RANK_COLUMN = "38px";
 
 export function TopPlayers({
   rows,
+  games,
 }: {
   /** Los mejores del vault, ya ordenados y numerados. */
   rows: PlayerRank[];
+  /**
+   * El catálogo por id, resuelto en el servidor. Sólo se usa para nombrar la
+   * máquina en el `title` de cada fila; una que ya no esté cae en su id.
+   */
+  games: Partial<Record<GameId, Game>>;
 }) {
   const best = rows[0]?.score ?? 0;
 
@@ -61,7 +67,7 @@ export function TopPlayers({
                 } as React.CSSProperties
               }
               className="relative grid grid-cols-[38px_minmax(0,1fr)_auto] items-center gap-2.5 py-2"
-              title={`${row.name} · ${getGame(row.game)?.title ?? row.game}`}
+              title={`${row.name} · ${games[row.game]?.title ?? row.game}`}
             >
               <span
                 aria-hidden="true"
