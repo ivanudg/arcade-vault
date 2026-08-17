@@ -25,11 +25,11 @@ import "server-only";
 
 import { cache } from "react";
 
-import { GAMES, type Game, type GameCategory, type GameGlow, type GameId } from "@/lib/games";
+import { GAME_IDS, type Game, type GameCategory, type GameGlow, type GameId } from "@/lib/games";
 import { createClient } from "@/lib/supabase/server";
 
 /** Ids que existen en el código, para no dar por buena una fila inventada. */
-const IDS = new Set<string>(GAMES.map((g) => g.id));
+const IDS = new Set<string>(GAME_IDS);
 
 /**
  * Las columnas que pide cualquiera de las dos lecturas.

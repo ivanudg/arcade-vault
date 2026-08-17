@@ -17,6 +17,19 @@
 export type GameId = "asteroids" | "tetris" | "arkanoid" | "snake" | "frogger";
 
 /**
+ * Los ids que existen, sin sus datos.
+ *
+ * No es una copia disimulada del catálogo: no lleva ni un dato editable. Existe
+ * porque hay tres sitios que necesitan saber si un id existe **sin** poder
+ * consultar: `generateStaticParams()` de las dos rutas por máquina, que corre en
+ * el build y no tiene ni credenciales ni red; el `IDS` de `lib/leaderboard.ts`,
+ * que descarta las marcas de máquinas que ya no están y que consultando
+ * duplicaría cada lectura del marcador; y `components/site-footer.tsx`, que es
+ * de cliente y deduce su remate de `usePathname()`.
+ */
+export const GAME_IDS: readonly GameId[] = ["asteroids", "tetris", "arkanoid", "snake", "frogger"];
+
+/**
  * Vocabulario cerrado de categorías, no inventario de lo que hay hoy: conserva
  * los seis valores aunque de momento sólo se usen `DISPAROS`, `PUZZLE`,
  * `ARCADE`, `CLASICOS` y `REFLEJOS`, que estrenó Frogger.
