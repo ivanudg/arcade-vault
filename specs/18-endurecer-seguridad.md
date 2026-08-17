@@ -312,32 +312,32 @@ Van al final por eso.
 
 ### La base de datos
 
-- [ ] `information_schema.role_table_grants` para `anon` y `authenticated` devuelve **diez**
+- [x] `information_schema.role_table_grants` para `anon` y `authenticated` devuelve **diez**
       filas y ninguna con `UPDATE`, `DELETE`, `TRUNCATE`, `REFERENCES` ni `TRIGGER`.
-- [ ] `has_function_privilege('anon','public.handle_new_user()','execute')` es `false`, y lo
+- [x] `has_function_privilege('anon','public.handle_new_user()','execute')` es `false`, y lo
       mismo para `rls_auto_enable()` y para `authenticated`.
-- [ ] `has_function_privilege('postgres','public.handle_new_user()','execute')` sigue siendo
+- [x] `has_function_privilege('postgres','public.handle_new_user()','execute')` sigue siendo
       `true`.
-- [ ] `begin; set local role anon; truncate public.scores;` falla con `42501`. Antes de la
+- [x] `begin; set local role anon; truncate public.scores;` falla con `42501`. Antes de la
       migración **no fallaba**.
-- [ ] Con `set local role anon`, `select` sobre `games`, `top_scores` y `player_bests` sigue
+- [x] Con `set local role anon`, `select` sobre `games`, `top_scores` y `player_bests` sigue
       funcionando.
-- [ ] **El trigger de alta sigue funcionando**: un `insert` en `auth.users` con
+- [x] **El trigger de alta sigue funcionando**: un `insert` en `auth.users` con
       `raw_user_meta_data = '{"username":"TRIGGER_18"}'` dentro de una transacción que se
       deshace deja una fila en `public.profiles` con ese nombre.
-- [ ] La rama sin nombre de SPEC 16 sigue funcionando: el mismo `insert` con
+- [x] La rama sin nombre de SPEC 16 sigue funcionando: el mismo `insert` con
       `raw_user_meta_data = '{}'` tiene éxito y `profiles` no gana fila.
 - [ ] Firmar una marca desde `/jugar/[id]` sigue funcionando, con cuenta y como invitado.
 - [ ] Editar una fila de `public.games` desde el panel de Supabase sigue funcionando.
-- [ ] `get_advisors type=security` no devuelve ninguno de los cuatro
+- [x] `get_advisors type=security` no devuelve ninguno de los cuatro
       `*_security_definer_function_executable`.
-- [ ] `get_advisors type=security` **sí** sigue devolviendo `auth_leaked_password_protection`,
+- [x] `get_advisors type=security` **sí** sigue devolviendo `auth_leaked_password_protection`,
       a propósito.
-- [ ] `pg_default_acl` del esquema `public` para el rol `postgres` ya no menciona `anon` ni
+- [x] `pg_default_acl` del esquema `public` para el rol `postgres` ya no menciona `anon` ni
       `authenticated`.
 - [ ] `npx supabase db reset` contra el stack local aplica las trece migraciones sin error e
       imprime el aviso de que `rls_auto_enable()` no existe en esa base.
-- [ ] Aplicar la migración dos veces sobre la base remota tampoco falla.
+- [x] Aplicar la migración dos veces sobre la base remota tampoco falla.
 
 ### La configuración de Auth
 
