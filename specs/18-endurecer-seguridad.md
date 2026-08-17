@@ -302,13 +302,13 @@ Van al final por eso.
 
 ### Las cabeceras
 
-- [ ] Con `npm run build && npm run start`, las **cinco** cabeceras están con su valor exacto
+- [x] Con `npm run build && npm run start`, las **cinco** cabeceras están con su valor exacto
       en `/`, `/biblioteca`, `/cuenta`, `/jugar/snake`, `/api/supabase-health` y
       `/snake/fruits.png`.
-- [ ] Con `npm run dev` y el servidor reiniciado, las mismas rutas llevan **cuatro** y no
+- [x] Con `npm run dev` y el servidor reiniciado, las mismas rutas llevan **cuatro** y no
       `Strict-Transport-Security`.
-- [ ] `grep -c "process.argv" next.config.ts` devuelve `0`.
-- [ ] Ninguna respuesta lleva `X-Powered-By`.
+- [x] `grep -c "process.argv" next.config.ts` devuelve `0`.
+- [x] Ninguna respuesta lleva `X-Powered-By`.
 
 ### La base de datos
 
