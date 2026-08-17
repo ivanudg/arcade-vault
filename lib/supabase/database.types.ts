@@ -63,6 +63,24 @@ export type Database = {
         }
         Relationships: []
       }
+      profiles: {
+        Row: {
+          created_at: string
+          id: string
+          username: string
+        }
+        Insert: {
+          created_at?: string
+          id: string
+          username: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          username?: string
+        }
+        Relationships: []
+      }
       scores: {
         Row: {
           created_at: string
@@ -72,6 +90,7 @@ export type Database = {
           player_name: string
           score: number
           seeded: boolean
+          user_id: string | null
         }
         Insert: {
           created_at?: string
@@ -81,6 +100,7 @@ export type Database = {
           player_name: string
           score: number
           seeded?: boolean
+          user_id?: string | null
         }
         Update: {
           created_at?: string
@@ -90,6 +110,7 @@ export type Database = {
           player_name?: string
           score?: number
           seeded?: boolean
+          user_id?: string | null
         }
         Relationships: [
           {
@@ -109,6 +130,7 @@ export type Database = {
           game_id: string | null
           player_name: string | null
           score: number | null
+          user_id: string | null
         }
         Relationships: [
           {
@@ -130,6 +152,7 @@ export type Database = {
           rank: number | null
           score: number | null
           seeded: boolean | null
+          user_id: string | null
         }
         Relationships: [
           {

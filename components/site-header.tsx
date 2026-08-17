@@ -147,10 +147,12 @@ export function SiteHeader() {
               (user ? (
                 <div className="flex items-center gap-2.5">
                   <div className="grid size-8.5 place-items-center bg-av-magenta font-display text-[11px] text-av-bg av-halo-magenta">
-                    {user.name.slice(0, 1).toUpperCase()}
+                    {user.username.slice(0, 1)}
                   </div>
                   <div className="flex flex-col gap-0.5">
-                    <span className="text-[12px] tracking-av text-av-text-bright">{user.name}</span>
+                    <span className="text-[12px] tracking-av text-av-text-bright">
+                      {user.username}
+                    </span>
                     <button
                       type="button"
                       onClick={logout}

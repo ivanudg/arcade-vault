@@ -1,59 +1,143 @@
 "use client";
 
 /**
- * Sesión simulada del vault.
+ * La sesión del vault, ahora de verdad.
  *
- * Un único contexto montado en el layout: la cabecera, `/cuenta` y `/jugar`
- * leen el mismo usuario en vez de tocar `localStorage` cada una por su cuenta,
- * así no pueden discrepar. No hay autenticación real: eso llega con el backend.
+ * Hasta SPEC 15 esto era un nombre escrito en `localStorage`. Ahora es Supabase
+ * Auth: la sesión viaja en cookies —`@supabase/ssr`—, así que el servidor ve lo
+ * mismo que el navegador y `proxy.ts` la refresca en cada petición.
+ *
+ * Sigue siendo **un único contexto** montado en el layout raíz: la cabecera,
+ * `/cuenta` y `/jugar` leen el mismo usuario en vez de preguntar cada una por su
+ * cuenta.
+ *
+ * `login()` ya no está aquí. Entrar dejó de ser escribir un string y pasó a ser
+ * una llamada de red que puede fallar de cuatro formas distintas, así que vive
+ * en `AuthPanel`, con sus estados de envío y de error. Un contexto que sólo
+ * puede devolver `void` no tiene dónde contar que el correo ya existía.
  */
 
-import {
-  createContext,
-  useCallback,
-  useContext,
-  useEffect,
-  useMemo,
-  useState,
-} from "react";
-import { persist, read, type VaultUser } from "@/lib/storage";
+import { useRouter } from "next/navigation";
+import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
+import type { User } from "@supabase/supabase-js";
+import { deviceId } from "@/lib/storage";
+import { createClient } from "@/lib/supabase/client";
+import { isSupabaseConfigured } from "@/lib/supabase/env";
+
+/**
+ * El jugador tal y como lo ve la interfaz.
+ *
+ * Ya no viene de `lib/storage.ts`: el nombre es el `username` de
+ * `public.profiles`, único en todo el vault y ya normalizado por la base de
+ * datos —mayúsculas y doce caracteres—, y el `id` es el de `auth.users`, que es
+ * lo que firma las marcas desde esta spec.
+ */
+export interface VaultUser {
+  id: string;
+  username: string;
+  email: string;
+}
 
 interface Session {
   user: VaultUser | null;
-  /** `false` hasta que se ha leído `localStorage` tras hidratar. */
+  /** `false` hasta la primera respuesta de Supabase. */
   ready: boolean;
-  /** Normaliza el nombre como el prototipo: mayúsculas y 12 caracteres. */
-  login: (name: string) => void;
-  logout: () => void;
+  logout: () => Promise<void>;
 }
 
 const SessionContext = createContext<Session | null>(null);
 
+/** Nombre de emergencia si el perfil no se puede leer. Nunca debería verse. */
+const FALLBACK_NAME = "JUGADOR";
+
 export function SessionProvider({ children }: { children: React.ReactNode }) {
-  // `undefined` significa "aún no se ha leído `localStorage`", así que `ready`
-  // se deduce en vez de guardarse: un solo estado, imposible que discrepen.
+  const router = useRouter();
+
+  // Sin credenciales no hay cliente que crear: `createClient()` lanza, y este
+  // proveedor envuelve las ocho pantallas, incluidas las que no hablan con
+  // Supabase. Mismo criterio que `proxy.ts`: no se finge sesión, no se pide.
+  const supabase = useMemo(() => (isSupabaseConfigured() ? createClient() : null), []);
+
+  // Dos estados y no uno, y a propósito. `authUser` es lo que dice Supabase;
+  // `user` es lo que se pinta, que además necesita una consulta a `profiles`.
+  // Separarlos es lo que permite que el callback de `onAuthStateChange` sea
+  // síncrono: consultar la base de datos ahí dentro puede bloquearse contra el
+  // propio candado de auth.
+  const [authUser, setAuthUser] = useState<User | null | undefined>(undefined);
   const [user, setUser] = useState<VaultUser | null | undefined>(undefined);
+
+  // `undefined` significa "aún no ha contestado Supabase", así que `ready` se
+  // deduce en vez de guardarse: un solo estado, imposible que discrepen.
   const ready = user !== undefined;
 
-  // `localStorage` no existe en el render de servidor: la lectura espera al
-  // efecto. Hasta que `ready` es true nadie debe pintar estado de sesión.
-  // eslint-disable-next-line react-hooks/set-state-in-effect -- lectura única de localStorage tras hidratar
-  useEffect(() => setUser(read().user ?? null), []);
+  // Quién hay: la sesión de las cookies al montar, y desde ahí lo que vaya
+  // diciendo Supabase —entrar, salir, refrescar el token—.
+  useEffect(() => {
+    if (!supabase) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- sin credenciales no hay a quién preguntar
+      setAuthUser(null);
+      return;
+    }
 
-  const login = useCallback((name: string) => {
-    const next: VaultUser = { name: name.toUpperCase().slice(0, 12), guest: false };
-    persist({ user: next });
-    setUser(next);
-  }, []);
+    let alive = true;
+    void supabase.auth.getSession().then(({ data }) => {
+      if (alive) setAuthUser(data.session?.user ?? null);
+    });
 
-  const logout = useCallback(() => {
-    persist({ user: null });
-    setUser(null);
-  }, []);
+    const { data } = supabase.auth.onAuthStateChange((_event, session) => {
+      setAuthUser(session?.user ?? null);
+    });
+
+    return () => {
+      alive = false;
+      data.subscription.unsubscribe();
+    };
+  }, [supabase]);
+
+  // Cómo se llama: el `username` sale de `profiles`, no del correo ni de los
+  // metadatos. Depende del `id` y no del objeto entero, que Supabase reemplaza
+  // en cada refresco de token y volvería a consultar sin que nada haya cambiado.
+  const authId = authUser?.id;
+  const email = authUser?.email ?? "";
+
+  useEffect(() => {
+    if (authUser === undefined) return;
+    if (!supabase || !authId) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- sin sesión no hay perfil que traer
+      setUser(null);
+      return;
+    }
+
+    let alive = true;
+    void supabase
+      .from("profiles")
+      .select("username")
+      .eq("id", authId)
+      .maybeSingle()
+      .then(({ data, error }) => {
+        if (!alive) return;
+        if (error) console.error("[sesion] no se pudo leer el perfil:", error);
+        // Con sesión abierta y sin perfil legible se entra igual: el trigger
+        // garantiza que la fila existe, así que esto sólo pasa si la red falla,
+        // y decir INVITADO a quien ha entrado sería peor que decir JUGADOR.
+        setUser({ id: authId, username: data?.username ?? FALLBACK_NAME, email });
+      });
+
+    return () => {
+      alive = false;
+    };
+  }, [supabase, authUser, authId, email]);
+
+  const logout = useCallback(async () => {
+    await supabase?.auth.signOut();
+    // Los Server Components que leen el marcador se pintaron con la sesión
+    // vieja; sin esto habría que recargar a mano para que se enteren.
+    router.refresh();
+  }, [supabase, router]);
 
   const value = useMemo<Session>(
-    () => ({ user: user ?? null, ready, login, logout }),
-    [user, ready, login, logout],
+    () => ({ user: user ?? null, ready, logout }),
+    [user, ready, logout],
   );
 
   return <SessionContext value={value}>{children}</SessionContext>;
@@ -65,4 +149,43 @@ export function useSession(): Session {
     throw new Error("useSession() necesita un <SessionProvider> por encima.");
   }
   return session;
+}
+
+/** Lo que hace falta para saber de quién es una marca. */
+interface Signed {
+  deviceId: string | null;
+  userId: string | null;
+}
+
+/**
+ * Devuelve la prueba de «esta marca es mía», que las tres tablas del marcador
+ * aplican igual.
+ *
+ * Con sesión manda la **cuenta**, que es lo que sobrevive al cambio de aparato;
+ * sin ella manda el **dispositivo**, como desde SPEC 06. Nunca las dos a la vez:
+ * quien entra deja de ver resaltadas las marcas que dejó de invitado en este
+ * navegador, porque no son suyas —son de quien estuviera jugando aquí—.
+ *
+ * Vive aquí y no en cada tabla porque tres copias de una regla son tres sitios
+ * donde puede empezar a decir cosas distintas. El servidor no la resuelve:
+ * `localStorage` no lo puede leer, y una marca no puede resaltarse de dos formas
+ * según quién pregunte.
+ */
+export function useMine(): (row: Signed) => boolean {
+  const { user, ready } = useSession();
+  const [device, setDevice] = useState<string>();
+
+  // `localStorage` no existe en el render de servidor: la lectura espera al
+  // efecto, y hasta entonces no se resalta nada.
+  // eslint-disable-next-line react-hooks/set-state-in-effect -- lectura única de localStorage tras hidratar
+  useEffect(() => setDevice(deviceId()), []);
+
+  return useCallback(
+    (row: Signed) => {
+      if (!ready) return false;
+      if (user) return row.userId !== null && row.userId === user.id;
+      return device !== undefined && row.deviceId === device;
+    },
+    [ready, user, device],
+  );
 }

@@ -75,14 +75,17 @@ interface RawScore {
   player_name: string | null;
   score: number | null;
   device_id: string | null;
+  user_id: string | null;
   created_at: string | null;
 }
 
 /**
  * Una fila de la vista pasada a `BoardRow`.
  *
- * `mine` sale siempre `false`: el servidor no puede leer `localStorage`, así que
- * quien resuelve de quién es cada marca es el navegador tras montar.
+ * `mine` sale siempre `false`: quien resuelve de quién es cada marca es el
+ * navegador tras montar. Con cuenta podría saberlo el servidor, pero sin ella
+ * hace falta `localStorage`, y una marca no puede resaltarse de dos maneras
+ * distintas según quién mire.
  */
 function toBoardRow(r: RawScore): BoardRow {
   return {
@@ -90,6 +93,7 @@ function toBoardRow(r: RawScore): BoardRow {
     score: r.score ?? 0,
     date: r.created_at ? utcDate(r.created_at) : "—",
     deviceId: r.device_id,
+    userId: r.user_id,
     mine: false,
   };
 }
@@ -100,7 +104,7 @@ export async function board(id: GameId): Promise<BoardRow[] | null> {
     const supabase = await createClient();
     const { data, error } = await supabase
       .from("top_scores")
-      .select("game_id, player_name, score, device_id, created_at")
+      .select("game_id, player_name, score, device_id, user_id, created_at")
       .eq("game_id", id)
       .order("score", { ascending: false })
       .order("created_at", { ascending: true });
@@ -122,7 +126,7 @@ export async function boards(): Promise<Partial<Record<GameId, BoardRow[]>> | nu
     const supabase = await createClient();
     const { data, error } = await supabase
       .from("top_scores")
-      .select("game_id, player_name, score, device_id, created_at")
+      .select("game_id, player_name, score, device_id, user_id, created_at")
       .order("score", { ascending: false })
       .order("created_at", { ascending: true });
     if (error) throw error;
@@ -162,7 +166,7 @@ export async function recentScores(limit = 7): Promise<RecentScore[] | null> {
     const supabase = await createClient();
     const { data, error } = await supabase
       .from("scores")
-      .select("game_id, player_name, score, device_id, created_at")
+      .select("game_id, player_name, score, device_id, user_id, created_at")
       .order("created_at", { ascending: false })
       .order("score", { ascending: false })
       .limit(limit);
@@ -188,7 +192,7 @@ export async function topPlayers(limit = 5): Promise<PlayerRank[] | null> {
     const supabase = await createClient();
     const { data, error } = await supabase
       .from("player_bests")
-      .select("game_id, player_name, score, device_id")
+      .select("game_id, player_name, score, device_id, user_id")
       .order("score", { ascending: false })
       .limit(limit);
     if (error) throw error;
@@ -203,6 +207,7 @@ export async function topPlayers(limit = 5): Promise<PlayerRank[] | null> {
         score: row.score ?? 0,
         game: id,
         deviceId: row.device_id,
+        userId: row.user_id,
         mine: false,
       });
     }

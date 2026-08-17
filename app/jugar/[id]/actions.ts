@@ -13,9 +13,15 @@
  * desconfianza del cliente: una Server Action es una URL pública que responde a
  * cualquier POST, se llame o no desde la pantalla.
  *
+ * Por eso mismo, desde SPEC 15 **con sesión abierta el nombre no lo pone el
+ * cliente**: lo pone el `username` del perfil, y el `user_id` sale de
+ * `auth.getUser()`. Si el nombre viniera de fuera, cualquiera firmaría con el de
+ * otro con un POST a mano. Sin sesión se conserva el camino de siempre: el
+ * nombre recibido, sus tres validaciones y `user_id` nulo.
+ *
  * Lo que **no** hace, a propósito: comprobar que la puntuación sea alcanzable.
- * Sin sesión el marcador es falsificable y se acepta; los límites de aquí son
- * de forma, no de honestidad.
+ * El marcador es falsificable y se acepta; los límites de aquí son de forma, no
+ * de honestidad.
  */
 
 import { revalidatePath } from "next/cache";
@@ -44,28 +50,58 @@ export async function saveScore(
     return { ok: false, error: "Esa máquina no está en el catálogo." };
   }
 
-  // La misma norma que aplica `login()` en `lib/session.tsx`: mayúsculas y doce
-  // caracteres. Un nombre de sólo espacios se queda en nada y no entra.
-  const player = name.trim().toUpperCase().slice(0, MAX_NAME);
-  if (!player) {
-    return { ok: false, error: "Escribe un nombre para firmar la marca." };
-  }
-
   if (!Number.isInteger(score) || score < 0 || score > MAX_SCORE) {
     return { ok: false, error: "Esa puntuación no es válida." };
   }
 
   // El `device_id` es una columna `uuid`: un texto cualquiera haría fallar la
-  // inserción entera. Sin dueño se guarda igual, sólo que no se resalta.
+  // inserción entera. Sin dueño se guarda igual, sólo que no se resalta. Se
+  // conserva junto a la cuenta: quien juega sin ella sigue viendo sus marcas
+  // resaltadas, que es como funciona el vault desde SPEC 06.
   const owner = deviceId && UUID.test(deviceId) ? deviceId : null;
 
   try {
     const supabase = await createClient();
+
+    // `getUser()` y no `getSession()`: éste valida el token contra Supabase en
+    // vez de creerse la cookie, que es lo que hay que hacer antes de escribir.
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    let player: string;
+    if (user) {
+      const { data: profile, error: lookup } = await supabase
+        .from("profiles")
+        .select("username")
+        .eq("id", user.id)
+        .maybeSingle();
+      // Sin perfil legible no se firma con un nombre inventado ni con el del
+      // cliente: la marca se pierde y se dice. El trigger garantiza la fila, así
+      // que esto sólo pasa si la base no contesta.
+      if (lookup || !profile) {
+        console.error("[marcador] sesión sin perfil legible:", lookup);
+        return { ok: false, error: "No se pudo leer tu perfil." };
+      }
+      player = profile.username;
+    } else {
+      // La misma norma que aplica el registro: mayúsculas y doce caracteres. Un
+      // nombre de sólo espacios se queda en nada y no entra.
+      player = name.trim().toUpperCase().slice(0, MAX_NAME);
+      if (!player) {
+        return { ok: false, error: "Escribe un nombre para firmar la marca." };
+      }
+    }
+
     // `seeded` se deja en su valor por defecto: la política de `insert` sólo
     // admite `false`, y escribirlo aquí sería repetir lo que ya dice la tabla.
-    const { error } = await supabase
-      .from("scores")
-      .insert({ game_id: gameId, player_name: player, score, device_id: owner });
+    const { error } = await supabase.from("scores").insert({
+      game_id: gameId,
+      player_name: player,
+      score,
+      device_id: owner,
+      user_id: user?.id ?? null,
+    });
 
     if (error) {
       console.error("[marcador] la marca no entró:", error);

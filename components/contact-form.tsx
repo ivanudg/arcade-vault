@@ -14,15 +14,11 @@
  */
 
 import { useActionState, useEffect, useRef, useState } from "react";
-import {
-  type ContactState,
-  sendContactMessage,
-} from "@/app/(vault)/acerca-de/actions";
+import { type ContactState, sendContactMessage } from "@/app/(vault)/acerca-de/actions";
 import { LIMITS, TERMINAL_FAIL, TERMINAL_OK } from "@/lib/about";
 import { useSession } from "@/lib/session";
 
-const LABEL =
-  "font-mono text-[10px] tracking-[0.16em] text-av-text-faint uppercase";
+const LABEL = "font-mono text-[10px] tracking-[0.16em] text-av-text-faint uppercase";
 const FIELD =
   "border border-av-line bg-av-bg px-3 font-mono text-av-text outline-none transition-[border-color,box-shadow] duration-150 placeholder:text-av-text-faint focus:border-av-cyan focus:shadow-[0_0_12px_rgba(0,245,255,0.35)]";
 /** El campo que la acción señaló: se marca en magenta hasta el próximo envío. */
@@ -31,10 +27,9 @@ const FIELD_INVALID = "border-av-magenta shadow-[0_0_12px_rgba(255,0,110,0.35)]"
 const EMPTY = { name: "", email: "", message: "" };
 
 export function ContactForm() {
-  const [state, action, pending] = useActionState<ContactState, FormData>(
-    sendContactMessage,
-    { status: "idle" },
-  );
+  const [state, action, pending] = useActionState<ContactState, FormData>(sendContactMessage, {
+    status: "idle",
+  });
   const { user, ready } = useSession();
   const [values, setValues] = useState(EMPTY);
   const [shake, setShake] = useState(false);
@@ -52,7 +47,7 @@ export function ContactForm() {
   useEffect(() => {
     if (seeded.current || !ready || !user) return;
     seeded.current = true;
-    setValues((prev) => (prev.name ? prev : { ...prev, name: user.name }));
+    setValues((prev) => (prev.name ? prev : { ...prev, name: user.username }));
   }, [ready, user]);
 
   // Lo que el cliente dejó pasar y la acción sí rechazó: misma respuesta que
@@ -89,8 +84,8 @@ export function ContactForm() {
         lines={TERMINAL_OK}
         tail={
           <>
-            &gt; MENSAJE RECIBIDO. TE RESPONDEREMOS PRONTO. GRACIAS,{" "}
-            {state.name.toUpperCase()}.<span className="animate-av-caret">_</span>
+            &gt; MENSAJE RECIBIDO. TE RESPONDEREMOS PRONTO. GRACIAS, {state.name.toUpperCase()}.
+            <span className="animate-av-caret">_</span>
           </>
         }
         label="ENVIAR OTRO MENSAJE"

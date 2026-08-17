@@ -16,12 +16,12 @@
  */
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { ScoreboardEmpty } from "@/components/scoreboard-empty";
 import { ScoreboardUnavailable } from "@/components/scoreboard-unavailable";
 import { GAMES, getGame, tint, type GameId } from "@/lib/games";
+import { useMine } from "@/lib/session";
 import { formatScore, type BoardRow } from "@/lib/scores";
-import { deviceId } from "@/lib/storage";
 
 /** Oro, plata y bronce. La plata no está en la paleta: es exclusiva del podio. */
 const MEDALS = ["#f5ff00", "#d8dee9", "#ff9d4d"];
@@ -38,17 +38,15 @@ export function HallOfFame({
   tables: Partial<Record<GameId, BoardRow[]>> | null;
 }) {
   const [tab, setTab] = useState<GameId>(initialTab);
-  const [device, setDevice] = useState<string>();
 
-  // El único efecto que queda: de quién es cada marca. Repinta un color, no
-  // vuelve a pedir los datos.
-  // eslint-disable-next-line react-hooks/set-state-in-effect -- lectura única de localStorage tras hidratar
-  useEffect(() => setDevice(deviceId()), []);
+  // De quién es cada marca lo resuelve el cliente, y `useMine()` guarda dentro
+  // el único efecto que queda aquí. Repinta un color, no vuelve a pedir datos.
+  const isMine = useMine();
 
   const unavailable = tables === null;
   const rows = (tables?.[tab] ?? []).map((r) => ({
     ...r,
-    mine: device !== undefined && r.deviceId === device,
+    mine: isMine(r),
   }));
 
   const game = getGame(tab);
@@ -128,8 +126,8 @@ export function HallOfFame({
 
       <div className="mt-5.5 flex flex-wrap items-center justify-between gap-3.5">
         <p className="max-w-[62ch] text-[12px] tracking-av text-av-line-strong">
-          Puntuaciones compartidas en Supabase. Sin sesión todavía: cualquiera puede firmar con el
-          nombre que quiera.
+          Puntuaciones compartidas en Supabase. Con cuenta, la marca la firma tu nombre de jugador;
+          sin ella entra como INVITADO.
         </p>
         <Link
           href={playHref}

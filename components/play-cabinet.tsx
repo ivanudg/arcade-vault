@@ -205,7 +205,7 @@ export function PlayCabinet({ game }: { game: Game }) {
 
   /** Las tres cifras del HUD, de la partida en curso. */
   const run = live ?? FRESH_RUN;
-  const playerName = ready && user ? user.name : "INVITADO";
+  const playerName = ready && user ? user.username : "INVITADO";
   /** Teclas vivas del mando: las que no están se pintan deshabilitadas. */
   const padKeys = ENGINE_KEYS[game.id];
   /**
@@ -584,7 +584,7 @@ export function PlayCabinet({ game }: { game: Game }) {
           score={run.score}
           note={
             user
-              ? `Sesión de ${user.name}: tu marca entra en el salón.`
+              ? `Sesión de ${user.username}: tu marca entra en el salón.`
               : "Modo invitado: la marca entra en el salón firmada como INVITADO."
           }
           canSave={!saved}
