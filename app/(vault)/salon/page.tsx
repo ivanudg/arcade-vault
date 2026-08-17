@@ -10,8 +10,10 @@
  */
 
 import type { Metadata } from "next";
+import { CatalogEmpty } from "@/components/catalog-empty";
+import { CatalogUnavailable } from "@/components/catalog-unavailable";
 import { HallOfFame } from "@/components/hall-of-fame";
-import { getGame, type GameId } from "@/lib/games";
+import { catalog } from "@/lib/catalog";
 import { boards } from "@/lib/leaderboard";
 
 export const metadata: Metadata = {
@@ -21,15 +23,36 @@ export const metadata: Metadata = {
 
 export default async function HallPage({ searchParams }: PageProps<"/salon">) {
   const { juego } = await searchParams;
-  // Un `?juego=` inventado no es un 404: abre en la primera máquina.
-  const requested = typeof juego === "string" ? getGame(juego) : undefined;
-  const initialTab: GameId = requested?.id ?? "asteroids";
 
-  // Todas las tablas de una sola consulta: cambiar de pestaña no vuelve a
-  // preguntar. Si la base no contesta llega `{}` y la tabla avisa.
-  // Baja tal cual, con su `null`: la diferencia entre no poder preguntar y no
-  // tener marcas la pinta `HallOfFame`, que es quien sabe qué pestaña se ve.
-  const tables = await boards();
+  // Las dos lecturas a la vez: ni el catálogo depende del marcador ni al revés.
+  //
+  // De `boards()` salen todas las tablas de una sola consulta, así que cambiar
+  // de pestaña no vuelve a preguntar. Baja tal cual, con su `null`: la
+  // diferencia entre no poder preguntar y no tener marcas la pinta
+  // `HallOfFame`, que es quien sabe qué pestaña se está viendo.
+  const [tables, games] = await Promise.all([boards(), catalog()]);
+
+  // El salón conserva la pestaña de una máquina retirada, así que aquí no se
+  // filtra `playable`: las marcas ya firmadas siguen siendo verdad, y
+  // esconderlas al retirar la máquina sería reescribir la historia del
+  // marcador.
+  if (games === null || games.length === 0) {
+    return (
+      <main className="flex-1 px-[clamp(14px,3vw,40px)] pt-[clamp(22px,4vw,44px)] pb-22.5">
+        <section className="mx-auto w-full max-w-275 animate-av-fade">
+          <h2 className="text-center font-display text-[clamp(18px,4.6vw,40px)] leading-[1.35] tracking-av-wider text-av-yellow [text-shadow:0_0_14px_rgba(245,255,0,0.7),0_0_40px_rgba(245,255,0,0.3)]">
+            SALON DE LA FAMA
+          </h2>
+          {games === null ? <CatalogUnavailable /> : <CatalogEmpty />}
+        </section>
+      </main>
+    );
+  }
+
+  // Un `?juego=` inventado no es un 404: abre en la primera máquina, que desde
+  // SPEC 17 es la de menor `sort_order` y no un `"asteroids"` escrito a mano.
+  const requested = typeof juego === "string" ? games.find((g) => g.id === juego) : undefined;
+  const initialTab = requested?.id ?? games[0].id;
 
   return (
     <main className="flex-1 px-[clamp(14px,3vw,40px)] pt-[clamp(22px,4vw,44px)] pb-22.5">
@@ -41,7 +64,7 @@ export default async function HallPage({ searchParams }: PageProps<"/salon">) {
           Las diez marcas más altas de cada máquina del vault.
         </p>
 
-        <HallOfFame initialTab={initialTab} tables={tables} />
+        <HallOfFame initialTab={initialTab} games={games} tables={tables} />
       </section>
     </main>
   );

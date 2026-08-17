@@ -19,12 +19,20 @@
 
 import "server-only";
 
-import { GAMES, type GameId } from "@/lib/games";
+import { GAME_IDS, type GameId } from "@/lib/games";
 import type { BoardRow, PlayerRank, RecentScore } from "@/lib/scores";
 import { createClient } from "@/lib/supabase/server";
 
-/** Ids del catálogo, para no dar por buena una `game_id` que ya no existe. */
-const IDS = new Set<string>(GAMES.map((g) => g.id));
+/**
+ * Ids que existen, para no dar por buena una `game_id` que ya no existe.
+ *
+ * Sale de `GAME_IDS` y no del catálogo de la base de datos a propósito: lo usan
+ * las cinco lecturas de este archivo, así que consultarlo duplicaría cada viaje
+ * del marcador y ataría dos fuentes que no tienen por qué ir juntas. La
+ * semántica no cambia: una marca cuyo `game_id` no es un literal conocido se
+ * descarta.
+ */
+const IDS = new Set<string>(GAME_IDS);
 
 function asGameId(id: string | null): GameId | null {
   return id && IDS.has(id) ? (id as GameId) : null;

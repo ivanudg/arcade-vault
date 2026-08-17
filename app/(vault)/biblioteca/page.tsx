@@ -16,7 +16,10 @@
  */
 
 import type { Metadata } from "next";
+import { CatalogEmpty } from "@/components/catalog-empty";
+import { CatalogUnavailable } from "@/components/catalog-unavailable";
 import { LibraryBrowser } from "@/components/library-browser";
+import { catalog } from "@/lib/catalog";
 import { bests } from "@/lib/leaderboard";
 
 export const metadata: Metadata = {
@@ -25,17 +28,26 @@ export const metadata: Metadata = {
 };
 
 /**
- * La rejilla lee el marcador, así que se renderiza en cada visita. Ver la nota
- * de `app/(vault)/juego/[id]/page.tsx`.
+ * La rejilla lee el marcador y, desde SPEC 17, también el catálogo, así que se
+ * renderiza en cada visita. Ver la nota de `app/(vault)/juego/[id]/page.tsx`.
  */
 export const dynamic = "force-dynamic";
 
 export default async function LibraryPage() {
-  // Una sola consulta para todas las tarjetas: la cifra viaja ya en el HTML del
-  // servidor, así que no hay parpadeo de valor al hidratar. Una máquina sin
-  // récord pinta `—`, y la tarjeta no distingue si es que no hay marcas o que
-  // no se pudo preguntar: en las dos, el récord está por escribir.
-  const records = (await bests()) ?? {};
+  // Las dos lecturas son independientes, así que van a la vez: en serie, esta
+  // pantalla pagaría las dos latencias seguidas para enseñar lo mismo.
+  //
+  // De `bests()` basta una consulta para todas las tarjetas: la cifra viaja ya
+  // en el HTML del servidor, así que no hay parpadeo de valor al hidratar. Una
+  // máquina sin récord pinta `—`, y la tarjeta no distingue si es que no hay
+  // marcas o que no se pudo preguntar: en las dos, el récord está por escribir.
+  const [records, games] = await Promise.all([bests().then((r) => r ?? {}), catalog()]);
+
+  // Con el catálogo sí se distingue, porque aquí `null` deja la pantalla sin
+  // nada que enseñar: `null` es que no se pudo preguntar y la lista vacía es
+  // que se preguntó y no hay máquinas. Una retirada (`playable = false`) no
+  // aparece; sus marcas siguen en el salón.
+  const playable = games === null ? null : games.filter((g) => g.playable);
 
   return (
     <main className="flex-1 px-[clamp(14px,3vw,40px)] pt-[clamp(22px,4vw,44px)] pb-22.5">
@@ -49,7 +61,13 @@ export default async function LibraryPage() {
           </p>
         </div>
 
-        <LibraryBrowser records={records} />
+        {playable === null ? (
+          <CatalogUnavailable />
+        ) : playable.length === 0 ? (
+          <CatalogEmpty />
+        ) : (
+          <LibraryBrowser games={playable} records={records} />
+        )}
       </section>
     </main>
   );

@@ -1,20 +1,41 @@
 /**
- * Catálogo de máquinas del vault.
+ * Vocabulario de las máquinas del vault. **Ya no es el catálogo.**
  *
- * Nació como puerto literal de `GAMES` en references/templates/arcade-core.js,
- * con las ocho máquinas del prototipo. SPEC 07 lo dejó en una, `asteroids`,
- * porque era la única que se jugaba de verdad: las otras ocho eran escena
- * congelada y HUD de mentira, y un vault que enseña nueve y deja jugar una
- * promete ocho veces más de lo que da. De ahí la regla que sigue vigente:
- * **toda máquina que entre a partir de aquí entra con motor.** `tetris` es la
- * primera que la cumple.
+ * Nació como puerto literal del catálogo de references/templates/arcade-core.js,
+ * con las ocho máquinas del prototipo, y hasta SPEC 16 fue la fuente de verdad:
+ * los siete campos de cada máquina se escribían aquí. Desde SPEC 17 los manda
+ * `public.games` y los lee `lib/catalog.ts`, así que de aquel catálogo aquí sólo
+ * quedan los **tipos** —que dicen qué forma tiene una máquina, no cuáles hay—,
+ * la lista de ids y las tres ayudas de dibujo que importan los cinco motores.
  *
- * `getGame()` devuelve `undefined` en vez de la primera máquina cuando el id no
- * existe, para que las rutas dinámicas puedan responder 404.
+ * La regla de SPEC 07 sigue vigente y ahora se lee mejor: **toda máquina que
+ * entre entra con motor.** Lo que el código sabe de una máquina es justo lo que
+ * no cabe en una fila —su motor, su mando y su miniatura—, y por eso `GameId`
+ * sigue siendo una unión cerrada de literales: editar una máquina no necesita
+ * desplegar, pero añadirla sí.
+ *
+ * Este archivo **no** lleva `server-only` y no puede llevarlo: lo importan los
+ * cinco motores y cuatro componentes de cliente.
  */
 
-/** Una máquina nueva entra añadiendo un literal aquí y su entrada en `GAMES`. */
+/**
+ * Una máquina nueva entra añadiendo un literal aquí, su entrada en `GAME_IDS` y
+ * una fila en `public.games`.
+ */
 export type GameId = "asteroids" | "tetris" | "arkanoid" | "snake" | "frogger";
+
+/**
+ * Los ids que existen, sin sus datos.
+ *
+ * No es una copia disimulada del catálogo: no lleva ni un dato editable. Existe
+ * porque hay tres sitios que necesitan saber si un id existe **sin** poder
+ * consultar: `generateStaticParams()` de las dos rutas por máquina, que corre en
+ * el build y no tiene ni credenciales ni red; el `IDS` de `lib/leaderboard.ts`,
+ * que descarta las marcas de máquinas que ya no están y que consultando
+ * duplicaría cada lectura del marcador; y `components/site-footer.tsx`, que es
+ * de cliente y deduce su remate de `usePathname()`.
+ */
+export const GAME_IDS: readonly GameId[] = ["asteroids", "tetris", "arkanoid", "snake", "frogger"];
 
 /**
  * Vocabulario cerrado de categorías, no inventario de lo que hay hoy: conserva
@@ -26,82 +47,34 @@ export type GameCategory = "ARCADE" | "CLASICOS" | "DISPAROS" | "REFLEJOS" | "PU
 /** Los tres neones de `globals.css`: cada máquina se pinta con uno de ellos. */
 export type GameGlow = "#00f5ff" | "#ff006e" | "#f5ff00";
 
+/**
+ * La forma de una máquina. Los valores salen de una fila de `public.games`, que
+ * `lib/catalog.ts` traduce: `desc` es la columna `tagline` y `long` es `blurb`,
+ * porque `desc` es palabra reservada en PostgreSQL.
+ */
 export interface Game {
   id: GameId;
-  /** Rótulo en mayúsculas sin tilde: Press Start 2P no tiene glifos acentuados. */
+  /**
+   * Rótulo en mayúsculas sin tilde: Press Start 2P no tiene glifos acentuados.
+   * Desde SPEC 17 no es sólo disciplina, es un `check` de la tabla.
+   */
   title: string;
   cat: GameCategory;
   /** Color de acento de la máquina. */
   glow: GameGlow;
-  /** `false` en una máquina en mantenimiento. Hoy no hay ninguna. */
+  /**
+   * `false` retira la máquina: desaparece de la biblioteca y de la portada, y
+   * sus dos rutas responden 404. Conserva su pestaña en el salón, porque las
+   * marcas ya firmadas siguen siendo verdad. Es la vía de retirada sin
+   * desplegar, y se cambia desde el panel de Supabase.
+   */
   playable: boolean;
-  /** Una línea, para la tarjeta de la biblioteca. */
+  /** Una línea, para la tarjeta de la biblioteca. Es la columna `tagline`. */
   desc: string;
-  /** Párrafo de la ficha. */
+  /** Párrafo de la ficha. Es la columna `blurb`. */
   long: string;
   /** Línea de controles de la ficha. */
   controls: string;
-}
-
-export const GAMES: readonly Game[] = [
-  {
-    id: "asteroids",
-    title: "ASTEROIDS",
-    cat: "DISPAROS",
-    glow: "#f5ff00",
-    playable: true,
-    desc: "Pulveriza el campo de asteroides y sobrevive.",
-    long: "El clásico de vectores, entero y jugable de verdad. Inercia real y espacio toroidal: sales por un borde y entras por el opuesto. Los asteroides grandes se parten en medianos y los medianos en pequeños, y cuanto más pequeños, más puntos. Cada nivel suelta dos de los cuatro potenciadores —disparo triple, escudo, cámara lenta e hiperpropulsión— y, con suerte, una bomba nova que limpia la pantalla.",
-    controls: "Flechas ← → giran · ↑ empuja · ESPACIO dispara",
-  },
-  {
-    id: "tetris",
-    title: "TETRIS",
-    cat: "PUZZLE",
-    glow: "#00f5ff",
-    playable: true,
-    desc: "Encaja las piezas, limpia lineas y no llegues al techo.",
-    long: "El clásico de las siete piezas, entero y jugable de verdad. Las piezas caen cada vez más rápido: cada diez líneas sube un nivel y el intervalo de caída baja noventa milisegundos, hasta un suelo de cien. Cuatro líneas de golpe valen ocho veces lo que una. La proyección marca dónde va a aterrizar la pieza y el retardo de bloqueo da medio segundo para encajarla. La partida acaba cuando la pieza siguiente ya no cabe.",
-    controls: "Flechas ← → mueven · ↑ rota · ↓ baja rápido · ESPACIO suelta de golpe",
-  },
-  {
-    id: "arkanoid",
-    title: "ARKANOID",
-    cat: "ARCADE",
-    glow: "#ff006e",
-    playable: true,
-    desc: "Rompe todos los bloques sin dejar caer la bola.",
-    long: "El clásico de la pala y la bola, entero y jugable de verdad. Diez pantallas que van apretando: la bola sale más rápida en cada una y acelera mientras juegas. Los bloques de dos y tres golpes se desgastan a la vista antes de romperse, y los grises no se rompen nunca. El punto de la pala donde golpeas decide el ángulo de salida, hasta sesenta grados. Cada bloque roto vale cien puntos y despejar la decima pantalla acaba la partida.",
-    controls: "Flechas ← → mueven la pala · ESPACIO lanza la bola",
-  },
-  {
-    id: "snake",
-    title: "SNAKE",
-    cat: "CLASICOS",
-    glow: "#00f5ff",
-    playable: true,
-    desc: "Come fruta, crece y no te muerdas la cola.",
-    long: "El clásico de la serpiente, con veintidós frutas de verdad en vez de un cuadrado. Cada fruta que comes te hace un segmento más largo y vale diez puntos por nivel, así que la misma manzana renta diez veces más en el nivel diez que en el primero. Cada cinco frutas el juego acelera, de ciento cincuenta milisegundos por celda a sesenta. La pared mata y tu propia cola también. Tres vidas: al perder una vuelves al centro con la puntuación y la velocidad intactas.",
-    controls: "Flechas ← ↑ → ↓ giran · ESPACIO arranca",
-  },
-  {
-    id: "frogger",
-    title: "FROGGER",
-    cat: "REFLEJOS",
-    glow: "#ff006e",
-    playable: true,
-    desc: "Cruza el trafico y el rio y llena las casas ronda tras ronda.",
-    long: "El clásico de la rana, con todo lo que traía el salón. Abajo, cinco carriles de coches y camiones; arriba, cinco de río donde el agua mata y las plataformas te arrastran, y donde una de cada dos tortugas se sumerge justo cuando te has subido. Treinta segundos por travesía, y cada segundo que sobra vale diez puntos. Llenar los cinco nichos empieza otra ronda: todo va un doce por ciento más rápido y hay dos segundos menos, hasta más del doble de velocidad. Desde la tercera ronda un cocodrilo asoma en las casas y una serpiente patrulla la mediana. La mosca vale doscientos, y escoltar a la dama-rana hasta casa, otros doscientos.",
-    controls: "Flechas ← ↑ → ↓ saltan · ESPACIO sale de la orilla",
-  },
-];
-
-/**
- * Busca una máquina por id. Devuelve `undefined` si no existe, para que las
- * rutas dinámicas puedan responder 404 en lugar de servir otra máquina.
- */
-export function getGame(id: string): Game | undefined {
-  return GAMES.find((g) => g.id === id);
 }
 
 /**

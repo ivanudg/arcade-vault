@@ -8,10 +8,22 @@
 import type { Metadata, Viewport } from "next";
 import { notFound } from "next/navigation";
 import { PlayCabinet } from "@/components/play-cabinet";
-import { GAMES, getGame } from "@/lib/games";
+import { game as findGame } from "@/lib/catalog";
+import { GAME_IDS } from "@/lib/games";
 
-/** Sólo existe una ruta por máquina: cualquier otra es 404 sin ejecutar código. */
+/**
+ * La lista de ids es cerrada: cualquier otro es 404 sin ejecutar código. Qué
+ * máquinas hay de verdad lo dice `public.games`, y de eso se encarga el layout.
+ */
 export const dynamicParams = false;
+
+/**
+ * Desde SPEC 17 la pantalla de juego lee el catálogo, así que se renderiza en
+ * cada visita: editar una máquina en el panel tiene que verse al recargar. El
+ * precio es que esta ruta deja de prerenderizarse; `generateStaticParams` sigue
+ * cerrando la lista de ids.
+ */
+export const dynamic = "force-dynamic";
 
 /**
  * El pellizco se bloquea sólo aquí, no en `app/layout.tsx`: es una ayuda de
@@ -30,21 +42,31 @@ export const viewport: Viewport = {
   viewportFit: "cover",
 };
 
+/**
+ * Sale de `GAME_IDS` y no del catálogo: esto corre en el build, donde no hay ni
+ * credenciales ni red. Leerlo de la base de datos congelaría además la lista de
+ * rutas en el despliegue, que es lo contrario de lo que busca SPEC 17.
+ */
 export function generateStaticParams() {
-  return GAMES.map((g) => ({ id: g.id }));
+  return GAME_IDS.map((id) => ({ id }));
 }
 
 export async function generateMetadata({ params }: PageProps<"/jugar/[id]">): Promise<Metadata> {
   const { id } = await params;
-  const game = getGame(id);
+  const game = await findGame(id);
   if (!game) return {};
   return { title: `JUGAR · ${game.title}`, description: game.desc };
 }
 
 export default async function PlayPage({ params }: PageProps<"/jugar/[id]">) {
   const { id } = await params;
-  const game = getGame(id);
-  if (!game) notFound();
+  const game = await findGame(id);
+
+  // Sin catálogo no se monta el gabinete, pero el aviso lo pinta el layout, que
+  // es quien ya cortó por no poder nombrar la máquina en la cabecera. Repetirlo
+  // aquí lo enseñaría dos veces.
+  if (game === null) return null;
+  if (game === undefined || !game.playable) notFound();
 
   return (
     // El margen seguro se suma al relleno de siempre, no lo sustituye: en

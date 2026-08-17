@@ -19,7 +19,7 @@ import Link from "next/link";
 import { useState } from "react";
 import { ScoreboardEmpty } from "@/components/scoreboard-empty";
 import { ScoreboardUnavailable } from "@/components/scoreboard-unavailable";
-import { GAMES, getGame, tint, type GameId } from "@/lib/games";
+import { tint, type Game, type GameId } from "@/lib/games";
 import { useMine } from "@/lib/session";
 import { formatScore, type BoardRow } from "@/lib/scores";
 
@@ -31,9 +31,16 @@ const COLUMNS = "grid-cols-[62px_minmax(0,1fr)_108px_96px]";
 
 export function HallOfFame({
   initialTab,
+  games,
   tables,
 }: {
   initialTab: GameId;
+  /**
+   * El catálogo entero, resuelto en el servidor y ordenado por `sort_order`.
+   * Van **todas**, también las retiradas: sus marcas siguen siendo verdad y
+   * conservan su pestaña.
+   */
+  games: Game[];
   /** Las tablas ya resueltas, o `null` si la base de datos no contestó. */
   tables: Partial<Record<GameId, BoardRow[]>> | null;
 }) {
@@ -49,13 +56,17 @@ export function HallOfFame({
     mine: isMine(r),
   }));
 
-  const game = getGame(tab);
-  const playHref = game?.playable ? `/jugar/${tab}` : `/juego/${tab}`;
+  // Una retirada conserva pestaña pero no tiene a dónde llevar: su pantalla de
+  // juego responde 404 y su ficha también, así que el enlace deja sitio a un
+  // rótulo. Esconderlo dejaría el pie de la tabla descuadrado y sin explicar
+  // por qué desde esta máquina no se puede jugar.
+  const game = games.find((g) => g.id === tab);
+  const retired = game !== undefined && !game.playable;
 
   return (
     <>
       <div className="flex flex-wrap justify-center gap-2">
-        {GAMES.map((g) => {
+        {games.map((g) => {
           const on = tab === g.id;
           return (
             <button
@@ -129,12 +140,18 @@ export function HallOfFame({
           Puntuaciones compartidas en Supabase. Con cuenta, la marca la firma tu nombre de jugador;
           sin ella entra como INVITADO.
         </p>
-        <Link
-          href={playHref}
-          className="border border-av-magenta/50 px-4.5 py-3.5 font-display text-[9px] tracking-av text-av-magenta hover:bg-av-magenta/16 hover:text-white"
-        >
-          BATIR ESTE RECORD
-        </Link>
+        {retired ? (
+          <span className="border border-av-line px-4.5 py-3.5 font-display text-[9px] tracking-av text-av-text-faint">
+            MAQUINA RETIRADA
+          </span>
+        ) : (
+          <Link
+            href={`/jugar/${tab}`}
+            className="border border-av-magenta/50 px-4.5 py-3.5 font-display text-[9px] tracking-av text-av-magenta hover:bg-av-magenta/16 hover:text-white"
+          >
+            BATIR ESTE RECORD
+          </Link>
+        )}
       </div>
     </>
   );

@@ -7,11 +7,11 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Proyecto
 
 **Arcade Vault**: plataforma para jugar online y competir por la mayor cantidad de
-puntos. Ya no es el scaffold de `create-next-app`: hoy son **siete pantallas**, cinco
-máquinas jugables con motor propio —las cinco vestidas con sus tres pieles— y un
-marcador compartido en Supabase. Lo construido por spec llega hasta **SPEC 14**; lo que
-ha entrado después no lleva número, porque lo escriben los agentes (ver «Lo que ha
-pasado sin spec»).
+puntos. Ya no es el scaffold de `create-next-app`: hoy son **ocho pantallas**, cinco
+máquinas jugables con motor propio —las cinco vestidas con sus tres pieles—, un
+marcador compartido en Supabase y, desde SPEC 17, **el catálogo también**. Lo construido
+por spec llega hasta **SPEC 17**; entre medias hay trabajo que no lleva número, porque lo
+escriben los agentes (ver «Lo que ha pasado sin spec»).
 
 El flujo de trabajo del proyecto es **Spec Driven Design** vía las skills `/spec` y `/spec-impl` de [Klerith/fernando-skills](https://github.com/Klerith/fernando-skills) (`npx skills@latest add Klerith/fernando-skills`). Antes de implementar una feature nueva, espera/produce la spec correspondiente en lugar de escribir código directamente.
 
@@ -27,29 +27,32 @@ y el último eslabón encadena a su vez `skin-designer` y `mobile-porter`; los d
 Las specs viven en `specs/NN-<slug>.md` y llevan su estado en la segunda línea. El
 historial cuenta el producto mejor que el código:
 
-| Spec | Qué trajo                                                                                     |
-| ---- | --------------------------------------------------------------------------------------------- |
-| 01   | MVP visual: biblioteca, ficha, salón, cuenta y gabinete, puerto de `references/templates/`    |
-| 02   | Portada en `/` y mudanza del catálogo a `/biblioteca`                                         |
-| 03   | `/acerca-de` y el formulario de contacto con Resend                                           |
-| 04   | Conexión con Supabase (clientes, `env.ts`, `/api/supabase-health`)                            |
-| 05   | Asteroids: el primer motor real y el contrato `GameMount`                                     |
-| 06   | El marcador se muda a Supabase: `public.games` y `public.scores`                              |
-| 07   | El catálogo encoge a una máquina y el marcador arranca vacío                                  |
-| 08   | Tetris y los rótulos de HUD por motor                                                         |
-| 09   | Arkanoid, puerto sin spritesheet                                                              |
-| 10   | Snake, escrita desde cero, con `public/snake/fruits.png`                                      |
-| 11   | `/jugar/[id]` jugable con el dedo: maquetación vertical y horizontal de mano                  |
-| 12   | El mando de mano se vuelve de consola: cruz, `B`/`A` y `PAUSA`/`SALIR` en el centro           |
-| 13   | El mando se viste: chasis, cruz con flechas SVG y hub, `B`/`A` con relieve; `game-pad.tsx`    |
-| 14   | Frogger: rondas infinitas, cronómetro en el canvas y la fauna del río; estrena `REFLEJOS`     |
-| 15   | Cuentas reales: Supabase Auth, `public.profiles`, `proxy.ts` y la marca firmada con `user_id` |
-| 16   | OAuth con Google y GitHub, la cuenta sin nombre y recuperar la contraseña                     |
+| Spec | Qué trajo                                                                                           |
+| ---- | --------------------------------------------------------------------------------------------------- |
+| 01   | MVP visual: biblioteca, ficha, salón, cuenta y gabinete, puerto de `references/templates/`          |
+| 02   | Portada en `/` y mudanza del catálogo a `/biblioteca`                                               |
+| 03   | `/acerca-de` y el formulario de contacto con Resend                                                 |
+| 04   | Conexión con Supabase (clientes, `env.ts`, `/api/supabase-health`)                                  |
+| 05   | Asteroids: el primer motor real y el contrato `GameMount`                                           |
+| 06   | El marcador se muda a Supabase: `public.games` y `public.scores`                                    |
+| 07   | El catálogo encoge a una máquina y el marcador arranca vacío                                        |
+| 08   | Tetris y los rótulos de HUD por motor                                                               |
+| 09   | Arkanoid, puerto sin spritesheet                                                                    |
+| 10   | Snake, escrita desde cero, con `public/snake/fruits.png`                                            |
+| 11   | `/jugar/[id]` jugable con el dedo: maquetación vertical y horizontal de mano                        |
+| 12   | El mando de mano se vuelve de consola: cruz, `B`/`A` y `PAUSA`/`SALIR` en el centro                 |
+| 13   | El mando se viste: chasis, cruz con flechas SVG y hub, `B`/`A` con relieve; `game-pad.tsx`          |
+| 14   | Frogger: rondas infinitas, cronómetro en el canvas y la fauna del río; estrena `REFLEJOS`           |
+| 15   | Cuentas reales: Supabase Auth, `public.profiles`, `proxy.ts` y la marca firmada con `user_id`       |
+| 16   | OAuth con Google y GitHub, la cuenta sin nombre y recuperar la contraseña                           |
+| 17   | El catálogo se muda a `public.games`: `lib/catalog.ts`, `playable` de verdad y editar sin desplegar |
 
 Ojo: **el estado del encabezado no siempre se actualiza al cerrar**. La spec 02 sigue
 marcada como `Aprobado` con la portada implementada, y la 14 como `Aprobada` con Frogger
-ya jugable en el catálogo. La verdad de qué hay implementado la dicen `lib/games.ts` y
-`references/implemented-games.md`, no la línea de estado.
+ya jugable en el catálogo. La verdad de qué hay implementado la dice **`public.games`**
+—y no la línea de estado, ni `lib/games.ts`, que desde SPEC 17 ya no tiene el catálogo—.
+`references/implemented-games.md` es una copia a mano de esa tabla, y avisa de que puede
+quedar desfasada.
 
 ### Lo que ha pasado sin spec
 
@@ -95,7 +98,7 @@ npx supabase db push   # aplica las migraciones de supabase/migrations/
 - **Dos variantes propias, también en `globals.css`**, declaradas con `@custom-variant` de Tailwind v4 y usadas por nombre en el marcado: `handheld` es puntero grueso con la ventana por debajo de 480px de ancho **o** de alto, y `handheld-wide` es lo mismo en horizontal. Las dos llevan `(pointer: coarse)` acompañado siempre del umbral, para que un portátil táctil no cumpla ninguna y una tableta —un iPad mini mide 744px por su lado corto— se quede con la maquetación de escritorio. Sólo las usa la pantalla de juego, y desde que existe `mobile-porter` eso es **una regla y no una observación** (M8 de `.claude/mobile-porter/reglas-movil.md`): las otras siete pantallas se maquetan por **ancho**, con los breakpoints de fábrica de Tailwind, porque lo único que les cambia es cuánto sitio hay; la de juego se maqueta por **puntero**, porque lo que le cambia es con qué se juega. Y hay un motivo práctico además del conceptual: `(pointer: coarse)` no lo cumple un Chrome de escritorio, así que una regla escrita bajo `handheld` no se puede ver ni verificar estrechando una ventana —la SPEC 12 lo pagó y lo dejó escrito en su «Validación»—. Para ocultar algo con el dedo sin cambiar de maquetación está `pointer-coarse:`, que ya trae Tailwind. Junto a ellas vive `--av-play-header`, el alto de `PlayHeader` con el dedo: la cabecera lo fija y el `<main>` de `/jugar/[id]` se lo resta a `100svh`, y va en `:root` porque son hermanos y sólo comparten lo que herede la raíz.
 - `next.config.ts` sólo declara `turbopack.root = import.meta.dirname`, porque hay un `package-lock.json` suelto por encima del repo y sin eso Turbopack lo toma como raíz del workspace y avisa en cada build. Cualquier otro flag (p. ej. `cacheComponents`) es una decisión nueva, no algo ya asumido.
 - **Lo que se pinta en Press Start 2P va en mayúsculas y sin tildes.** La fuente no tiene glifos acentuados y el navegador los sustituye por otra, que al lado de un avance de 20px sale como una mota. Lo mismo con los símbolos del template (`▸ ▶ ✦ …`): se dibujan con ASCII. El único no-ASCII admitido es `·`. Los cuerpos de texto van en Courier Prime y **sí** llevan su acentuación.
-- **El texto editorial no vive en la maquetación**: los literales de la portada están en `lib/landing.ts` (`FEATURES`, `STATS`, `PLAN`, `FAQ`), los de «Acerca de» en `lib/about.ts` (`MISSION`, `HIGHLIGHTS`, `CONTACT_TIPS`, `TERMINAL_*`, `LIMITS`) y los de las máquinas en `lib/games.ts`. Un retoque de copia no abre un `.tsx`.
+- **El texto editorial no vive en la maquetación**: los literales de la portada están en `lib/landing.ts` (`FEATURES`, `STATS`, `PLAN`, `FAQ`), los de «Acerca de» en `lib/about.ts` (`MISSION`, `HIGHLIGHTS`, `CONTACT_TIPS`, `TERMINAL_*`, `LIMITS`) y los de las máquinas **ya no están en el repo**: desde SPEC 17 viven en `public.games` y se editan en el panel de Supabase (ver «El catálogo»). Un retoque de copia no abre un `.tsx`, y el de una máquina ni siquiera abre el repo.
 - **Los acentos son cuatro** —`Accent = "cyan" | "magenta" | "yellow" | "amber"`, definido en `lib/landing.ts`— y **nunca se interpolan en un nombre de clase**: Tailwind sólo ve las cadenas escritas enteras, así que cada componente declara su `Record<Accent, string>` con las clases completas. El color de una máquina (`game.glow`) sí es dinámico y se resuelve en `style`, con `tint()` de `lib/games.ts` para los velos y halos.
 - **Prettier y ESLint corren solos.** `.claude/settings.json` engancha un hook `PostToolUse` a `Write|Edit|MultiEdit|NotebookEdit` que ejecuta `.claude/hooks/format-file.sh`: pasa el archivo tocado por `eslint --fix` y `prettier --write`, salta lo que esté en `node_modules/`, `.next/` o `references/`, y devuelve por stderr lo que ESLint no pudo auto-corregir. No hace falta formatear a mano; sí hace falta contar con que el archivo cambie después de escribirlo.
 
@@ -116,14 +119,15 @@ URL**: existe para que `/jugar/[id]` quede fuera y monte su cabecera reducida
 | `/cuenta/nueva-contrasena` | `app/(vault)/cuenta/nueva-contrasena/page.tsx` | Escribir una contraseña nueva; sin sesión, rebota a `/cuenta`     |
 | `/acerca-de`               | `app/(vault)/acerca-de/page.tsx`               | Misión y formulario de contacto                                   |
 | `/jugar/[id]`              | `app/jugar/[id]/page.tsx`                      | El gabinete: HUD, canvas y mando                                  |
+| —                          | `app/(vault)/not-found.tsx`                    | El 404 de los `notFound()` del grupo; sin cabecera ni pie propios |
 | `/api/supabase-health`     | `app/api/supabase-health/route.ts`             | Diagnóstico de conexión                                           |
 | `/auth/confirmar`          | `app/auth/confirmar/route.ts`                  | Canjea el `token_hash` del correo; con `recovery`, a la de arriba |
 | `/auth/callback`           | `app/auth/callback/route.ts`                   | Canjea el `code` de Google y GitHub y acaba en `/cuenta`          |
 
 - **`app/layout.tsx` es de todas**: fuentes, `metadata` con plantilla `"%s · Arcade Vault"`, `VaultBackdrop` y `SessionProvider`. Su contenedor no lleva `z-index` a propósito, para no crear contexto de apilamiento: los z de dentro compiten con los del fondo (rejilla 0, cabecera 40, scanlines 50, superpuestos 55 y 60).
-- **`app/not-found.tsx` vive en la raíz, fuera del grupo**, y monta cabecera y pie por su cuenta: un `not-found` dentro de un grupo de rutas no atiende las URLs que no corresponden a ninguna ruta.
-- **Las dos rutas por máquina son cerradas**: `/juego/[id]` y `/jugar/[id]` declaran `generateStaticParams()` sobre `GAMES` y `dynamicParams = false`, así que un id inventado es 404 sin ejecutar código. `getGame()` devuelve `undefined` —no la primera máquina— justamente para eso.
-- **`?juego=` sólo existe en `/salon`** y sólo elige la pestaña inicial; un valor inventado abre en `asteroids` en vez de dar 404. A partir de ahí las pestañas son estado de cliente y la URL no cambia. Lo mismo con el buscador y los filtros de `/biblioteca`: estado de cliente, no `searchParams`, para no navegar en cada pulsación.
+- **Hay dos `not-found`, y los dos hacen falta.** `app/not-found.tsx` vive en la raíz, fuera del grupo, y monta cabecera y pie por su cuenta, porque un `not-found` dentro de un grupo de rutas no atiende las URLs que no corresponden a ninguna ruta. `app/(vault)/not-found.tsx` atiende los `notFound()` que lanzan las páginas del grupo y **no** los monta, que ya se los pone su layout; sin él saldrían dos cabeceras y dos pies. El cuerpo lo comparten en `components/not-found-body.tsx`, para que no puedan decir cosas distintas. El segundo hace falta desde SPEC 17 y no antes: hasta entonces esa rama era inalcanzable.
+- **Que el id exista y que la máquina exista dejaron de ser lo mismo.** `/juego/[id]` y `/jugar/[id]` declaran `generateStaticParams()` sobre `GAME_IDS` y `dynamicParams = false`, así que un id **inventado** sigue siendo 404 sin ejecutar código. Pero desde SPEC 17 los ids salen del código y las máquinas de `public.games`: un `GameId` sin fila, o con la fila en `playable = false`, también responde 404, y ése lo decide `notFound()` dentro de la página. La lista cerrada pasó a ser una guarda, no la respuesta.
+- **`?juego=` sólo existe en `/salon`** y sólo elige la pestaña inicial; un valor inventado abre en la máquina de menor `sort_order` en vez de dar 404. A partir de ahí las pestañas son estado de cliente y la URL no cambia. Lo mismo con el buscador y los filtros de `/biblioteca`: estado de cliente, no `searchParams`, para no navegar en cada pulsación.
 - **El ancho máximo va dentro y el relleno fuera.** Las plantillas de `references/templates/` miden en `content-box`; con el `border-box` de Tailwind, juntar ancho y relleno en el mismo elemento encoge la rejilla.
 - **`SiteHeader` y `SiteFooter` ya no son sólo de escritorio.** Las rondas de `mobile-porter` les escribieron el relleno de muesca —los cuatro lados declarados enteros con `calc(... + env(safe-area-inset-*))`, sin restar sobre el `px`/`py`, así que hoy, con `env()` a 0, a 1280 no cambia ni un píxel—, y el cajón del móvil **congela `<html>`** mientras está abierto, restaurándolo al cerrar y al desmontar. Se congela `<html>` y no `<body>` porque el `html { overflow-x: hidden }` de `globals.css` le quita a `body` la propagación de su overflow al viewport. Ojo: el relleno de `env()` ya no es exclusivo de `/jugar/[id]`; lo que sigue siendo sólo suyo es el `viewport` propio con escala fija.
 
@@ -296,11 +300,17 @@ máquina, se actualiza también esa tabla.
   candidato falla uno, no entra. Y como cada categoría de `GameCategory` sin
   estrenar y cada escena libre de `lib/preview-art.ts` puntúan, el agente empuja
   hacia donde el catálogo tiene hueco.
-- **Para añadir una máquina** son cuatro sitios: implementar `GameMount` en
-  `lib/games/<juego>/`, añadir una línea a `ENGINES`, un literal a `GameId` con
-  su entrada en `GAMES`, y una migración que la meta en `public.games`. Son
+- **Para añadir una máquina** siguen siendo cuatro sitios, pero desde SPEC 17 uno
+  cambió de sitio: implementar `GameMount` en `lib/games/<juego>/`, añadir una
+  línea a `ENGINES`, un literal a `GameId` **con su entrada en `GAME_IDS`**, y una
+  migración que la meta en `public.games` —que ahora es un `insert` de **nueve**
+  columnas y no de cinco, porque ahí van los siete campos de la ficha—. Son
   **cinco** si hay escena archivada que mover en `lib/preview-art.ts`, que es
-  como entraron `tetris`, `arkanoid` y `snake`. El
+  como entraron `tetris`, `arkanoid` y `snake`. Ojo con lo que eso cambia en la
+  práctica: **la entrada del catálogo ya no la vigila `tsc`**. Antes, olvidar la
+  ficha de una máquina rompía la compilación; ahora la migración se olvida en
+  silencio y sólo se nota al mirar la pantalla. Lo único que sigue fallando
+  ruidosamente es el `id satisfies never` de `drawPreview()`. El
   teclado se coge de `lib/games/input.ts`
   (`createInput()`), que engancha `window` solo mientras hay partida y limita el
   `preventDefault` a las flechas y `Space`. Declara sus teclas vivas en
@@ -480,6 +490,90 @@ El proyecto está conectado a Supabase (`nlfwqnmidfdohuyhklqp`) desde SPEC 04, y
 
 - **La cuota de correo del plan gratuito son dos por hora**, y desde SPEC 16 hay dos flujos que la gastan. Al agotarla Supabase responde `429: email rate limit exceeded`; subirla exige un SMTP propio, que es otra spec. Ojo con el orden de `readable()` en `AuthPanel`: ese mensaje lleva la palabra `email` dentro, así que la rama de la cuota va **antes** que la de correo inválido o salía `ESE CORREO NO VALE` por un correo perfecto.
 
+## El catálogo
+
+Desde SPEC 17 **la fuente de verdad de los siete campos de una máquina es
+`public.games`**, no `lib/games.ts`. Cambiar un título, reescribir una descripción o
+retirar una máquina se hace en el panel de Supabase y se ve al recargar: **sin commit,
+sin build y sin desplegar**. Es la inversión exacta de la regla que este archivo llevaba
+escrita desde SPEC 06.
+
+- **La tabla tiene nueve columnas.** Las cinco de siempre —`id`, `title`, `cat`,
+  `playable`, `sort_order`— más `glow`, `tagline`, `blurb` y `controls`. **Dos no se
+  llaman como el campo de TypeScript, y es a propósito**: `desc` es palabra reservada en
+  PostgreSQL —`select desc from games` no compila y habría que entrecomillarla en cada
+  consulta a mano—, y `long` al lado de `tagline` no dice nada. Así que la tabla usa
+  `tagline` (es `Game.desc`) y `blurb` (es `Game.long`), y `lib/catalog.ts` los traduce
+  al leer la fila, igual que `toBoardRow()` traduce `player_name` a `name`. Ningún
+  `.tsx` se entera del renombrado.
+- **Tres `check` vigilan lo que se escribe desde el panel**, que es donde ya no llega
+  `tsc`: `games_cat_valida` replica `GameCategory`, `games_glow_valido` replica
+  `GameGlow`, y `games_title_ascii` convierte en restricción real la regla de Press
+  Start 2P —`^[A-Z0-9 ]{1,20}$`, así que escribir `GALAGÁ` se rechaza—. Los dos primeros
+  son gemelos de sus tipos: añadir una categoría exige tocar los dos sitios, y los dos
+  fallan ruidosamente.
+- **`lib/catalog.ts` es sólo de servidor** (`import "server-only"`) y está calcado de
+  `lib/leaderboard.ts`: su `safely()`, su regla de que **ninguna función lanza**, y el
+  relanzado de las excepciones de control de flujo de Next por su `digest`. Eso último
+  no es opcional aquí: tragarse un `notFound()` haría que la ruta sirviera un aviso de
+  catálogo caído en vez de un 404. Expone `catalog()` —`Game[] | null`— y `game(id)`
+  —`Game | null | undefined`—, las dos envueltas en **`cache()` de React**.
+- **`cache()` no es caché entre visitas, es deduplicación dentro de la petición.**
+  `/jugar/[id]` resuelve la máquina **tres veces** —el layout para `PlayHeader`,
+  `generateMetadata` para el título y la página para el gabinete— y `/juego/[id]` dos.
+  Sin ella, esta spec habría triplicado las consultas de la pantalla de juego; con ella,
+  **está medido**: una visita, una consulta. Por eso las dos funciones son constantes de
+  módulo: `cache()` indexa por identidad de la función, y envolver dentro de un
+  componente crearía una nueva por render.
+- **No hay caché de ningún tipo, y `use cache` no cabe.** `lib/supabase/server.ts` hace
+  `await cookies()`, y una función marcada `'use cache'` que lo invoque falla con
+  `next-request-in-use-cache`. Además, activar `cacheComponents` elimina `dynamic`,
+  `dynamicParams`, `revalidate` y `fetchCache`, que este repo usa en seis sitios. Es su
+  propia spec.
+- **Los tres estados, otra vez.** Es la misma tabla que el marcador tiene desde SPEC 07:
+  `null` es «no se pudo preguntar» y pinta `CatalogUnavailable` —`CATALOGO NO
+DISPONIBLE`, magenta pulsante—; `[]` es «se preguntó y no hay» y pinta `CatalogEmpty`
+  —`EL VAULT ESTA VACIO`, amarillo sin movimiento—. Los dos en
+  `components/catalog-*.tsx`, hermanos de los del marcador. **La portada colapsa los
+  dos** y esconde su sección, como ya hace con la de actividad; las que se quedarían en
+  blanco sí distinguen. Y `null` **nunca** es 404: afirmar que una máquina no existe
+  cuando lo que pasa es que la base no contesta sería mentir.
+- **`playable = false` es la vía de retirada**, y desde SPEC 17 el campo por fin
+  significa algo. Saca la máquina de `/biblioteca` y de la portada, hace que sus dos
+  rutas respondan 404 y que la Server Action rechace su marca; **conserva su pestaña en
+  el salón**, porque las marcas ya firmadas siguen siendo verdad y esconderlas sería
+  reescribir la historia del marcador. Ahí `HallOfFame` cambia el enlace por un rótulo
+  `MAQUINA RETIRADA`, que la ficha también da 404.
+- **Borrar la fila no es la vía de retirada.** `scores.game_id` pasó a
+  `on delete cascade`, así que borrarla **se lleva todas sus marcas**, sin confirmación
+  y sin vuelta atrás. Va en dirección contraria a `scores.user_id`, que es
+  `on delete set null` justamente para que una cuenta borrada no se lleve sus
+  puntuaciones, y se tomó a sabiendas.
+- **La base de datos manda qué se ve, el código manda qué existe.** Una fila con un `id`
+  que no está en `GAME_IDS` se ignora con un aviso en la consola del servidor —no tiene
+  motor, ni mando, ni miniatura—; un `GameId` sin fila desaparece del catálogo y sus
+  rutas responden 404 aunque su motor esté ahí. Es el mismo criterio que `asGameId()`.
+- **`GameId` sigue siendo una unión cerrada de literales**, y eso es lo que hace que
+  **editar** una máquina no necesite desplegar pero **añadirla** sí. No es pereza: el
+  motor (`ENGINES`), el mando (`ENGINE_KEYS` / `ENGINE_PAD`) y la miniatura
+  (`drawPreview()`) son código, y un `import()` no sale de una columna.
+- **`GAME_IDS` no es un catálogo disimulado**: no lleva ni un dato editable. Existe por
+  los tres sitios que necesitan saber si un id existe **sin** poder consultar:
+  `generateStaticParams()`, que corre en el build sin credenciales ni red; el `IDS` de
+  `lib/leaderboard.ts`, que consultando duplicaría cada una de sus cinco lecturas; y
+  `components/site-footer.tsx`, que es de cliente.
+- **`/jugar/[id]` dejó de prerenderizarse.** Estrena `dynamic = "force-dynamic"`, porque
+  editar en el panel tiene que verse al recargar. Perdió sus cinco HTML estáticos y paga
+  un viaje a Supabase en la primera pintura; es el precio de la frescura inmediata.
+- **Ningún componente de cliente consulta el catálogo**: baja por props, igual que el
+  marcador. `LibraryBrowser`, `HallOfFame`, `ActivityFeed` y `TopPlayers` lo reciben
+  —los dos últimos como mapa por id, que buscan la máquina de cada marca—. No hay
+  `CatalogProvider`: un contexto para datos que no cambian durante la visita, y que ya
+  viajan en el HTML del servidor, es maquinaria de más.
+- **El texto de la portada no es el catálogo.** `FEATURES` de `lib/landing.ts` nombra las
+  cinco máquinas a mano y `STATS` dice `5 MAQUINAS`: retirar una desde el panel **no**
+  las cambia. Es una copia editorial y hay que tocarla a mano.
+
 ## El marcador
 
 Desde SPEC 06 las puntuaciones son **una sola tabla compartida**, no una copia por
@@ -487,14 +581,15 @@ navegador. `addScore()` ya no existe. Desde SPEC 07 **arranca vacío**: las nove
 marcas sembradas se borraron y se llena jugando. Ninguna máquina nueva se siembra:
 SPEC 08 metió la fila de `tetris` en `public.games`, SPEC 09 la de `arkanoid` y
 SPEC 10 la de `snake` y SPEC 14 la de `frogger` —la tabla tiene **cinco**, con
-`sort_order` 0, 1, 2, 3 y 4—, y ni una marca en `public.scores`.
+`sort_order` 0, 1, 2, 3 y 4—, y ni una marca en `public.scores`. Desde SPEC 17 esas
+filas son el catálogo y llevan sus nueve columnas (ver «El catálogo»).
 
 - **Qué vive en la base de datos y qué no.** `public.scores` son las marcas y
-  `public.games` existe para que `scores.game_id` tenga una clave ajena real. El
-  **catálogo sigue mandándolo `lib/games.ts`**: `games` se siembra desde él y
-  nunca al revés, y la app no lee sus columnas —el título de una máquina sale de
-  `getGame()`—. De los cuatro sitios que toca una máquina nueva, dos son éstos:
-  el catálogo y una migración que la meta en `games` (ver «Motores de juego»).
+  `public.games` **es el catálogo**. Nació en SPEC 06 como copia reducida de
+  `lib/games.ts` que existía sólo para que `scores.game_id` tuviera una clave
+  ajena real, y la app no leía sus columnas; **SPEC 17 invirtió la dirección** y
+  hoy manda ella (ver «El catálogo»). De los cuatro sitios que toca una máquina
+  nueva, uno es esa migración (ver «Motores de juego»).
 - **Dos vistas acotan lo que viaja**: `top_scores` (top 10 por máquina, desempate
   por `created_at` ascendente) y `player_bests` (la mejor marca de cada nombre).
   Las dos con `security_invoker = true`, para que la RLS de `scores` siga
@@ -552,12 +647,13 @@ SPEC 10 la de `snake` y SPEC 14 la de `frogger` —la tabla tiene **cinco**, con
   Ojo con las vistas: `top_scores` se escribió con `s.*`, pero Postgres expande
   esa estrella al crearla, así que hubo que **recrearla** para que se enterara
   de la columna nueva; `player_bests`, que nombra las suyas, también.
-- **Las cuatro pantallas que leen marcas se renderizan en cada visita**: la
-  portada, la biblioteca y la ficha lo declaran con `dynamic = "force-dynamic"`;
-  `/salon` no hace falta que lo declare, porque su `searchParams` ya la hace
-  dinámica. Decirlo a las claras ahorra el intento de prerenderizar y abortar
-  —el cliente de Supabase mira las cookies— y deja escrito por qué. Vacío con
-  aviso; nunca marcas inventadas.
+- **Las pantallas que leen la base de datos se renderizan en cada visita**, y desde
+  SPEC 17 son **cinco**, no cuatro: la portada, la biblioteca, la ficha y —esto es
+  nuevo— `/jugar/[id]` lo declaran con `dynamic = "force-dynamic"`; `/salon` no hace
+  falta que lo declare, porque su `searchParams` ya la hace dinámica. Decirlo a las
+  claras ahorra el intento de prerenderizar y abortar —el cliente de Supabase mira las
+  cookies— y deja escrito por qué. Vacío con aviso; nunca marcas ni máquinas
+  inventadas.
 - **Las migraciones se aplican con `npx supabase db push`** y quedan en
   `supabase/migrations/`. Nada de `apply_migration` por MCP: iría al proyecto
   remoto sin dejar rastro en el repo. Se corrige hacia delante: SPEC 07 no
@@ -668,10 +764,10 @@ El formulario de `/acerca-de` envía por la Server Action `app/(vault)/acerca-de
 
 ## Herramientas del repo
 
-- **`.claude/agents/game-planner.md`** es el eslabón de **antes** de la spec: un subagente que decide **qué** máquina entra. Reconstruye el catálogo desde `lib/games.ts`, puntúa entre cinco y ocho candidatos con los doce criterios de `.claude/game-planner/rubrica.md` —siete eliminatorios contra el contrato del motor, cinco ponderados— y devuelve una terna con un ganador y su ficha. **Para ahí**: no escribe specs ni código, y cierra con un `/spec-game <juego>` literal.
-- **`.claude/game-planner/memoria.md`** es lo que hace que ese agente no se repita. Un subagente arranca en frío —no ve el hilo que lo llamó ni lo que se habló ayer—, así que cada candidato queda escrito ahí con su nota y su veredicto (`propuesta`, `no-encaja`, `descartada`, `aparcada`, `elegida`, `en-spec`, `implementada`, `desincronizada`). Se versiona en git a propósito, es el único archivo que el agente escribe, y **el repo manda sobre él**: si la tabla y `lib/games.ts` no coinciden, se corrige la tabla. Para que anote un veredicto tuyo, pásaselo literal («descarta Pong porque…»): entonces sólo reconcilia y escribe. Hoy la tabla **está desincronizada y lo estará hasta la próxima ronda**: `frogger` sigue como `propuesta` aunque su clave lleve en `GameId` desde SPEC 14, y `amidar` como `propuesta` con dos specs de jam escritas. Se corrige la tabla, nunca el repo. Nota: el CLI trae una memoria nativa de agente (`memory: project`); se descartó a propósito por ser de forma libre y de índice truncable, pero podría sumarse encima del ledger, nunca en su lugar.
+- **`.claude/agents/game-planner.md`** es el eslabón de **antes** de la spec: un subagente que decide **qué** máquina entra. Reconstruye el catálogo desde `lib/games.ts` —**ojo, eso quedó desactualizado con SPEC 17**: ahí ya sólo están los ids, y la ficha de cada máquina vive en `public.games`; hasta que se le reescriba el prompt, quien lo invoque le pasa el catálogo o le dice dónde mirar—, puntúa entre cinco y ocho candidatos con los doce criterios de `.claude/game-planner/rubrica.md` —siete eliminatorios contra el contrato del motor, cinco ponderados— y devuelve una terna con un ganador y su ficha. **Para ahí**: no escribe specs ni código, y cierra con un `/spec-game <juego>` literal.
+- **`.claude/game-planner/memoria.md`** es lo que hace que ese agente no se repita. Un subagente arranca en frío —no ve el hilo que lo llamó ni lo que se habló ayer—, así que cada candidato queda escrito ahí con su nota y su veredicto (`propuesta`, `no-encaja`, `descartada`, `aparcada`, `elegida`, `en-spec`, `implementada`, `desincronizada`). Se versiona en git a propósito, es el único archivo que el agente escribe, y **el repo manda sobre él**: si el ledger y el catálogo no coinciden, se corrige el ledger —y desde SPEC 17 el catálogo con el que se contrasta es `public.games`, no `lib/games.ts`—. Para que anote un veredicto tuyo, pásaselo literal («descarta Pong porque…»): entonces sólo reconcilia y escribe. Hoy la tabla **está desincronizada y lo estará hasta la próxima ronda**: `frogger` sigue como `propuesta` aunque su clave lleve en `GameId` desde SPEC 14, y `amidar` como `propuesta` con dos specs de jam escritas. Se corrige la tabla, nunca el repo. Nota: el CLI trae una memoria nativa de agente (`memory: project`); se descartó a propósito por ser de forma libre y de índice truncable, pero podría sumarse encima del ledger, nunca en su lugar.
 - **`.claude/agents/game-jam.md`** es el subagente que desarrolla **la decisión de alcance**, una vez la máquina ya está decidida. **Se le da el juego** —«haz una jam de Galaga»— y escribe **dos specs alternativas de él**, `specs/game-jam/<game-id>/spec-minima.md` y `spec-completa.md`. **No elige la máquina**: eso es de `game-planner`, y sin argumento para y lo pide. De la máquina dada sólo comprueba que **cabe**, con la pasada eliminatoria C1-C7 de `.claude/game-planner/rubrica.md`; si falla un criterio en sus dos versiones, para y cita cuál. Antes de separar fija lo que las dos comparten —`id`, `title`, `cat`, `glow`, miniatura y `sort_order`—, así que lo único que varía es el alcance y se pueden comparar. Detecta solo si hay material en `references/started-games/` o `source-assets/`: con él las constantes se copian, sin él se fijan en cada spec como hizo SPEC 10. Las dos salen enteras, al nivel de las specs 09 y 10: ocho secciones, plan por pasos, criterios de aceptación sin marcar y riesgos. Va **del tirón**, sin preguntar. Es la decisión que más se pelea aquí —SPEC 08 dejó fuera 31 de las 45 features de su original— y hasta ahora se tomaba antes de saber qué costaba cada camino. **Las dos son excluyentes**: se implementa una, y sus dos `insert` llevan el mismo `id`. Sus specs **no llevan número** —la numeración de `specs/NN-*.md` está reservada para lo que sí se implementa— y salen en estado `Borrador de jam`; aprobar una significa mudarla a `specs/NN-<slug>.md`, y cerrar la hermana, antes de `/spec-impl-game`. Ha corrido dos veces: la jam de Frogger, que acabó en SPEC 14 con la versión completa, y la de Amidar, cuyas dos specs **siguen en borrador y esperan decisión**. **Lee `.claude/game-planner/memoria.md` para avisar de veredictos anteriores y nunca escribe en él**: el ledger es de `game-planner`.
-- **`.claude/skills/spec-game/`** es una skill local del proyecto: `/spec-game` diseña la spec de una máquina nueva —motor, catálogo, miniatura, mando y migración— y la guarda en `specs/NN-<slug>.md` en estado `Borrador`. **No escribe código de juego**; implementar sigue siendo trabajo de `/spec-impl-game` con la spec ya aprobada por un humano. Sus dos apoyos son `contact-points.md` (los sitios que toca una máquina nueva) y `engine-contract.md`.
+- **`.claude/skills/spec-game/`** es una skill local del proyecto: `/spec-game` diseña la spec de una máquina nueva —motor, catálogo, miniatura, mando y migración— y la guarda en `specs/NN-<slug>.md` en estado `Borrador`. **No escribe código de juego**; implementar sigue siendo trabajo de `/spec-impl-game` con la spec ya aprobada por un humano. Sus dos apoyos son `contact-points.md` (los sitios que toca una máquina nueva) y `engine-contract.md`. **`contact-points.md` quedó desactualizado con SPEC 17** y no se ha reescrito: sigue diciendo que la entrada del catálogo va en `GAMES`, que la migración es de cinco columnas y que la pestaña por defecto del salón es un `"asteroids"` a mano. Hoy son un `insert` de nueve columnas, sin entrada en el código más que el literal de `GameId` y `GAME_IDS`, y el salón ordena por `sort_order`. Reescribirlo es su propia tarea; hasta entonces, manda «El catálogo» de aquí.
 - **`.claude/skills/spec-impl-game/`** es la otra skill local, y es la que hoy cierra la cadena: `/spec-impl-game NN-slug` **no reemplaza a `/spec-impl`, lo especializa** para las specs que traen máquina. Sus fases 1, 2, 4 y 5 son las de `/spec-impl` —mismo bloqueo si el estado no significa «Aprobado», misma rama `spec-NN-slug`, mismo ritmo de un paso y una pausa—; lo que añade son tres: comprueba que la spec **trae máquina** (motor en `lib/games/<id>/`, línea en `ENGINES` y migración a `public.games`, las tres o para y remite a `/spec-impl`), pone una **puerta de verificación** con `tsc`, `lint` y `build` antes de llamar a nadie, y **encadena los dos subagentes que hasta ahora se pedían a mano y se olvidaban**: `skin-designer` sobre la máquina y después `mobile-porter` sobre `/juego/<id>`. **Uno detrás de otro y nunca en el mismo mensaje**: los dos escriben en el árbol y comparten el hook de formateo. Al terminar recuerda las tres cosas que son de humano —cambiar el estado de la spec, el commit final y firmar la pantalla en un teléfono de verdad—. Es la skill donde está escrito, además, que las specs de `specs/game-jam/` **no cuentan**: no llevan número y por definición no están aprobadas.
 - **`.claude/agents/skin-designer.md`** es el subagente que se ocupa del **vestido** de las máquinas, y es transversal a la cadena anterior: no decide qué máquina entra ni con qué alcance, sino que comprueba que cada motor de `ENGINES` tenga sus **tres skins obligatorias** —`clasico` (la paleta que el motor ya tiene hoy, extraída del código y no rediseñada), `neon` (sólo tokens `--av-*`) y `retro` (fósforo verde monocromo, donde las entidades se distinguen por brillo y no por tinte)—, diseña hex por hex las que falten y **las aplica al código de la máquina que se le diga**. Es el único agente del repo que escribe en `lib/` y `components/`, y por eso va acotado: **una máquina por invocación**, y verifica con `tsc` y `lint` antes de responder. Lo que lo hace fiable es que **inventaria las ranuras de color leyendo el código**, incluidas las que no están en `constants.ts` —los literales sueltos de `asteroids/entities.ts`, el `"#000"` de fondo, el brillo de `tetris/board.ts`—, que una auditoría a ojo se deja. Sus tres apoyos son `contrato-skin.md` (qué es una skin y las ocho reglas S1-S8), `aplicar-skins.md` (la receta de la aplicación: qué archivos, con qué forma) y el ledger `skins.md`, que lleva el control de qué máquina está vestida y se versiona como la memoria de `game-planner`. **Su trabajo de fondo está hecho**: las quince filas —cinco máquinas por tres pieles— están en `aplicada`, y la serie del halo se cerró con Frogger; lo que queda es veredicto humano, porque `aplicada` no es aprobada. Ojo con lo que **no** toca: `components/game-canvas.tsx`, nunca, porque su efecto de montaje depende sólo de `[game]` y meter ahí la skin reiniciaría la partida al cambiarla; la skin viaja por el `GameHandle` que el gabinete ya guarda.
 - **El sistema de skins es aditivo y opcional a propósito**, y hoy lo usan las cinco máquinas (los detalles, en «Motores de juego»). `lib/games/skins.ts` tiene el vocabulario y el contrato gana dos campos **opcionales**: `GameMount.skins` y `GameHandle.setSkin()`. Que sean opcionales es lo que permitió vestirlas de una en una, y lo que permitirá que la sexta entre sin vestir; `mount()` nunca cambió de firma. La skin activa vive en el closure de `mount()` —en el ámbito de módulo de un motor sigue sin haber una variable mutable— y el default es `clasico`, así que estrenar el sistema no cambió el aspecto de ninguna partida.

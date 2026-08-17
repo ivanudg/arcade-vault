@@ -329,8 +329,11 @@ export function drawPreview(
       break;
     }
 
-    // Una máquina nueva en `GAMES` sin escena aquí deja de estrechar `id` a
+    // Un literal nuevo en `GameId` sin escena aquí deja de estrechar `id` a
     // `never` y rompe la compilación, que es lo que este tipo estaba comprando.
+    // Desde SPEC 17 es además la única garantía en compilación de que toda
+    // máquina tiene arte: el catálogo se fue a la base de datos y ya no puede
+    // vigilarlo `tsc`.
     default:
       id satisfies never;
   }
