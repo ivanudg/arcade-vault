@@ -24,6 +24,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { MIN_PASSWORD, PASSWORD_HINT, passwordProblem, WEAK_PASSWORD } from "@/lib/password";
 import { useSession } from "@/lib/session";
 import { createClient } from "@/lib/supabase/client";
 
@@ -44,9 +45,6 @@ type OAuthProvider = (typeof PROVIDERS)[number]["id"];
 
 /** Los tres bloques que se pintan cuando no hay sesión. */
 type PanelMode = "login" | "register" | "recuperar";
-
-/** El mínimo que Supabase Auth trae de fábrica. */
-const MIN_PASSWORD = 6;
 
 /**
  * Traduce el error de Supabase al rótulo que se pinta.
@@ -70,6 +68,13 @@ function readable(message: string): string {
   // dos flujos de correo desde SPEC 16 se choca contra ella mucho más.
   if (m.includes("rate limit") || m.includes("too many"))
     return "DEMASIADOS INTENTOS. ESPERA UN POCO";
+  // Composición **antes** que longitud, y por el mismo motivo que la cuota: las
+  // dos frases que Supabase manda por contraseña débil llevan la palabra
+  // `password`, así que la de abajo cazaba también ésta y diría NECESITA 8
+  // CARACTERES de una contraseña de doce a la que sólo le falta un símbolo. Se
+  // discrimina por este trozo porque es lo único presente en la frase de
+  // composición y ausente en la de longitud.
+  if (m.includes("at least one character")) return WEAK_PASSWORD;
   if (m.includes("password")) return `LA CONTRASENA NECESITA ${MIN_PASSWORD} CARACTERES`;
   if (m.includes("email")) return "ESE CORREO NO VALE";
   return "NO SE HA PODIDO. INTENTALO OTRA VEZ";
@@ -114,13 +119,22 @@ export function AuthPanel({
 
     const username = name.toUpperCase().slice(0, 12);
 
-    if (isRegister && !USERNAME.test(username)) {
-      setError("EL NOMBRE VA DE 3 A 12: LETRAS, CIFRAS Y _");
-      return;
-    }
-    if (password.length < MIN_PASSWORD) {
-      setError(`LA CONTRASENA NECESITA ${MIN_PASSWORD} CARACTERES`);
-      return;
+    // Las dos comprobaciones son **del registro y sólo del registro**, y van
+    // juntas para que eso sea estructural y no un detalle de una condición. Una
+    // cuenta anterior a SPEC 18 tiene seis caracteres y sigue siendo válida para
+    // Supabase, que la deja entrar y avisa por separado con `data.weakPassword`:
+    // exigirle aquí la regla nueva la dejaría fuera de su propia cuenta, y la
+    // dejaría fuera nuestro `if` antes de preguntar.
+    if (isRegister) {
+      if (!USERNAME.test(username)) {
+        setError("EL NOMBRE VA DE 3 A 12: LETRAS, CIFRAS Y _");
+        return;
+      }
+      const problem = passwordProblem(password);
+      if (problem) {
+        setError(problem);
+        return;
+      }
     }
 
     setSending(true);
@@ -543,11 +557,25 @@ export function AuthPanel({
                 type="password"
                 placeholder="••••••••"
                 autoComplete={isRegister ? "new-password" : "current-password"}
+                aria-describedby={isRegister ? "password-hint" : undefined}
                 required
                 disabled={sending}
                 className={FIELD}
               />
             </label>
+
+            {/* Hermano del `<label>` y no hijo: dentro pasaría a formar parte del
+                nombre accesible del campo y un lector de pantalla anunciaría
+                «Contraseña Mínimo 8 caracteres con una minúscula…». Sólo en el
+                registro, porque al entrar la regla no se aplica. */}
+            {isRegister && (
+              <p
+                id="password-hint"
+                className="-mt-2 text-[11px] leading-relaxed text-av-text-faint"
+              >
+                {PASSWORD_HINT}
+              </p>
+            )}
 
             {error && (
               <p
