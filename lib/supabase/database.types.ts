@@ -41,24 +41,36 @@ export type Database = {
     Tables: {
       games: {
         Row: {
+          blurb: string
           cat: string
+          controls: string
+          glow: string
           id: string
           playable: boolean
           sort_order: number
+          tagline: string
           title: string
         }
         Insert: {
+          blurb: string
           cat: string
+          controls: string
+          glow: string
           id: string
           playable?: boolean
           sort_order: number
+          tagline: string
           title: string
         }
         Update: {
+          blurb?: string
           cat?: string
+          controls?: string
+          glow?: string
           id?: string
           playable?: boolean
           sort_order?: number
+          tagline?: string
           title?: string
         }
         Relationships: []
