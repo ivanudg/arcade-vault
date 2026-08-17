@@ -7,7 +7,7 @@
  */
 
 import { usePathname } from "next/navigation";
-import { getGame } from "@/lib/games";
+import { GAME_IDS } from "@/lib/games";
 
 /**
  * El remate del catálogo, que ya no vive en `/`. Contaba las máquinas desde
@@ -27,12 +27,21 @@ const BY_SECTION: ReadonlyArray<[test: (path: string) => boolean, text: string]>
   [(p) => p.startsWith("/salon"), "ARCADE VAULT · SALÓN DE LA FAMA"],
   [(p) => p.startsWith("/cuenta"), "ARCADE VAULT · ACCESO DE JUGADORES"],
   [(p) => p.startsWith("/acerca-de"), "ARCADE VAULT · QUIENES SOMOS"],
-  // Sólo si la máquina existe: en el 404 de `/juego/inventado` este pie
-  // anunciaría una ficha que no se está mostrando.
+  // Sólo si el id existe: en el 404 de `/juego/inventado` este pie anunciaría
+  // una ficha que no se está mostrando.
+  //
+  // Se comprueba contra `GAME_IDS` y no contra el catálogo, y no es un descuido
+  // de SPEC 17. Este componente es de cliente y lo monta el layout de las siete
+  // pantallas del vault: alimentarlo con `public.games` pondría una consulta en
+  // `/acerca-de`, en `/cuenta` y en las demás, que no la necesitan para nada. Y
+  // no hace falta, porque lo que decide aquí es la **forma** de la URL: el
+  // único caso que protege —un id que no existe— nunca renderiza este pie, ya
+  // que `notFound()` sube hasta el `not-found` del grupo. Un id conocido cuya
+  // fila se haya retirado tampoco llega, por lo mismo.
   [
     (p) => {
       const match = /^\/juego\/([^/]+)$/.exec(p);
-      return match !== null && getGame(match[1]) !== undefined;
+      return match !== null && (GAME_IDS as readonly string[]).includes(match[1]);
     },
     "ARCADE VAULT · FICHA DE MÁQUINA",
   ],
