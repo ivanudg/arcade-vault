@@ -20,7 +20,7 @@
  */
 
 import Image from "next/image";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   accentOf,
   fetchEntry,
@@ -36,6 +36,20 @@ import {
 const REVEAL_MS = 420;
 
 type Status = "cargando" | "listo" | "error";
+
+/** En qué punto de la revelación está el artwork que se pinta ahora mismo. */
+type Phase = "oculta" | "silueta" | "visible";
+
+/** Cómo se dibuja el artwork en cada punto de la revelación. */
+const ART_CLASS: Record<Phase, string> = {
+  oculta: "scale-95 opacity-0 brightness-0",
+  silueta: "scale-95 opacity-100 brightness-0",
+  visible: "scale-100 opacity-100 brightness-100",
+};
+
+/** Lo que comparten los dos botones laterales; el acento va escrito aparte. */
+const SIDE_BUTTON =
+  "min-w-[124px] cursor-pointer border border-white/16 px-5 py-4.5 font-display text-[9px] tracking-av text-av-text-muted transition focus-visible:outline-2 focus-visible:outline-offset-2 active:scale-94 disabled:cursor-not-allowed disabled:opacity-35 disabled:hover:border-white/16 disabled:hover:text-av-text-muted";
 
 export function PokedexCounter() {
   const [count, setCount] = useState(POKEDEX_MIN);
@@ -60,50 +74,41 @@ export function PokedexCounter() {
    */
   const cache = useRef(new Map<number, PokedexEntry>());
 
+  /**
+   * Trae la entrada y, en cuanto está en pantalla, calienta la siguiente: eso
+   * es lo que hace que el `+1` se sienta instantáneo a partir del segundo clic.
+   * Un fallo de la que viene no se le cuenta a nadie, que es trabajo adelantado
+   * y no la pantalla.
+   */
   useEffect(() => {
-    const cached = cache.current.get(count);
-    if (cached) {
-      setEntry(cached);
-      setStatus("listo");
-      return;
-    }
-
     const ctrl = new AbortController();
-    setStatus("cargando");
-    setEntry(null);
 
-    fetchEntry(count, ctrl.signal)
+    const load = async (id: number) => {
+      const hit = cache.current.get(id);
+      if (hit) return hit;
+      const got = await fetchEntry(id, ctrl.signal);
+      cache.current.set(id, got);
+      return got;
+    };
+
+    const cached = cache.current.get(count);
+    setEntry(cached ?? null);
+    setStatus(cached ? "listo" : "cargando");
+
+    load(count)
       .then((got) => {
-        cache.current.set(count, got);
+        // Abortar es cambiar de entrada, no fallar: la petición nueva manda.
         if (ctrl.signal.aborted) return;
         setEntry(got);
         setStatus("listo");
+        if (count < POKEDEX_MAX) load(count + 1).catch(() => {});
       })
       .catch(() => {
-        // Abortar es cambiar de entrada, no fallar: la petición nueva manda.
         if (!ctrl.signal.aborted) setStatus("error");
       });
 
     return () => ctrl.abort();
   }, [count, attempt]);
-
-  /**
-   * Calienta la entrada siguiente en cuanto la actual está en pantalla, que es
-   * lo que hace que el `+1` se sienta instantáneo a partir del segundo clic.
-   * Un fallo aquí no se cuenta a nadie: es trabajo adelantado, no la pantalla.
-   */
-  useEffect(() => {
-    if (status !== "listo") return;
-    const next = count + 1;
-    if (next > POKEDEX_MAX || cache.current.has(next)) return;
-
-    const ctrl = new AbortController();
-    fetchEntry(next, ctrl.signal)
-      .then((got) => cache.current.set(next, got))
-      .catch(() => {});
-
-    return () => ctrl.abort();
-  }, [count, status]);
 
   /**
    * El compás de la silueta. Sólo programa el reloj: quien decide si hay
@@ -116,22 +121,25 @@ export function PokedexCounter() {
     return () => window.clearTimeout(id);
   }, [shown]);
 
-  const step = useCallback((delta: number) => {
+  const step = (delta: number) =>
     setCount((n) => Math.min(POKEDEX_MAX, Math.max(POKEDEX_MIN, n + delta)));
-  }, []);
 
   const accent = accentOf(entry);
   /**
-   * En qué punto va la entrada que se está pintando ahora mismo.
-   *
-   * Una entrada **sin artwork** no dispara `onLoad`, así que se da por
-   * revelada de entrada: si no, su ficha no aparecería nunca. Todo esto es
-   * derivado y no estado, de modo que cambiar de entrada devuelve la pantalla
-   * a oscuras sola.
+   * En qué punto va la entrada que se está pintando ahora mismo. Es derivado y
+   * no estado, de modo que cambiar de entrada devuelve la pantalla a oscuras
+   * sola. Una entrada **sin artwork** no dispara `onLoad`, así que se da por
+   * revelada de entrada: si no, su ficha no aparecería nunca.
    */
-  const mine = !!entry && shown?.id === entry.id;
-  const loaded = !!entry && (!entry.art || mine);
-  const revealed = !!entry && (!entry.art || (mine && shown?.phase === "visible"));
+  const phase: Phase = !entry
+    ? "oculta"
+    : !entry.art
+      ? "visible"
+      : shown?.id === entry.id
+        ? shown.phase
+        : "oculta";
+  /** La entrada ya revelada, o `null` mientras la silueta aguanta. */
+  const card = phase === "visible" ? entry : null;
   const atStart = count === POKEDEX_MIN;
   const atEnd = count === POKEDEX_MAX;
 
@@ -178,13 +186,7 @@ export function PokedexCounter() {
               // Si el artwork no carga, se salta el gesto entero: una silueta
               // que no se revela nunca es peor que no tener silueta.
               onError={() => setShown({ id: entry.id, phase: "visible" })}
-              className={`object-contain p-[12%] transition-[filter,opacity,transform] duration-500 ease-out motion-reduce:transition-none ${
-                revealed
-                  ? "scale-100 opacity-100 brightness-100"
-                  : loaded
-                    ? "scale-95 opacity-100 brightness-0"
-                    : "scale-95 opacity-0 brightness-0"
-              }`}
+              className={`object-contain p-[12%] transition-[filter,opacity,transform] duration-500 ease-out motion-reduce:transition-none ${ART_CLASS[phase]}`}
             />
           )}
 
@@ -252,13 +254,13 @@ export function PokedexCounter() {
               al lado de una silueta, la silueta sobraría. Lo que sí responde al
               instante es el número, que es lo que se acaba de pulsar. */}
           <h2 className="mt-5 min-h-6 font-display text-[clamp(13px,3vw,20px)] leading-[1.5] tracking-av-wide text-av-text-bright">
-            {revealed && entry ? entry.name : " "}
+            {card?.name ?? " "}
           </h2>
 
-          {revealed && entry && (
+          {card && (
             <div className="animate-av-fade">
               <ul className="mt-4 flex flex-wrap gap-2">
-                {entry.types.map((type) => (
+                {card.types.map((type) => (
                   <li
                     key={type}
                     className="border px-3 py-2 font-display text-[8px] tracking-av"
@@ -278,19 +280,19 @@ export function PokedexCounter() {
                   <dt className="font-display text-[8px] tracking-[0.2em] text-av-text-faint">
                     ALTURA
                   </dt>
-                  <dd className="mt-2 text-av-text">{entry.height.toFixed(1)} m</dd>
+                  <dd className="mt-2 text-av-text">{card.height.toFixed(1)} m</dd>
                 </div>
                 <div>
                   <dt className="font-display text-[8px] tracking-[0.2em] text-av-text-faint">
                     PESO
                   </dt>
-                  <dd className="mt-2 text-av-text">{entry.weight.toFixed(1)} kg</dd>
+                  <dd className="mt-2 text-av-text">{card.weight.toFixed(1)} kg</dd>
                 </div>
               </dl>
 
-              {entry.flavor && (
+              {card.flavor && (
                 <p className="mt-5 max-w-[52ch] text-[14px] leading-[1.8] tracking-av text-pretty text-av-text-dim">
-                  {entry.flavor}
+                  {card.flavor}
                 </p>
               )}
             </div>
@@ -307,7 +309,7 @@ export function PokedexCounter() {
           type="button"
           onClick={() => step(-1)}
           disabled={atStart}
-          className="min-w-[124px] cursor-pointer border border-white/16 px-5 py-4.5 font-display text-[9px] tracking-av text-av-text-muted transition hover:border-av-yellow hover:text-av-yellow focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-av-yellow active:scale-94 disabled:cursor-not-allowed disabled:opacity-35 disabled:hover:border-white/16 disabled:hover:text-av-text-muted"
+          className={`${SIDE_BUTTON} hover:border-av-yellow hover:text-av-yellow focus-visible:outline-av-yellow`}
         >
           -1
         </button>
@@ -330,7 +332,7 @@ export function PokedexCounter() {
           type="button"
           onClick={() => setCount(POKEDEX_MIN)}
           disabled={atStart}
-          className="min-w-[124px] cursor-pointer border border-white/16 px-5 py-4.5 font-display text-[9px] tracking-av text-av-text-muted transition hover:border-av-magenta hover:text-av-magenta focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-av-magenta active:scale-94 disabled:cursor-not-allowed disabled:opacity-35 disabled:hover:border-white/16 disabled:hover:text-av-text-muted"
+          className={`${SIDE_BUTTON} hover:border-av-magenta hover:text-av-magenta focus-visible:outline-av-magenta`}
         >
           VOLVER AL 1
         </button>
