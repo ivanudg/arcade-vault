@@ -154,7 +154,7 @@ export function PokedexCounter() {
             líneas de barrido que el resto del sitio.
             --------------------------------------------------------------- */}
         <div
-          className="relative mx-auto aspect-square w-full max-w-[380px] overflow-hidden border bg-av-void transition-colors duration-500"
+          className="relative mx-auto aspect-square w-full max-w-95 overflow-hidden border bg-av-void transition-colors duration-500"
           style={{
             borderColor: accent,
             boxShadow: `0 0 34px -14px ${accent}, inset 0 0 60px -30px ${accent}`,
@@ -253,7 +253,7 @@ export function PokedexCounter() {
           {/* El nombre entra **con** la revelación y no con los datos: escrito
               al lado de una silueta, la silueta sobraría. Lo que sí responde al
               instante es el número, que es lo que se acaba de pulsar. */}
-          <h2 className="mt-5 min-h-6 font-display text-[clamp(13px,3vw,20px)] leading-[1.5] tracking-av-wide text-av-text-bright">
+          <h2 className="mt-5 min-h-6 font-display text-[clamp(13px,3vw,20px)] leading-normal tracking-av-wide text-av-text-bright">
             {card?.name ?? " "}
           </h2>
 
