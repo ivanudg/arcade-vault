@@ -1,6 +1,6 @@
 ## Checklist de seguridad básico
 
-Estado tras **SPEC 18** (2026-08-17). Este archivo no es material de referencia de sólo
+Estado tras **SPEC 19** (2026-08-17). Este archivo no es material de referencia de sólo
 lectura como el resto de `references/`: es el registro de qué medidas están puestas, y se
 mantiene al día.
 
@@ -12,11 +12,30 @@ mantiene al día.
       Que no se notara era mérito de la RLS y no del permiso.
 - [x] **Permisos mínimos**, que es lo que de verdad faltaba.
       `20260817020000_permisos_minimos.sql` revoca todo y devuelve sólo lo que el código
-      usa: `games` SELECT, `scores` SELECT + INSERT, `profiles` SELECT más INSERT de
-      `authenticated`, y SELECT en las dos vistas. Lo que cierra en concreto: **`anon`
-      podía hacer `TRUNCATE` de `public.scores`** con la clave publicable que viaja al
-      navegador, y `truncate` no lo mira la RLS —no es un `delete` que una política pueda
-      filtrar, es una operación sobre la tabla—.
+      usa. Lo que cierra en concreto: **`anon` podía hacer `TRUNCATE` de `public.scores`**
+      con la clave publicable que viaja al navegador, y `truncate` no lo mira la RLS —no es
+      un `delete` que una política pueda filtrar, es una operación sobre la tabla—. **SPEC 19
+      recortó esa lista**, porque devolvía permisos que el código no necesitaba; la de hoy
+      está tres casillas más abajo.
+- [x] **`public.profiles` ya no se puede volcar (SPEC 19).**
+      `20260817030000_perfiles_privados.sql` sustituye la política `"perfiles publicos"`
+      —`using (true)` para los dos roles— por `"mi perfil"`, `using ((select auth.uid()) =
+id)` y sólo de `authenticated`, y le revoca el SELECT a `anon`. Lo que cerró, verificado
+      contra el proyecto remoto y no deducido del archivo: con la clave publicable, un
+      `GET /rest/v1/profiles?select=*` devolvía el censo del vault —el **UUID de
+      `auth.users`**, el nombre y la fecha de alta de cada cuenta, incluidas las que nunca
+      han dejado una marca—.
+- [x] **El marcador dejó de repartir el UUID (SPEC 19).**
+      `20260817040000_marcador_sin_user_id.sql` quita `user_id` de `top_scores` y
+      `player_bests`, añade `public_scores` y le da a las tres una columna `mine` calculada
+      con `(select auth.uid())`. `anon` y `authenticated` pierden el SELECT sobre
+      `public.scores` y conservan el INSERT **acotado por columnas** a las cinco que escribe
+      la Server Action. La cadena `user_id` ya no aparece en el HTML de `/`, `/salon`,
+      `/biblioteca` ni `/juego/[id]`.
+- [x] **La lista de permisos de hoy**, tras las dos migraciones de SPEC 19: `games` SELECT;
+      `scores` **sólo INSERT** sobre `game_id, player_name, score, device_id, user_id`;
+      `profiles` SELECT + INSERT de `authenticated` y nada de `anon`; SELECT en las **tres**
+      vistas; y EXECUTE de `username_libre()` para los dos roles.
 - [x] **Los cuatro WARN de `SECURITY DEFINER` ejecutable**, cerrados por la misma
       migración: `handle_new_user()` y `rls_auto_enable()` ya no son llamables desde
       `/rest/v1/rpc/`. El `revoke` nombra también a `public`, porque el `=X` del ACL es de
@@ -25,7 +44,10 @@ mantiene al día.
       rol `postgres` en el esquema `public`, así que una tabla nueva **nace sin ningún
       permiso**. Consecuencia asumida: PostgREST responde `permission denied for table X`
       en vez de una lista vacía, y toda spec futura con tabla escribe su `grant select` al
-      lado de su `create policy`. Está también en CLAUDE.md.
+      lado de su `create policy`. Está también en CLAUDE.md. **SPEC 19 extendió la regla a
+      las funciones y a las vistas**: `username_libre()` nace sin EXECUTE y lleva su `grant`
+      escrito al lado, y un `drop view` se lleva los `grant` de la vista, así que recrear una
+      obliga a volver a escribirlos en la misma migración.
 - [x] **Minimum password length — 8 caracteres**, y con las cuatro clases de carácter
       (`password_requirements = lower_upper_letters_digits_symbols`). Puesto en el panel y
       espejado en `supabase/config.toml`. La misma regla se valida en Next con
@@ -82,13 +104,32 @@ Sin `preload`, que es un compromiso separado y hoy no hay dominio propio.
 
 Antes de SPEC 18 el `get_advisors type=security` devolvía **cinco** WARN: los cuatro de
 `SECURITY DEFINER` ejecutable —`handle_new_user()` y `rls_auto_enable()`, cada una para
-`anon` y para `authenticated`— y el de contraseñas filtradas.
+`anon` y para `authenticated`— y el de contraseñas filtradas. Tras SPEC 18 quedó **uno**, el
+de contraseñas filtradas.
 
-Después devuelve **uno**, el de contraseñas filtradas, que es el bloqueado por plan:
+**Tras SPEC 19 son seis, y cinco son el precio anotado de sus decisiones.** El informe sube
+de ruido y baja de superficie expuesta, que no es lo mismo: la lista de abajo hay que leerla
+sabiendo qué se cambió por qué, y **ninguna de las cinco se «arregla»** sin deshacer la spec.
 
-| name                            | title                               | level | detail                                                                                                              |
-| ------------------------------- | ----------------------------------- | ----- | ------------------------------------------------------------------------------------------------------------------- |
-| auth_leaked_password_protection | Leaked Password Protection Disabled | WARN  | Supabase Auth comprueba contra HaveIBeenPwned.org. Requiere plan Pro; la organización está en `free`. Ver arriba. |
+| name                                                | level | qué es y por qué está                                                                                                                                                                          |
+| --------------------------------------------------- | ----- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `security_definer_view` × 3 (las tres vistas)       | ERROR | Decidido en SPEC 19: con el invocador ya sin SELECT sobre `public.scores`, una vista `security_invoker` no podría leer su tabla base y las tres dejarían de funcionar. Ver la nota de abajo. |
+| `anon_security_definer_function_executable`         | WARN  | Es `username_libre()`, y que `anon` la pueda llamar **es su motivo de existir**: la comprobación de nombre libre ocurre en el registro, sin sesión.                                             |
+| `authenticated_security_definer_function_executable` | WARN  | La misma función desde una cuenta de proveedor que elige nombre en `/cuenta`.                                                                                                                  |
+| `auth_leaked_password_protection`                   | WARN  | El bloqueado por plan de SPEC 18, sin cambios.                                                                                                                                                 |
 
-Remediación oficial, para cuando se pueda:
+Sobre los tres ERROR, que es lo que más llama la atención: **hoy no se pierde ninguna
+restricción**, porque la política de SELECT de `scores` es `using (true)` para los dos roles.
+Lo que se pierde es la herencia automática, y por eso queda escrito aquí y en CLAUDE.md:
+**acotar la lectura de `scores` obliga a repetir el filtro en las tres vistas**. Las tres
+llevan `security_barrier = true`, ninguna devuelve `user_id`, y lo que sale por ellas es
+menos de lo que salía antes.
+
+Sobre los dos WARN de la función: la alternativa es no tener comprobación previa y fiarlo
+todo al `unique`, que SPEC 19 descartó con motivo —el choque llegaría desde el trigger como
+`database error` y el mensaje empeoraría para todo el mundo—. Sigue siendo un oráculo de
+disponibilidad, inevitable si el formulario ha de poder decir «cogido»; lo que ya no hace es
+entregar el listado, el UUID y la fecha de alta.
+
+Remediación oficial del de contraseñas filtradas, para cuando se pueda:
 <https://supabase.com/docs/guides/auth/password-security#password-strength-and-leaked-password-protection>
