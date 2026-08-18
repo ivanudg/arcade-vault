@@ -178,7 +178,7 @@ export type Database = {
       }
     }
     Functions: {
-      [_ in never]: never
+      username_libre: { Args: { candidato: string }; Returns: boolean }
     }
     Enums: {
       [_ in never]: never

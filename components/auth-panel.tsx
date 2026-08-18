@@ -156,16 +156,18 @@ export function AuthPanel({
       // Cortesía antes de `signUp()`: la garantía real es el `unique` de
       // `profiles`, pero un error del trigger llega ilegible y esto cubre todo
       // menos una carrera de milisegundos.
-      const { data: taken, error: lookup } = await supabase
-        .from("profiles")
-        .select("username")
-        .eq("username", username)
-        .maybeSingle();
+      //
+      // Desde SPEC 19 se pregunta por RPC y no leyendo la tabla: `profiles` ya
+      // no es pública, y un booleano por candidato dice lo mismo sin entregar el
+      // censo del vault.
+      const { data: libre, error: lookup } = await supabase.rpc("username_libre", {
+        candidato: username,
+      });
       if (lookup) {
         setError(readable(lookup.message));
         return;
       }
-      if (taken) {
+      if (!libre) {
         setError("ESE NOMBRE YA ESTA COGIDO");
         return;
       }
@@ -297,16 +299,14 @@ export function AuthPanel({
     try {
       const supabase = createClient();
 
-      const { data: taken, error: lookup } = await supabase
-        .from("profiles")
-        .select("username")
-        .eq("username", username)
-        .maybeSingle();
+      const { data: libre, error: lookup } = await supabase.rpc("username_libre", {
+        candidato: username,
+      });
       if (lookup) {
         setError(readable(lookup.message));
         return;
       }
-      if (taken) {
+      if (!libre) {
         setError("ESE NOMBRE YA ESTA COGIDO");
         return;
       }
