@@ -140,9 +140,44 @@ export type Database = {
         Row: {
           device_id: string | null
           game_id: string | null
+          mine: boolean | null
           player_name: string | null
           score: number | null
-          user_id: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "scores_game_id_fkey"
+            columns: ["game_id"]
+            isOneToOne: false
+            referencedRelation: "games"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      public_scores: {
+        Row: {
+          created_at: string | null
+          device_id: string | null
+          game_id: string | null
+          mine: boolean | null
+          player_name: string | null
+          score: number | null
+        }
+        Insert: {
+          created_at?: string | null
+          device_id?: string | null
+          game_id?: string | null
+          mine?: never
+          player_name?: string | null
+          score?: number | null
+        }
+        Update: {
+          created_at?: string | null
+          device_id?: string | null
+          game_id?: string | null
+          mine?: never
+          player_name?: string | null
+          score?: number | null
         }
         Relationships: [
           {
@@ -160,11 +195,11 @@ export type Database = {
           device_id: string | null
           game_id: string | null
           id: string | null
+          mine: boolean | null
           player_name: string | null
           rank: number | null
           score: number | null
           seeded: boolean | null
-          user_id: string | null
         }
         Relationships: [
           {
