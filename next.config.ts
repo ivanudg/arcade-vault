@@ -53,6 +53,19 @@ const nextConfig: NextConfig = {
     root: import.meta.dirname,
   },
   allowedDevOrigins: ["192.168.100.157"],
+  images: {
+    // El artwork de la Pokédex que pinta `/contador`. PokeAPI sirve sus
+    // imágenes desde este repositorio de GitHub, y el permiso va acotado a su
+    // ruta: `remotePatterns` sin `pathname` abriría el optimizador a cualquier
+    // archivo del host, que es un servidor de contenido de terceros.
+    remotePatterns: [
+      {
+        protocol: "https",
+        hostname: "raw.githubusercontent.com",
+        pathname: "/PokeAPI/sprites/**",
+      },
+    ],
+  },
   // Un `X-Powered-By: Next.js` en cada respuesta es información que no hace
   // falta dar.
   poweredByHeader: false,

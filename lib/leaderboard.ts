@@ -77,23 +77,24 @@ async function safely<T>(what: string, run: () => Promise<T>): Promise<T | null>
   }
 }
 
-/** Fila cruda de `top_scores` / `scores`, ya con lo que interesa. */
+/** Fila cruda de `top_scores` / `public_scores`, ya con lo que interesa. */
 interface RawScore {
   game_id: string | null;
   player_name: string | null;
   score: number | null;
   device_id: string | null;
-  user_id: string | null;
+  mine: boolean | null;
   created_at: string | null;
 }
 
 /**
  * Una fila de la vista pasada a `BoardRow`.
  *
- * `mine` sale siempre `false`: quien resuelve de quién es cada marca es el
- * navegador tras montar. Con cuenta podría saberlo el servidor, pero sin ella
- * hace falta `localStorage`, y una marca no puede resaltarse de dos maneras
- * distintas según quién mire.
+ * `mine` viene calculado de la base de datos desde SPEC 19: las tres vistas del
+ * marcador comparan `user_id` con `auth.uid()`, así que el UUID de la cuenta no
+ * llega hasta aquí y no puede bajar al HTML. Sin sesión llega `false` para todas
+ * y quien decide es `deviceId`, en el navegador; la regla entera sigue estando
+ * en un solo sitio, `useMine()` de `lib/session.tsx`.
  */
 function toBoardRow(r: RawScore): BoardRow {
   return {
@@ -101,8 +102,7 @@ function toBoardRow(r: RawScore): BoardRow {
     score: r.score ?? 0,
     date: r.created_at ? utcDate(r.created_at) : "—",
     deviceId: r.device_id,
-    userId: r.user_id,
-    mine: false,
+    mine: r.mine ?? false,
   };
 }
 
@@ -112,7 +112,7 @@ export async function board(id: GameId): Promise<BoardRow[] | null> {
     const supabase = await createClient();
     const { data, error } = await supabase
       .from("top_scores")
-      .select("game_id, player_name, score, device_id, user_id, created_at")
+      .select("game_id, player_name, score, device_id, mine, created_at")
       .eq("game_id", id)
       .order("score", { ascending: false })
       .order("created_at", { ascending: true });
@@ -134,7 +134,7 @@ export async function boards(): Promise<Partial<Record<GameId, BoardRow[]>> | nu
     const supabase = await createClient();
     const { data, error } = await supabase
       .from("top_scores")
-      .select("game_id, player_name, score, device_id, user_id, created_at")
+      .select("game_id, player_name, score, device_id, mine, created_at")
       .order("score", { ascending: false })
       .order("created_at", { ascending: true });
     if (error) throw error;
@@ -168,13 +168,19 @@ export async function bests(): Promise<Partial<Record<GameId, number>> | null> {
   });
 }
 
-/** Las marcas más recientes de todas las máquinas, de nueva a vieja. */
+/**
+ * Las marcas más recientes de todas las máquinas, de nueva a vieja.
+ *
+ * Lee `public_scores` y no `scores`: desde SPEC 19 la tabla cruda no la puede
+ * leer nadie desde fuera —es la que tiene el `user_id`—, y la vista da lo mismo
+ * con `mine` ya resuelto.
+ */
 export async function recentScores(limit = 7): Promise<RecentScore[] | null> {
   return safely("recentScores()", async () => {
     const supabase = await createClient();
     const { data, error } = await supabase
-      .from("scores")
-      .select("game_id, player_name, score, device_id, user_id, created_at")
+      .from("public_scores")
+      .select("game_id, player_name, score, device_id, mine, created_at")
       .order("created_at", { ascending: false })
       .order("score", { ascending: false })
       .limit(limit);
@@ -200,7 +206,7 @@ export async function topPlayers(limit = 5): Promise<PlayerRank[] | null> {
     const supabase = await createClient();
     const { data, error } = await supabase
       .from("player_bests")
-      .select("game_id, player_name, score, device_id, user_id")
+      .select("game_id, player_name, score, device_id, mine")
       .order("score", { ascending: false })
       .limit(limit);
     if (error) throw error;
@@ -215,8 +221,7 @@ export async function topPlayers(limit = 5): Promise<PlayerRank[] | null> {
         score: row.score ?? 0,
         game: id,
         deviceId: row.device_id,
-        userId: row.user_id,
-        mine: false,
+        mine: row.mine ?? false,
       });
     }
     return out;

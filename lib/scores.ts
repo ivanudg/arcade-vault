@@ -23,11 +23,12 @@ export interface ScoreEntry {
 export interface BoardRow extends ScoreEntry {
   /** Del dispositivo que la guardó. `null` en las semillas. */
   deviceId: string | null;
-  /** De la cuenta que la firmó. `null` si se jugó sin ella. */
-  userId: string | null;
   /**
-   * `true` si la marca es de quien mira. Lo resuelve el cliente: por cuenta si
-   * hay sesión, y por dispositivo si no.
+   * `true` si la marca es de la cuenta que mira. Desde SPEC 19 **lo dice la base
+   * de datos**: las tres vistas del marcador comparan `user_id` con
+   * `auth.uid()`, y así el UUID de la cuenta no sale del servidor. Sin sesión
+   * llega siempre `false` y quien resuelve es `deviceId`; la regla entera está
+   * en `useMine()`, en `lib/session.tsx`.
    */
   mine: boolean;
 }
@@ -37,8 +38,7 @@ export interface RecentScore extends ScoreEntry {
   game: GameId;
   /** Del dispositivo que la guardó. `null` en las semillas. */
   deviceId: string | null;
-  /** De la cuenta que la firmó. `null` si se jugó sin ella. */
-  userId: string | null;
+  /** Como el de `BoardRow`: lo calcula la vista con `auth.uid()`. */
   mine: boolean;
 }
 
@@ -52,8 +52,7 @@ export interface PlayerRank {
   game: GameId;
   /** Del dispositivo que la guardó. `null` en las semillas. */
   deviceId: string | null;
-  /** De la cuenta que la firmó. `null` si se jugó sin ella. */
-  userId: string | null;
+  /** Como el de `BoardRow`: lo calcula la vista con `auth.uid()`. */
   mine: boolean;
 }
 

@@ -186,7 +186,8 @@ export function useSession(): Session {
 /** Lo que hace falta para saber de quién es una marca. */
 interface Signed {
   deviceId: string | null;
-  userId: string | null;
+  /** Ya resuelto por la base de datos contra `auth.uid()`. Ver `lib/scores.ts`. */
+  mine: boolean;
 }
 
 /**
@@ -199,9 +200,13 @@ interface Signed {
  * navegador, porque no son suyas —son de quien estuviera jugando aquí—.
  *
  * Vive aquí y no en cada tabla porque tres copias de una regla son tres sitios
- * donde puede empezar a decir cosas distintas. El servidor no la resuelve:
- * `localStorage` no lo puede leer, y una marca no puede resaltarse de dos formas
- * según quién pregunte.
+ * donde puede empezar a decir cosas distintas.
+ *
+ * Lo que cambió en SPEC 19 es **quién compara**, no la regla. La parte de la
+ * cuenta la resuelve ahora la base de datos —las tres vistas del marcador miran
+ * `user_id` contra `auth.uid()` y bajan un booleano—, para que el UUID de la
+ * cuenta no salga del servidor. La del dispositivo sigue aquí por donde estaba:
+ * `localStorage` no lo puede leer el servidor.
  */
 export function useMine(): (row: Signed) => boolean {
   const { user, ready } = useSession();
@@ -215,7 +220,7 @@ export function useMine(): (row: Signed) => boolean {
   return useCallback(
     (row: Signed) => {
       if (!ready) return false;
-      if (user) return row.userId !== null && row.userId === user.id;
+      if (user) return row.mine;
       return device !== undefined && row.deviceId === device;
     },
     [ready, user, device],

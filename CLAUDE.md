@@ -10,7 +10,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 puntos. Ya no es el scaffold de `create-next-app`: hoy son **ocho pantallas**, cinco
 máquinas jugables con motor propio —las cinco vestidas con sus tres pieles—, un
 marcador compartido en Supabase y, desde SPEC 17, **el catálogo también**. Lo construido
-por spec llega hasta **SPEC 18**; entre medias hay trabajo que no lleva número, porque lo
+por spec llega hasta **SPEC 19**; entre medias hay trabajo que no lleva número, porque lo
 escriben los agentes (ver «Lo que ha pasado sin spec»).
 
 El flujo de trabajo del proyecto es **Spec Driven Design** vía las skills `/spec` y `/spec-impl` de [Klerith/fernando-skills](https://github.com/Klerith/fernando-skills) (`npx skills@latest add Klerith/fernando-skills`). Antes de implementar una feature nueva, espera/produce la spec correspondiente en lugar de escribir código directamente.
@@ -27,26 +27,27 @@ y el último eslabón encadena a su vez `skin-designer` y `mobile-porter`; los d
 Las specs viven en `specs/NN-<slug>.md` y llevan su estado en la segunda línea. El
 historial cuenta el producto mejor que el código:
 
-| Spec | Qué trajo                                                                                           |
-| ---- | --------------------------------------------------------------------------------------------------- |
-| 01   | MVP visual: biblioteca, ficha, salón, cuenta y gabinete, puerto de `references/templates/`          |
-| 02   | Portada en `/` y mudanza del catálogo a `/biblioteca`                                               |
-| 03   | `/acerca-de` y el formulario de contacto con Resend                                                 |
-| 04   | Conexión con Supabase (clientes, `env.ts`, `/api/supabase-health`)                                  |
-| 05   | Asteroids: el primer motor real y el contrato `GameMount`                                           |
-| 06   | El marcador se muda a Supabase: `public.games` y `public.scores`                                    |
-| 07   | El catálogo encoge a una máquina y el marcador arranca vacío                                        |
-| 08   | Tetris y los rótulos de HUD por motor                                                               |
-| 09   | Arkanoid, puerto sin spritesheet                                                                    |
-| 10   | Snake, escrita desde cero, con `public/snake/fruits.png`                                            |
-| 11   | `/jugar/[id]` jugable con el dedo: maquetación vertical y horizontal de mano                        |
-| 12   | El mando de mano se vuelve de consola: cruz, `B`/`A` y `PAUSA`/`SALIR` en el centro                 |
-| 13   | El mando se viste: chasis, cruz con flechas SVG y hub, `B`/`A` con relieve; `game-pad.tsx`          |
-| 14   | Frogger: rondas infinitas, cronómetro en el canvas y la fauna del río; estrena `REFLEJOS`           |
-| 15   | Cuentas reales: Supabase Auth, `public.profiles`, `proxy.ts` y la marca firmada con `user_id`       |
-| 16   | OAuth con Google y GitHub, la cuenta sin nombre y recuperar la contraseña                           |
-| 17   | El catálogo se muda a `public.games`: `lib/catalog.ts`, `playable` de verdad y editar sin desplegar |
-| 18   | Seguridad: cinco cabeceras, permisos mínimos en Supabase y contraseña de 8 con cuatro clases        |
+| Spec | Qué trajo                                                                                            |
+| ---- | ---------------------------------------------------------------------------------------------------- |
+| 01   | MVP visual: biblioteca, ficha, salón, cuenta y gabinete, puerto de `references/templates/`           |
+| 02   | Portada en `/` y mudanza del catálogo a `/biblioteca`                                                |
+| 03   | `/acerca-de` y el formulario de contacto con Resend                                                  |
+| 04   | Conexión con Supabase (clientes, `env.ts`, `/api/supabase-health`)                                   |
+| 05   | Asteroids: el primer motor real y el contrato `GameMount`                                            |
+| 06   | El marcador se muda a Supabase: `public.games` y `public.scores`                                     |
+| 07   | El catálogo encoge a una máquina y el marcador arranca vacío                                         |
+| 08   | Tetris y los rótulos de HUD por motor                                                                |
+| 09   | Arkanoid, puerto sin spritesheet                                                                     |
+| 10   | Snake, escrita desde cero, con `public/snake/fruits.png`                                             |
+| 11   | `/jugar/[id]` jugable con el dedo: maquetación vertical y horizontal de mano                         |
+| 12   | El mando de mano se vuelve de consola: cruz, `B`/`A` y `PAUSA`/`SALIR` en el centro                  |
+| 13   | El mando se viste: chasis, cruz con flechas SVG y hub, `B`/`A` con relieve; `game-pad.tsx`           |
+| 14   | Frogger: rondas infinitas, cronómetro en el canvas y la fauna del río; estrena `REFLEJOS`            |
+| 15   | Cuentas reales: Supabase Auth, `public.profiles`, `proxy.ts` y la marca firmada con `user_id`        |
+| 16   | OAuth con Google y GitHub, la cuenta sin nombre y recuperar la contraseña                            |
+| 17   | El catálogo se muda a `public.games`: `lib/catalog.ts`, `playable` de verdad y editar sin desplegar  |
+| 18   | Seguridad: cinco cabeceras, permisos mínimos en Supabase y contraseña de 8 con cuatro clases         |
+| 19   | La identidad deja de ser pública: `profiles` cerrado, `username_libre()` y el marcador sin `user_id` |
 
 Ojo: **el estado del encabezado no siempre se actualiza al cerrar**. La spec 02 sigue
 marcada como `Aprobado` con la portada implementada, y la 14 como `Aprobada` con Frogger
@@ -97,7 +98,7 @@ npx supabase db push   # aplica las migraciones de supabase/migrations/
 - El tema es **dark-only**: los tokens `--av-*` de `app/globals.css` derivan de `references/templates/` (paleta neón `#00f5ff` / `#ff006e` / `#f5ff00` sobre `#0a0a0f`). No hay variante clara ni theme switcher; no uses variantes `dark:`. Ojo: las **skins** de las que habla `skin-designer` son otra cosa —la paleta del canvas de un motor, que no hereda nada del tema del sitio—, y no contradicen esto: el sitio sigue siendo dark-only.
 - Los efectos CRT del template son utilidades propias en `globals.css`: `av-glow-*`, `av-halo-*`, `av-grid-floor`, `av-scanlines`, `av-vignette`, y las animaciones `animate-av-*` (fade, slide, row, caret, spin, sweep, cabinet, pulse, flicker, grid, led).
 - **Dos variantes propias, también en `globals.css`**, declaradas con `@custom-variant` de Tailwind v4 y usadas por nombre en el marcado: `handheld` es puntero grueso con la ventana por debajo de 480px de ancho **o** de alto, y `handheld-wide` es lo mismo en horizontal. Las dos llevan `(pointer: coarse)` acompañado siempre del umbral, para que un portátil táctil no cumpla ninguna y una tableta —un iPad mini mide 744px por su lado corto— se quede con la maquetación de escritorio. Sólo las usa la pantalla de juego, y desde que existe `mobile-porter` eso es **una regla y no una observación** (M8 de `.claude/mobile-porter/reglas-movil.md`): las otras siete pantallas se maquetan por **ancho**, con los breakpoints de fábrica de Tailwind, porque lo único que les cambia es cuánto sitio hay; la de juego se maqueta por **puntero**, porque lo que le cambia es con qué se juega. Y hay un motivo práctico además del conceptual: `(pointer: coarse)` no lo cumple un Chrome de escritorio, así que una regla escrita bajo `handheld` no se puede ver ni verificar estrechando una ventana —la SPEC 12 lo pagó y lo dejó escrito en su «Validación»—. Para ocultar algo con el dedo sin cambiar de maquetación está `pointer-coarse:`, que ya trae Tailwind. Junto a ellas vive `--av-play-header`, el alto de `PlayHeader` con el dedo: la cabecera lo fija y el `<main>` de `/jugar/[id]` se lo resta a `100svh`, y va en `:root` porque son hermanos y sólo comparten lo que herede la raíz.
-- `next.config.ts` declara `turbopack.root = import.meta.dirname` —porque hay un `package-lock.json` suelto por encima del repo y sin eso Turbopack lo toma como raíz del workspace y avisa en cada build— y, desde SPEC 18, **las cinco cabeceras de seguridad** y `poweredByHeader: false`. Cualquier otro flag (p. ej. `cacheComponents`) sigue siendo una decisión nueva, no algo ya asumido.
+- `next.config.ts` declara `turbopack.root = import.meta.dirname` —porque hay un `package-lock.json` suelto por encima del repo y sin eso Turbopack lo toma como raíz del workspace y avisa en cada build— y, desde SPEC 18, **las cinco cabeceras de seguridad** y `poweredByHeader: false`. Lleva además un `images.remotePatterns` con un solo host, `raw.githubusercontent.com/PokeAPI/sprites/**`, que es de donde `/contador` saca sus imágenes: va **con `pathname`** y no sólo con `hostname`, porque abrir el optimizador a un host entero de contenido de terceros lo convierte en un proxy de imágenes para cualquiera. Es el único origen remoto del repo —lo demás sale de `public/`—. Cualquier otro flag (p. ej. `cacheComponents`) sigue siendo una decisión nueva, no algo ya asumido.
 - **Las cabeceras de seguridad viven en `next.config.ts` y no en `proxy.ts`**, y la razón está en la documentación empaquetada: `headers()` se resuelve **antes del sistema de ficheros**, así que cubre también las páginas y lo de `public/` —`snake/fruits.png` incluido—, mientras el `matcher` del proxy excluye justamente eso. Son `X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY`, `Referrer-Policy: strict-origin-when-cross-origin`, `Permissions-Policy: camera=(), microphone=(), geolocation=()` y, **sólo en producción**, `Strict-Transport-Security: max-age=63072000; includeSubDomains`. Dos cosas que no se deducen del archivo: el interruptor de HSTS es `process.env.NODE_ENV` y **no** los argumentos del proceso, porque en Next 16 el archivo de configuración ya no lo carga el comando `next dev` y buscar `dev` ahí devuelve `false` en desarrollo —lo dice `01-app/02-guides/upgrading/version-16.md`—; y `X-Frame-Options: DENY` es temporal por diseño, lo sustituirá `frame-ancestors 'none'` cuando llegue la spec de CSP. **`Content-Security-Policy` no está**: necesita un `nonce` por petición para los scripts en línea de Next y es su propia spec. Ojo al tocar este archivo: **no se recarga en caliente**, hay que reiniciar el servidor.
 - **Lo que se pinta en Press Start 2P va en mayúsculas y sin tildes.** La fuente no tiene glifos acentuados y el navegador los sustituye por otra, que al lado de un avance de 20px sale como una mota. Lo mismo con los símbolos del template (`▸ ▶ ✦ …`): se dibujan con ASCII. El único no-ASCII admitido es `·`. Los cuerpos de texto van en Courier Prime y **sí** llevan su acentuación.
 - **El texto editorial no vive en la maquetación**: los literales de la portada están en `lib/landing.ts` (`FEATURES`, `STATS`, `PLAN`, `FAQ`), los de «Acerca de» en `lib/about.ts` (`MISSION`, `HIGHLIGHTS`, `CONTACT_TIPS`, `TERMINAL_*`, `LIMITS`) y los de las máquinas **ya no están en el repo**: desde SPEC 17 viven en `public.games` y se editan en el panel de Supabase (ver «El catálogo»). Un retoque de copia no abre un `.tsx`, y el de una máquina ni siquiera abre el repo.
@@ -106,8 +107,10 @@ npx supabase db push   # aplica las migraciones de supabase/migrations/
 
 ## Rutas y pantallas
 
-Ocho pantallas y tres rutas sin pintura: el diagnóstico de conexión y los dos
-canjes, el del correo y el de OAuth. El grupo `app/(vault)/` **no aparece en la
+Nueve pantallas y tres rutas sin pintura: el diagnóstico de conexión y los dos
+canjes, el del correo y el de OAuth. Ocho vienen de una spec; la novena,
+`/contador`, no —se pidió y se escribió directamente, y es la única del sitio
+que no toca ni Supabase ni el catálogo—. El grupo `app/(vault)/` **no aparece en la
 URL**: existe para que `/jugar/[id]` quede fuera y monte su cabecera reducida
 (`PlayHeader`) sin heredar el `SiteHeader` ni el `SiteFooter` de `app/(vault)/layout.tsx`.
 
@@ -120,6 +123,7 @@ URL**: existe para que `/jugar/[id]` quede fuera y monte su cabecera reducida
 | `/cuenta`                  | `app/(vault)/cuenta/page.tsx`                  | `AuthPanel`: acceso, registro, nombre de jugador y perfil         |
 | `/cuenta/nueva-contrasena` | `app/(vault)/cuenta/nueva-contrasena/page.tsx` | Escribir una contraseña nueva; sin sesión, rebota a `/cuenta`     |
 | `/acerca-de`               | `app/(vault)/acerca-de/page.tsx`               | Misión y formulario de contacto                                   |
+| `/contador`                | `app/(vault)/contador/page.tsx`                | Contador que recorre la Pokédex Nacional de uno en uno            |
 | `/jugar/[id]`              | `app/jugar/[id]/page.tsx`                      | El gabinete: HUD, canvas y mando                                  |
 | —                          | `app/(vault)/not-found.tsx`                    | El 404 de los `notFound()` del grupo; sin cabecera ni pie propios |
 | `/api/supabase-health`     | `app/api/supabase-health/route.ts`             | Diagnóstico de conexión                                           |
@@ -482,7 +486,8 @@ El proyecto está conectado a Supabase (`nlfwqnmidfdohuyhklqp`) desde SPEC 04, y
 - **`proxy.ts` está en la raíz, refresca la sesión y desde SPEC 18 pre-filtra una ruta.** Llama a `auth.getUser()` y devuelve la respuesta con las cookies actualizadas; sin eso el token caducaría y el servidor acabaría viendo a un invitado donde hay una cuenta. Su `matcher` excluye `_next/static`, `_next/image`, `favicon.ico` y `snake/fruits.png`, y si faltan las credenciales deja pasar la petición sin tocarla —lo contrario que `env.ts`, y a propósito: lanzar ahí tumbaría el sitio entero—.
 - **Lo que el proxy hace con las rutas es pre-filtrar, no autorizar.** `PROTEGIDAS` es hoy **una** ruta, `/cuenta/nueva-contrasena`, y sin sesión rebota a `/cuenta?error=recuperacion`, que es el mismo destino que ya dice la página. Es un _optimistic check_ en el sentido de la documentación de Next, que admite el proxy para redirecciones por permiso y avisa **en la misma frase** de que no es una solución de autorización: la comprobación de verdad se queda donde estaba —en la página con su `getUser()`, en la Server Action que guarda la marca y en la RLS—, y la del proxy es puro ahorro de pintar una pantalla que va a rebotar. No cuesta ni una llamada de red, porque ese `getUser()` ya se hacía en cada petición y su respuesta se tiraba. Tres detalles que no se deducen: la coincidencia es **exacta y no por prefijo**, porque `/cuenta` es pública; sólo se rebota cuando Supabase **contestó** que no hay nadie, así que un fallo de red deja pasar y decide la página —rebotar ahí echaría de su cuenta a quien la tiene—; y las otras siete pantallas son públicas por diseño, que el vault se juega desde el primer clic sin cuenta.
 - **Los permisos de `anon` y `authenticated` son mínimos desde SPEC 18, y eso cambia cómo se añade una tabla.** `20260817020000_permisos_minimos.sql` revoca todo sobre las tres tablas y las dos vistas y devuelve sólo lo que el código usa: `games` SELECT, `scores` SELECT + INSERT, `profiles` SELECT más INSERT de `authenticated`, y SELECT en `top_scores` y `player_bests`. La RLS ya estaba desde SPEC 06 y 15; **el permiso es la otra capa**, y faltaba entera: lo que cerró de verdad es que `anon` podía hacer `TRUNCATE` de `public.scores` con la clave publicable que viaja al navegador, y **`truncate` no lo mira la RLS** —no es un `delete` que una política pueda filtrar, es una operación sobre la tabla—. La misma migración cierra el RPC de `handle_new_user()` y `rls_auto_enable()`, nombrando también a `public` porque el `=X` del ACL es de donde heredan los dos roles.
-- **Y por eso una tabla nueva nace sin ningún permiso.** El `alter default privileges` de esa migración quita a `anon` y `authenticated` de `pg_default_acl` del esquema `public`, así que el endurecimiento es una regla y no una foto —sin él, la próxima máquina que traiga tabla lo desandaría en silencio—. **La regla que eso deja escrita: toda spec futura con tabla escribe su `grant select` al lado de su `create policy`.** Si se olvida, PostgREST responde `permission denied for table X` en vez de una lista vacía; es el comportamiento correcto, pero conviene reconocerlo. Y un aviso de la misma migración: si algún día hay que recrear `handle_new_user()`, se hace con `create or replace`, que **conserva** el ACL, y nunca con `drop` más `create`, que lo devolvería al de fábrica y reabriría el agujero sin ruido.
+- **Y por eso una tabla nueva nace sin ningún permiso.** El `alter default privileges` de esa migración quita a `anon` y `authenticated` de `pg_default_acl` del esquema `public`, así que el endurecimiento es una regla y no una foto —sin él, la próxima máquina que traiga tabla lo desandaría en silencio—. **La regla que eso deja escrita: toda spec futura con tabla escribe su `grant select` al lado de su `create policy`.** Si se olvida, PostgREST responde `permission denied for table X` en vez de una lista vacía; es el comportamiento correcto, pero conviene reconocerlo. **Y desde SPEC 19 la regla vale también para las funciones y para las vistas**: `username_libre()` nace sin EXECUTE —el `alter default privileges` cubre `functions`— y lleva su `grant` escrito al lado; y un `drop view` se lleva por delante los `grant` que la vista tuviera, así que recrear una obliga a volver a escribirlos en la misma migración. Y un aviso de la misma migración: si algún día hay que recrear `handle_new_user()`, se hace con `create or replace`, que **conserva** el ACL, y nunca con `drop` más `create`, que lo devolvería al de fábrica y reabriría el agujero sin ruido.
+- **SPEC 19 recortó esa lista, porque SPEC 18 devolvió permisos que el código no necesitaba.** Hoy son: `games` SELECT; `scores` **sólo INSERT**, y acotado a las columnas `game_id, player_name, score, device_id, user_id`; `profiles` SELECT e INSERT **de `authenticated` y nada de `anon`**; SELECT en las tres vistas; y EXECUTE de `username_libre()`. Lo que cerró es que la clave publicable —que viaja al navegador por diseño— servía para pedir `/rest/v1/profiles?select=*`, o sea el censo del vault con el UUID de cada cuenta, su nombre y su fecha de alta, incluidas las cuentas que nunca dejaron una marca. La política `"perfiles publicos"` de SPEC 15 se sustituyó por `"mi perfil"`, `using ((select auth.uid()) = id)`, y lo único que seguía necesitando mirar la fila de un tercero —saber si un nombre está cogido— pasó a una función `security definer` que devuelve un booleano por candidato en vez de entregar la tabla.
 - **Hay configuración que no está en el repo, y desde SPEC 18 son cinco cosas.** Todas se hacen una vez en el panel de Supabase, y `.env.example` **no cambia** con ninguna: la autenticación usa las tres variables de siempre, y el cliente y el secreto de cada proveedor viven en el panel, que es quien habla con Google y con GitHub.
 
   1. **La confirmación de correo activada** y la **Site URL** del despliegue.
@@ -603,10 +608,29 @@ filas son el catálogo y llevan sus nueve columnas (ver «El catálogo»).
   ajena real, y la app no leía sus columnas; **SPEC 17 invirtió la dirección** y
   hoy manda ella (ver «El catálogo»). De los cuatro sitios que toca una máquina
   nueva, uno es esa migración (ver «Motores de juego»).
-- **Dos vistas acotan lo que viaja**: `top_scores` (top 10 por máquina, desempate
-  por `created_at` ascendente) y `player_bests` (la mejor marca de cada nombre).
-  Las dos con `security_invoker = true`, para que la RLS de `scores` siga
-  aplicando.
+- **Tres vistas acotan lo que viaja**, y desde SPEC 19 son la **única** puerta de
+  lectura del marcador: `top_scores` (top 10 por máquina, desempate por
+  `created_at` ascendente), `player_bests` (la mejor marca de cada nombre) y
+  `public_scores`, la nueva, que es `scores` sin `id`, sin `seeded` y sin
+  `user_id` y es lo que lee `recentScores()`. **`anon` y `authenticated` ya no
+  tienen SELECT sobre `public.scores`**; conservan el INSERT, y acotado por
+  columnas a las cinco que escribe la Server Action. Dos consecuencias que no se
+  deducen: un `.insert()` que encadenara `.select()` dejaría de funcionar —hoy no
+  lo hace y no debe empezar—, y una lectura nueva del marcador no se resuelve
+  añadiendo un `select` sino decidiendo por qué vista sale.
+- **Ninguna de las tres devuelve `user_id`; las tres devuelven `mine`.** Es
+  `(s.user_id is not null and s.user_id = (select auth.uid()))`, con el `select`
+  envuelto para que se evalúe una vez por consulta y no una por fila. Así el UUID
+  de `auth.users` deja de bajar al HTML de las cuatro pantallas públicas sin
+  perder el resaltado y sin gastar una llamada de red nueva.
+- **Y por eso las tres pasaron a `security_barrier = true` y dejaron
+  `security_invoker`.** Es un cambio consciente sobre lo que escribió SPEC 06:
+  con el invocador ya sin SELECT sobre `public.scores`, una vista
+  `security_invoker` no podría leer su tabla base y las tres dejarían de
+  funcionar. Hoy no se pierde ninguna restricción, porque la política de SELECT
+  de `scores` es `using (true)` para los dos roles. Lo que se pierde es la
+  herencia automática, así que queda escrito: **acotar la lectura de `scores`
+  obliga a repetir el filtro en las tres vistas**.
 - **`lib/leaderboard.ts` es sólo de servidor** (`import "server-only"`): ahí están
   `board`, `boards`, `bests`, `recentScores` y `topPlayers`. **Ninguna lanza**: un
   fallo devuelve **`null`** y el error se queda en la consola del servidor. Lo que
@@ -633,11 +657,12 @@ filas son el catálogo y llevan sus nueve columnas (ver «El catálogo»).
 - **`lib/scores.ts` es isomorfo**: sólo tipos y `formatScore()`. Lo importan tanto
   el servidor como los componentes de cliente.
 - **Ningún componente consulta por su cuenta.** Las páginas resuelven las filas y
-  las bajan por props con `mine: false`. Quién es el dueño lo decide el
-  navegador, con el `useMine()` de `lib/session.tsx` (ver «Sesión y cuentas»):
-  el servidor podría saberlo cuando hay cuenta, pero sin ella hace falta
-  `localStorage`, y una marca no puede resaltarse de dos maneras según quién
-  mire.
+  las bajan por props, y quién es el dueño lo sigue decidiendo `useMine()` de
+  `lib/session.tsx` (ver «Sesión y cuentas»). Lo que cambió en SPEC 19 es **quién
+  compara**, no la regla: `mine` ya no es un `false` fijo que el cliente ignoraba
+  —lo era desde SPEC 06— sino lo que dice la vista, y con sesión es la respuesta
+  entera. Sin ella sigue mandando el `deviceId`, porque `localStorage` no lo lee
+  el servidor.
 - **Escribir es la Server Action `app/jugar/[id]/actions.ts`**, no un `insert`
   desde el navegador: ahí se comprueba el `gameId` contra `GAMES` y se llama a
   `revalidatePath` de `/`, `/salon`, `/biblioteca` y la ruta concreta del juego.
@@ -659,7 +684,9 @@ filas son el catálogo y llevan sus nueve columnas (ver «El catálogo»).
   autenticado, así que nadie firma con la cuenta de otro ni desde el navegador.
   Ojo con las vistas: `top_scores` se escribió con `s.*`, pero Postgres expande
   esa estrella al crearla, así que hubo que **recrearla** para que se enterara
-  de la columna nueva; `player_bests`, que nombra las suyas, también.
+  de la columna nueva; `player_bests`, que nombra las suyas, también. Desde
+  SPEC 19 la columna existe en la tabla y **no sale de ella**: las tres vistas la
+  nombran una a una y ninguna la devuelve.
 - **Las pantallas que leen la base de datos se renderizan en cada visita**, y desde
   SPEC 17 son **cinco**, no cuatro: la portada, la biblioteca, la ficha y —esto es
   nuevo— `/jugar/[id]` lo declaran con `dynamic = "force-dynamic"`; `/salon` no hace
@@ -761,7 +788,8 @@ contraseña y un estado que antes no existía: la **cuenta sin nombre**.
   reclamar marcas ajenas.
 - **Un solo contexto**, `SessionProvider` de `lib/session.tsx`, montado en el layout raíz: la cabecera, `/cuenta` y `/jugar` leen el mismo usuario. `useSession()` lanza si no hay proveedor por encima. Dentro hay **dos estados y no uno**: `authUser` es lo que dice Supabase y `user` es lo que se pinta, que además necesita el `username` de `profiles`. Separarlos es lo que permite que el callback de `onAuthStateChange` sea síncrono —consultar la base de datos ahí dentro puede bloquearse contra el candado de auth— y que un refresco de token no vuelva a pedir el perfil. Desde SPEC 16 el contexto expone además **`refreshProfile()`**, y existe por un solo caso: quien acaba de elegir su nombre. Esa fila la escribe el navegador, así que Supabase no emite ningún evento de auth, y `router.refresh()` sólo alcanza a los Server Components —el proveedor es de cliente y no se remonta—; sin ella el panel seguiría pidiendo el nombre y la cabecera diciendo `ELIGE NOMBRE` hasta recargar a mano.
 - **`ready` se deduce, no se guarda**: el estado es `VaultUser | null | undefined` y `undefined` significa «aún no ha contestado Supabase». Hasta que `ready` sea `true` nadie pinta estado de sesión —el servidor no lo tiene y pintarlo antes sería un desajuste de hidratación—.
-- **`useMine()` vive en `lib/session.tsx` y es la única regla de «esta marca es mía»**: con sesión manda la **cuenta** (`userId`), sin ella manda el **dispositivo** (`deviceId`), nunca las dos a la vez. La usan las tres tablas del marcador; estaba escrita tres veces y tres copias de una regla son tres sitios donde puede empezar a decir cosas distintas.
+- **`useMine()` vive en `lib/session.tsx` y es la única regla de «esta marca es mía»**: con sesión manda la **cuenta**, sin ella manda el **dispositivo** (`deviceId`), nunca las dos a la vez. La usan las tres tablas del marcador; estaba escrita tres veces y tres copias de una regla son tres sitios donde puede empezar a decir cosas distintas. Desde SPEC 19 la mitad de la cuenta ya no la compara el navegador: `Signed` cambió `userId` por `mine`, que baja calculado de la vista, y la rama con sesión es `return row.mine`. La regla no cambió; cambió **quién compara**, y con ella se fue el UUID del HTML. Los tres consumidores —`hall-of-fame.tsx`, `activity-feed.tsx` y `score-panel.tsx`— no se enteraron: los tres llaman a `useMine()` y ninguno leía `userId` por su cuenta.
+- **`public.profiles` dejó de ser pública en SPEC 19**, y eso cambia qué se puede preguntar desde el navegador. `anon` no tiene SELECT y la política de `authenticated` es `id = auth.uid()`: se lee **la fila propia y ninguna más**, que es justo lo que hace el `.eq("id", …)` del contexto. Saber si un nombre está cogido —lo único que necesitaba mirar la fila de un tercero— es hoy `supabase.rpc("username_libre", { candidato })`, una función `security definer` que normaliza con `upper()` y devuelve un booleano. Sigue siendo un oráculo de disponibilidad, que es inevitable si el formulario ha de poder decir `ESE NOMBRE YA ESTA COGIDO`; lo que ya no hace es entregar el listado con su UUID y su fecha de alta. La garantía real sigue siendo el `unique`, y la comprobación previa sigue siendo cortesía: el `23505` de `chooseName()` no se toca.
 - **`lib/storage.ts` es el único que toca `localStorage`.** La clave sigue siendo `arcadevault:v1` y dentro ya sólo hay dos campos, `deviceId` y `skins`: SPEC 06 se llevó `scores` a Supabase y SPEC 15 se lleva `user`. Ninguna de las dos subió a `v2`, y a propósito: lo que se quita es un campo que deja de leerse, y estrenar clave habría borrado las pieles y el identificador de todo el mundo. Lo que un navegador viejo tenga guardado ahí se queda sin que lo lea nadie. `skins` se teclea `Record<string, SkinId>` y no `Record<GameId, SkinId>` para que este archivo no importe del catálogo. Todo va envuelto en `try/catch`: en modo privado la interfaz funciona igual, sólo que no persiste.
 - **El nombre se normaliza igual en los tres sitios**: mayúsculas y 12 caracteres, en el registro del panel, en el `check` de la tabla y en la Server Action que guarda la marca de un invitado.
 - **`deviceId()` puede devolver `undefined`.** `crypto.randomUUID()` sólo existe en contexto seguro, así que probando desde el móvil por `http://192.168.x.x` no está. La marca se guarda igual, sin dueño: se pierde un color en la tabla, no una puntuación. Con cuenta ya no importa, porque el dueño lo pone `user_id`.
