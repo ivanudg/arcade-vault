@@ -183,24 +183,46 @@ on public.scores to anon, authenticated`, y `grant select` sobre las tres vistas
 
 ## Criterios de aceptación
 
-- [ ] `GET /rest/v1/profiles?select=*` con la clave publicable y sin sesión no devuelve
+- [x] `GET /rest/v1/profiles?select=*` con la clave publicable y sin sesión no devuelve
       ninguna fila ajena.
-- [ ] Con sesión iniciada, esa misma petición devuelve exactamente una fila: la propia.
-- [ ] `GET /rest/v1/scores?select=user_id` con la clave publicable responde error de permiso.
-- [ ] `GET /rest/v1/top_scores?select=user_id` y `player_bests?select=user_id` responden
+- [x] Con sesión iniciada, esa misma petición devuelve exactamente una fila: la propia.
+- [x] `GET /rest/v1/scores?select=user_id` con la clave publicable responde error de permiso.
+- [x] `GET /rest/v1/top_scores?select=user_id` y `player_bests?select=user_id` responden
       error de permiso.
-- [ ] La cadena `user_id` no aparece en el HTML servido por `/`, `/salon`, `/biblioteca` ni
+- [x] La cadena `user_id` no aparece en el HTML servido por `/`, `/salon`, `/biblioteca` ni
       `/juego/[id]`.
-- [ ] Registrarse con un nombre ya cogido sigue diciendo `ESE NOMBRE YA ESTA COGIDO` antes de
+- [x] Registrarse con un nombre ya cogido sigue diciendo `ESE NOMBRE YA ESTA COGIDO` antes de
       llamar a `signUp()`.
-- [ ] Una cuenta de Google o GitHub puede elegir su nombre en `/cuenta` y la cabecera deja de
+- [x] Una cuenta de Google o GitHub puede elegir su nombre en `/cuenta` y la cabecera deja de
       decir `ELIGE NOMBRE` sin recargar.
-- [ ] Con sesión, las marcas propias siguen resaltadas en el salón, en la ficha y en la
+- [x] Con sesión, las marcas propias siguen resaltadas en el salón, en la ficha y en la
       actividad de la portada.
-- [ ] Sin sesión, las marcas de este navegador siguen resaltadas en las tres.
+- [x] Sin sesión, las marcas de este navegador siguen resaltadas en las tres.
 - [ ] Terminar una partida con sesión guarda la marca firmada con el `username` del perfil.
-- [ ] Terminar una partida sin sesión guarda la marca con el nombre escrito y sin dueño.
-- [ ] `npx tsc --noEmit`, `npm run lint` y `npm run build` pasan sin avisos nuevos.
+- [x] Terminar una partida sin sesión guarda la marca con el nombre escrito y sin dueño.
+- [x] `npx tsc --noEmit`, `npm run lint` y `npm run build` pasan sin avisos nuevos.
+
+### Cómo se verificaron (2026-08-17)
+
+Ocho de los doce están firmados contra el proyecto remoto y contra `npm start` en local.
+Los cuatro primeros se probaron con `curl` y la clave publicable de `.env.local`:
+`profiles` y `scores` responden `401 42501 permission denied`, y las dos vistas responden
+`400 42703 column ... does not exist` —no es el error de permiso que decía el criterio, sino
+uno más fuerte: la columna ya no está en la vista—. El de la sesión iniciada se comprobó en
+la base con `begin` / `set local role authenticated` con el `sub` de una cuenta real /
+`rollback`: de los dos perfiles de la tabla, la sesión ve **uno**. El del HTML es
+`grep user_id` sobre las cuatro rutas servidas por el build de producción: cero coincidencias
+en las cuatro, con el salón y la portada trayendo filas de verdad. El del nombre cogido se
+probó en `/cuenta`: el panel pintó `ESE NOMBRE YA ESTA COGIDO` y `auth.users` no ganó ninguna
+fila, así que la RPC cortó antes de `signUp()`. Los dos de invitado se firmaron terminando
+una partida de Snake sin sesión: la marca entró como `INVITADO` con `user_id` nulo y
+`device_id` puesto, y quedó resaltada en el salón, en la ficha y en la actividad de la
+portada —y sólo ella, que es lo que prueba que el `deviceId` sigue mandando sin sesión—.
+
+**Los tres que quedan piden un humano con cuenta**, y no son de código: los dos del resaltado
+y la firma con sesión necesitan una marca guardada desde una cuenta —hoy las seis de
+`public.scores` tienen `user_id` nulo—, y el de elegir nombre necesita entrar con Google o
+GitHub. Los tres son de recorrido manual y ninguno tiene sustituto automático.
 
 ## Decisiones tomadas y descartadas
 
