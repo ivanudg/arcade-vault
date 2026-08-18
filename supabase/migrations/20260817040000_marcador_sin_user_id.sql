@@ -85,3 +85,34 @@ select distinct on (s.player_name)
        (s.user_id is not null and s.user_id = (select auth.uid())) as mine
 from public.scores s
 order by s.player_name, s.score desc;
+
+-- ---------------------------------------------------------------------------
+-- 2. Los permisos: la tabla cruda deja de leerse desde fuera
+-- ---------------------------------------------------------------------------
+
+-- Con las tres vistas dando `mine`, nadie necesita ya `public.scores` para leer,
+-- y leerla es justo lo que devuelve `user_id`. Se revoca tambien el `insert` de
+-- tabla que dio SPEC 18, y no solo el `select`: dejarlo puesto haria del `grant`
+-- por columnas de abajo un adorno, porque el permiso de tabla ya cubre todas.
+revoke select, insert on public.scores from anon, authenticated;
+
+-- El INSERT se devuelve acotado a las cinco columnas que escribe
+-- `app/jugar/[id]/actions.ts`. `seeded` **no** entra: la Server Action lo deja
+-- en su valor por defecto y la politica "firmar una marca" solo admite `false`.
+-- Que el `with check` de esa politica nombre `seeded` y `user_id` no exige
+-- privilegio sobre ellas: el privilegio de columna se comprueba sobre las que el
+-- INSERT nombra.
+--
+-- AVISO: un `.insert()` que algun dia encadene `.select()` necesitaria SELECT
+-- sobre `scores`, y esta migracion se lo quita. Hoy no lo encadena y no debe
+-- empezar a hacerlo; queda escrito tambien en CLAUDE.md.
+grant insert (game_id, player_name, score, device_id, user_id)
+  on public.scores to anon, authenticated;
+
+-- Los tres `grant select` van aqui y no se dan por hechos: `drop view` se lleva
+-- por delante los de SPEC 18, asi que las dos vistas recreadas se quedarian
+-- ilegibles en produccion. Y `public_scores` nace sin ninguno, por el
+-- `alter default privileges` de SPEC 18.
+grant select on public.public_scores to anon, authenticated;
+grant select on public.top_scores to anon, authenticated;
+grant select on public.player_bests to anon, authenticated;
