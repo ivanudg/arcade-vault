@@ -133,3 +133,33 @@ entregar el listado, el UUID y la fecha de alta.
 
 Remediación oficial del de contraseñas filtradas, para cuando se pueda:
 <https://supabase.com/docs/guides/auth/password-security#password-strength-and-leaked-password-protection>
+
+## El proyecto de producción (2026-08-18)
+
+Hay un segundo proyecto de Supabase, creado para producción, y **no es este**. Lo que dice
+este archivo está medido contra el de **desarrollo** (`nlfwqnmidfdohuyhklqp`), que es el
+único que declara `.mcp.json` y el único que Claude puede consultar.
+
+- [x] **Producción está fuera del alcance de Claude, y es una regla ejecutada.** El hook
+      `PreToolUse` de `.claude/hooks/guard-prod.sh` aborta cualquier llamada —Bash o MCP—
+      que nombre un ref de Supabase distinto del de desarrollo, y también los verbos del
+      runbook: `supabase link`, `db push`, `db reset`, `config push`, `psql`, `pg_dump` y
+      `pg_restore`. El ref de producción vive en `.claude/prod-ref.txt`, que git ignora.
+- [ ] **La migración a producción está escrita pero no ejecutada.** El procedimiento son
+      `docs/produccion/runbook.md` (seis fases, con su bloque de SQL de verificación) y
+      `docs/produccion/panel-checklist.md` (las siete casillas que no viajan en las
+      migraciones). Las marca **el humano** al correrlo, no un agente.
+- [ ] **Nada de lo de arriba está verificado contra producción.** Las quince migraciones
+      llevan los permisos mínimos y la RLS dentro, así que `db push` los reproduce; pero
+      «reproduce» es una expectativa hasta que la fase 5.2 del runbook la comprueba con
+      sus propias consultas. Hasta entonces, este archivo habla de desarrollo y de nada más.
+- [ ] **La configuración del panel de producción se anota en la tabla «Afirmaciones» de**
+      `.claude/security-auditor/hallazgos.md`, no aquí: son verdades fechadas que no se
+      pueden medir desde el repo —los tres ajustes de Auth, la Site URL, las dos Redirect
+      URLs, las dos plantillas de correo y el veredicto sobre contraseñas filtradas—.
+
+Un riesgo que cambia de precio al haber producción: el hallazgo `serio` del
+`security-auditor` sobre `pg_default_acl`. `20260817020000_permisos_minimos.sql` sólo pudo
+cerrar las filas del rol `postgres`, así que **un objeto creado desde el editor del panel
+nace abierto a `anon` y `authenticated`**. En desarrollo eso se descubre y se arregla; en
+producción se descubre tarde. Todo objeto nuevo entra por migración.
